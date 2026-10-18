@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { CalendarClock, Search, SlidersHorizontal } from "lucide-react";
+import { useState } from 'react';
+import Link from 'next/link';
+import { CalendarClock, Search, SlidersHorizontal } from 'lucide-react';
 import {
   Modal,
   ModalBody,
@@ -10,7 +10,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from "@/components/ui";
+} from '@/components/ui';
+import {
+  TOURNAMENT_BOOKING_TYPE,
+  TOURNAMENT_BOOKING_BACKGROUND,
+} from '@/lib/bookings/tournamentBookings';
 
 export interface UpcomingBooking {
   id: string;
@@ -29,61 +33,62 @@ export interface UpcomingBooking {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  lezione_privata: "Lezione privata",
-  lezione_gruppo: "Lezione gruppo",
-  campo: "Campo",
-  lezione: "Lezione",
-  arena: "Match Arena",
-  torneo: "Torneo",
-  corso: "Corso",
+  lezione_privata: 'Lezione privata',
+  lezione_gruppo: 'Lezione gruppo',
+  campo: 'Campo',
+  lezione: 'Lezione',
+  arena: 'Match Arena',
+  torneo: 'Torneo',
+  corso: 'Corso',
 };
 
 function getItemBg(item: UpcomingBooking, currentUserId?: string): string {
-  if (item.isCourse) return "var(--color-frozen-lake-900)";
+  if (item.isCourse) return 'var(--color-frozen-lake-900)';
+  if (item.type === TOURNAMENT_BOOKING_TYPE) return TOURNAMENT_BOOKING_BACKGROUND;
   const isCoach = item.coach_id === currentUserId;
   if (isCoach) {
     switch (item.type) {
-      case "lezione_privata":
-      case "lezione_gruppo":
-      case "lezione":
-        return "#023047";
-      case "campo":
-        return "var(--color-frozen-lake-600)";
-      case "arena":
-        return "var(--color-frozen-lake-600)";
+      case 'lezione_privata':
+      case 'lezione_gruppo':
+      case 'lezione':
+        return '#023047';
+      case 'campo':
+        return 'var(--color-frozen-lake-600)';
+      case 'arena':
+        return 'var(--color-frozen-lake-600)';
       default:
-        return "#023047";
+        return '#023047';
     }
   }
   switch (item.type) {
-    case "lezione_privata":
-    case "lezione_gruppo":
-    case "lezione":
-      return "#023047";
-    case "campo":
-      return "var(--secondary)";
-    case "arena":
-      return "var(--color-frozen-lake-600)";
+    case 'lezione_privata':
+    case 'lezione_gruppo':
+    case 'lezione':
+      return '#023047';
+    case 'campo':
+      return 'var(--secondary)';
+    case 'arena':
+      return 'var(--color-frozen-lake-600)';
     default:
-      return "var(--secondary)";
+      return 'var(--secondary)';
   }
 }
 
 const TYPE_OPTIONS = [
-  { value: "all", label: "Tutti i tipi" },
-  { value: "lezione_privata", label: "Lezione privata" },
-  { value: "lezione_gruppo", label: "Lezione gruppo" },
-  { value: "corso", label: "Corso" },
-  { value: "campo", label: "Campo" },
-  { value: "arena", label: "Match Arena" },
-  { value: "torneo", label: "Torneo" },
+  { value: 'all', label: 'Tutti i tipi' },
+  { value: 'lezione_privata', label: 'Lezione privata' },
+  { value: 'lezione_gruppo', label: 'Lezione gruppo' },
+  { value: 'corso', label: 'Corso' },
+  { value: 'campo', label: 'Campo' },
+  { value: 'arena', label: 'Match Arena' },
+  { value: 'torneo', label: 'Torneo' },
 ];
 
 export function UpcomingCommitmentsCard({
   bookings,
   currentUserId,
-  basePath = "/dashboard/maestro",
-  title = "Prossimi impegni",
+  basePath = '/dashboard/maestro',
+  title = 'Prossimi impegni',
   showFilterButton = true,
 }: {
   bookings: UpcomingBooking[];
@@ -92,13 +97,13 @@ export function UpcomingCommitmentsCard({
   title?: string;
   showFilterButton?: boolean;
 }) {
-  const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterUser, setFilterUser] = useState("all");
-  const [filterCoach, setFilterCoach] = useState("all");
-  const [filterCourt, setFilterCourt] = useState("all");
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterUser, setFilterUser] = useState('all');
+  const [filterCoach, setFilterCoach] = useState('all');
+  const [filterCourt, setFilterCourt] = useState('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const userOptions = Array.from(
@@ -108,68 +113,76 @@ export function UpcomingCommitmentsCard({
         const names = (b.participants ?? []).map((p) => p.full_name).filter(Boolean);
         if (names.length > 0) return names;
         return b.user_profile?.full_name ? [b.user_profile.full_name] : [];
-      })
-    )
-  ).sort((a, b) => a.localeCompare(b, "it"));
+      }),
+    ),
+  ).sort((a, b) => a.localeCompare(b, 'it'));
 
   const coachOptions = Array.from(
     new Set(
       bookings
         .map((b) => b.coach_profile?.full_name?.trim())
-        .filter((n): n is string => Boolean(n))
-    )
-  ).sort((a, b) => a.localeCompare(b, "it"));
+        .filter((n): n is string => Boolean(n)),
+    ),
+  ).sort((a, b) => a.localeCompare(b, 'it'));
 
-  const courtOptions = Array.from(
-    new Set(bookings.map((b) => b.court).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b, "it"));
+  const courtOptions = Array.from(new Set(bookings.map((b) => b.court).filter(Boolean))).sort(
+    (a, b) => a.localeCompare(b, 'it'),
+  );
 
   const hasActiveFilters =
-    filterType !== "all" ||
-    filterUser !== "all" ||
-    filterCoach !== "all" ||
-    filterCourt !== "all" ||
+    filterType !== 'all' ||
+    filterUser !== 'all' ||
+    filterCoach !== 'all' ||
+    filterCourt !== 'all' ||
     Boolean(filterDateFrom) ||
     Boolean(filterDateTo);
 
   const searchLower = search.toLowerCase();
 
   const filtered = bookings.filter((item) => {
-    const itemType = item.isCourse ? "corso" : item.type;
-    if (filterType !== "all" && itemType !== filterType) return false;
-    if (filterCourt !== "all" && item.court !== filterCourt) return false;
+    const itemType = item.isCourse ? 'corso' : item.type;
+    if (filterType !== 'all' && itemType !== filterType) return false;
+    if (filterCourt !== 'all' && item.court !== filterCourt) return false;
     const itemDateStr = item.start_time.slice(0, 10);
     if (filterDateFrom && itemDateStr < filterDateFrom) return false;
     if (filterDateTo && itemDateStr > filterDateTo) return false;
-    if (filterUser !== "all" && !item.isCourse) {
+    if (filterUser !== 'all' && !item.isCourse) {
       const names = (item.participants ?? []).map((p) => p.full_name);
-      const primary = names.length > 0 ? names.join(", ") : item.user_profile?.full_name ?? "";
+      const primary = names.length > 0 ? names.join(', ') : item.user_profile?.full_name ?? '';
       if (primary !== filterUser) return false;
     }
-    if (filterCoach !== "all" && (item.coach_profile?.full_name ?? "") !== filterCoach) return false;
+    if (filterCoach !== 'all' && (item.coach_profile?.full_name ?? '') !== filterCoach)
+      return false;
     if (searchLower) {
-      const participantNames = (item.participants ?? []).map((p) => p.full_name).join(" ").toLowerCase();
+      const participantNames = (item.participants ?? [])
+        .map((p) => p.full_name)
+        .join(' ')
+        .toLowerCase();
       const name = item.isCourse
-        ? (item.notes || "").toLowerCase()
-        : [item.user_profile?.full_name || "", item.coach_profile?.full_name || "", participantNames]
-            .join(" ")
+        ? (item.notes || '').toLowerCase()
+        : [
+            item.user_profile?.full_name || '',
+            item.coach_profile?.full_name || '',
+            participantNames,
+          ]
+            .join(' ')
             .toLowerCase();
-      const court = (item.court || "").toLowerCase();
+      const court = (item.court || '').toLowerCase();
       if (!name.includes(searchLower) && !court.includes(searchLower)) return false;
     }
     return true;
   });
 
   const timeStr = (t: string) =>
-    new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    new Date(t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
   function resetFilters() {
-    setFilterType("all");
-    setFilterUser("all");
-    setFilterCoach("all");
-    setFilterCourt("all");
-    setFilterDateFrom("");
-    setFilterDateTo("");
+    setFilterType('all');
+    setFilterUser('all');
+    setFilterCoach('all');
+    setFilterCourt('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
   }
 
   return (
@@ -194,8 +207,8 @@ export function UpcomingCommitmentsCard({
             onClick={() => setIsFilterModalOpen(true)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
               hasActiveFilters
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+                ? 'border-secondary bg-secondary text-white hover:opacity-90'
+                : 'border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50'
             }`}
             aria-label="Filtri"
             title="Filtri"
@@ -210,13 +223,13 @@ export function UpcomingCommitmentsCard({
           <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
             <CalendarClock className="h-8 w-8 mb-2" />
             <p className="text-sm font-medium">
-              {bookings.length === 0 ? "Nessun impegno in arrivo" : "Nessun risultato"}
+              {bookings.length === 0 ? 'Nessun impegno in arrivo' : 'Nessun risultato'}
             </p>
           </div>
         ) : (
           <ul
             className="flex flex-col gap-2 overflow-y-auto scrollbar-hide"
-            style={{ maxHeight: "390px" }}
+            style={{ maxHeight: '390px' }}
           >
             {filtered.map((item) => {
               const start = new Date(item.start_time);
@@ -227,21 +240,23 @@ export function UpcomingCommitmentsCard({
                     <Link
                       href={`${basePath}/corsi/${item.id}`}
                       className="flex items-center gap-4 py-3.5 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                      style={{ background: "var(--color-frozen-lake-900)" }}
+                      style={{ background: 'var(--color-frozen-lake-900)' }}
                     >
                       <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                         <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                          {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                          {start.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')}
                         </span>
                         <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
                           {start.getDate()}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{item.notes || "Corso"}</p>
+                        <p className="font-semibold text-white text-sm truncate">
+                          {item.notes || 'Corso'}
+                        </p>
                         <p className="text-xs text-white/70 mt-0.5">
                           {timeStr(item.start_time)}–{timeStr(item.end_time)}
-                          {item.court ? ` · ${item.court}` : ""}
+                          {item.court ? ` · ${item.court}` : ''}
                         </p>
                       </div>
                       <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
@@ -258,11 +273,11 @@ export function UpcomingCommitmentsCard({
                 .filter(Boolean);
               const counterpart =
                 participantNames.length > 0
-                  ? participantNames.join(", ")
+                  ? participantNames.join(', ')
                   : item.coach_id === currentUserId
-                  ? item.user_profile?.full_name || "Impegno"
-                  : item.coach_profile?.full_name || item.user_profile?.full_name || "Impegno";
-              const typeLabel = TYPE_LABELS[item.type] || item.type.replace(/_/g, " ");
+                  ? item.user_profile?.full_name || 'Impegno'
+                  : item.coach_profile?.full_name || item.user_profile?.full_name || 'Impegno';
+              const typeLabel = TYPE_LABELS[item.type] || item.type.replace(/_/g, ' ');
               const typeBg = getItemBg(item, currentUserId);
 
               return (
@@ -274,7 +289,7 @@ export function UpcomingCommitmentsCard({
                   >
                     <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                       <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                        {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                        {start.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')}
                       </span>
                       <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
                         {start.getDate()}
@@ -302,29 +317,39 @@ export function UpcomingCommitmentsCard({
         <ModalContent
           size="md"
           showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
         >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="text-white text-lg">Filtra Prenotazioni</ModalTitle>
           </ModalHeader>
 
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+          <ModalBody className="px-4 py-4 bg-white space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Tipo</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Tipo
+              </label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 {TYPE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             {userOptions.length > 0 && (
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Utente</label>
+                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Utente
+                </label>
                 <select
                   value={filterUser}
                   onChange={(e) => setFilterUser(e.target.value)}
@@ -332,7 +357,9 @@ export function UpcomingCommitmentsCard({
                 >
                   <option value="all">Tutti gli utenti</option>
                   {userOptions.map((name) => (
-                    <option key={name} value={name}>{name}</option>
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -340,7 +367,9 @@ export function UpcomingCommitmentsCard({
 
             {coachOptions.length > 0 && (
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Maestro</label>
+                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Maestro
+                </label>
                 <select
                   value={filterCoach}
                   onChange={(e) => setFilterCoach(e.target.value)}
@@ -348,7 +377,9 @@ export function UpcomingCommitmentsCard({
                 >
                   <option value="all">Tutti i maestri</option>
                   {coachOptions.map((name) => (
-                    <option key={name} value={name}>{name}</option>
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -356,7 +387,9 @@ export function UpcomingCommitmentsCard({
 
             {courtOptions.length > 0 && (
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Campo</label>
+                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Campo
+                </label>
                 <select
                   value={filterCourt}
                   onChange={(e) => setFilterCourt(e.target.value)}
@@ -364,7 +397,9 @@ export function UpcomingCommitmentsCard({
                 >
                   <option value="all">Tutti i campi</option>
                   {courtOptions.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -372,7 +407,9 @@ export function UpcomingCommitmentsCard({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Data da</label>
+                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Data da
+                </label>
                 <input
                   type="date"
                   value={filterDateFrom}
@@ -381,7 +418,9 @@ export function UpcomingCommitmentsCard({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Data a</label>
+                <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Data a
+                </label>
                 <input
                   type="date"
                   value={filterDateTo}
@@ -392,7 +431,7 @@ export function UpcomingCommitmentsCard({
             </div>
           </ModalBody>
 
-          <ModalFooter className="px-7! py-3! border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="px-7! py-3! border-t border-gray-200 bg-white">
             <button
               type="button"
               onClick={resetFilters}

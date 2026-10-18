@@ -1,12 +1,14 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef, useMemo } from "react";
-import { useRouter, useParams, useSearchParams, usePathname } from "next/navigation";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import { format, addDays } from "date-fns";
-import { it } from "date-fns/locale";
-import { getClosingMinutes, getCourtHoursLabel } from "@/lib/bookings/bookingTimeRestrictions";
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { useRouter, useParams, useSearchParams, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { format, addDays } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { getClosingMinutes, getCourtHoursLabel } from '@/lib/bookings/bookingTimeRestrictions';
 import {
   Calendar,
   Loader2,
@@ -14,7 +16,7 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Modal,
   ModalContent,
@@ -22,11 +24,11 @@ import {
   ModalTitle,
   ModalBody,
   ModalFooter,
-} from "@/components/ui";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { type UserRole } from "@/lib/roles";
-import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
-import { ARENA_MATCH_FORMATS, CHALLENGE_TYPES } from "@/lib/arena/arenaConstants";
+} from '@/components/ui';
+import AthletesSelector from '@/components/bookings/AthletesSelector';
+import { type UserRole } from '@/lib/roles';
+import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
+import { ARENA_MATCH_FORMATS, CHALLENGE_TYPES } from '@/lib/arena/arenaConstants';
 
 interface OpponentProfile {
   id: string;
@@ -54,49 +56,47 @@ interface SelectedParticipant {
   isRegistered: boolean;
 }
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
+const COURTS = ['Campo 1', 'Campo 2', 'Campo 3', 'Campo 4'];
 
 const MATCH_TYPES = [
-  { value: "singolo", label: "Singolo" },
-  { value: "doppio", label: "Doppio" },
+  { value: 'singolo', label: 'Singolo' },
+  { value: 'doppio', label: 'Doppio' },
 ];
 
-const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+const WEEK_DAYS = ['lu', 'ma', 'me', 'gi', 've', 'sa', 'do'];
 
 export default function ConfigureChallengePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const dashboardBase = pathname.split("/arena")[0];
+  const dashboardBase = pathname.split('/arena')[0];
   const opponentId = params.opponentId as string;
-  const editChallengeId = searchParams.get("edit");
-  const isCounterProposal = searchParams.get("counter") === "true";
+  const editChallengeId = searchParams.get('edit');
+  const isCounterProposal = searchParams.get('counter') === 'true';
 
   const [opponent, setOpponent] = useState<OpponentProfile | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<Player | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [currentUserId, setCurrentUserId] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Form state
-  const [challengeType, setChallengeType] = useState("ranked");
-  const [matchFormat, setMatchFormat] = useState("best_of_3");
-  const [matchType, setMatchType] = useState("singolo");
+  const [challengeType, setChallengeType] = useState('ranked');
+  const [matchFormat, setMatchFormat] = useState('best_of_3');
+  const [matchType, setMatchType] = useState('singolo');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourt, setSelectedCourt] = useState(COURTS[0]);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
-  const [myPartner, setMyPartner] = useState("");
-  const [opponentPartner, setOpponentPartner] = useState("");
-  const [message, setMessage] = useState("");
+  const [myPartner, setMyPartner] = useState('');
+  const [opponentPartner, setOpponentPartner] = useState('');
+  const [message, setMessage] = useState('');
 
   // Slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [existingBookings, setExistingBookings] = useState<any[]>([]);
 
   // Calendar modal
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
@@ -110,7 +110,8 @@ export default function ConfigureChallengePage() {
   const editingBookingIdRef = useRef<string | null>(null);
 
   // Drag to scroll
-  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } =
+    useDragScroll();
 
   useEffect(() => {
     loadData();
@@ -129,24 +130,32 @@ export default function ConfigureChallengePage() {
   }, [selectedDate, selectedCourt]);
 
   useEffect(() => {
-    if (matchType === "singolo") {
-      setMyPartner("");
-      setOpponentPartner("");
+    if (matchType === 'singolo') {
+      setMyPartner('');
+      setOpponentPartner('');
     }
   }, [matchType]);
 
   async function loadData() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
-        router.push("/login");
+        router.push('/login');
         return;
       }
       setCurrentUserId(session.user.id);
 
       const [profileRes, playersRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, avatar_url").eq("id", session.user.id).single(),
-        fetch("/api/arena/players", { headers: { Authorization: `Bearer ${session.access_token}` } }),
+        supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .eq('id', session.user.id)
+          .single(),
+        fetch('/api/arena/players', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
       ]);
 
       if (profileRes.data) setCurrentUserProfile(profileRes.data as Player | null);
@@ -159,7 +168,7 @@ export default function ConfigureChallengePage() {
         if (foundOpponent) setOpponent(foundOpponent);
       }
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -172,12 +181,12 @@ export default function ConfigureChallengePage() {
         const data = await response.json();
         const challenge = data.challenge;
         if (challenge) {
-          setChallengeType(challenge.challenge_type || "ranked");
-          setMatchFormat(challenge.match_format || "best_of_3");
-          setMatchType(challenge.match_type || "singolo");
-          setMessage(challenge.message || "");
-          setMyPartner(challenge.my_partner_id || "");
-          setOpponentPartner(challenge.opponent_partner_id || "");
+          setChallengeType(challenge.challenge_type || 'ranked');
+          setMatchFormat(challenge.match_format || 'best_of_3');
+          setMatchType(challenge.match_type || 'singolo');
+          setMessage(challenge.message || '');
+          setMyPartner(challenge.my_partner_id || '');
+          setOpponentPartner(challenge.opponent_partner_id || '');
           if (challenge.booking) {
             const bookingId = challenge.booking_id || challenge.booking?.id || null;
             editingBookingIdRef.current = bookingId;
@@ -190,7 +199,7 @@ export default function ConfigureChallengePage() {
             let current = new Date(startTime);
             while (current < endTime) {
               slotList.push(
-                current.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+                current.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
               );
               current = new Date(current.getTime() + 30 * 60000);
             }
@@ -201,38 +210,37 @@ export default function ConfigureChallengePage() {
         }
       }
     } catch (error) {
-      console.error("Error loading existing challenge:", error);
+      console.error('Error loading existing challenge:', error);
     }
   }
 
   async function loadAvailableSlots(
     overrideDate?: Date,
     overrideCourt?: string,
-    excludeBookingId?: string | null
+    excludeBookingId?: string | null,
   ) {
     const dateToUse = overrideDate ?? selectedDate;
     const courtToUse = overrideCourt ?? selectedCourt;
     if (!dateToUse || !courtToUse) return;
-    setLoadingSlots(true);
     try {
-      const dateStr = format(dateToUse, "yyyy-MM-dd");
+      const dateStr = format(dateToUse, 'yyyy-MM-dd');
       const response = await fetch(
-        `/api/bookings/availability?date=${encodeURIComponent(dateStr)}&court=${encodeURIComponent(courtToUse)}`
+        `/api/bookings/availability?date=${encodeURIComponent(dateStr)}&court=${encodeURIComponent(
+          courtToUse,
+        )}`,
       );
 
       if (!response.ok) {
-        setExistingBookings([]);
         setSlots([]);
-        setLoadingSlots(false);
         return;
       }
 
       const payload = await response.json();
       const allItems = Array.isArray(payload?.bookings) ? payload.bookings : [];
-      setExistingBookings(allItems);
 
       // When editing, exclude the current booking's slots so they appear selectable
-      const bookingIdToExclude = excludeBookingId !== undefined ? excludeBookingId : editingBookingIdRef.current;
+      const bookingIdToExclude =
+        excludeBookingId !== undefined ? excludeBookingId : editingBookingIdRef.current;
 
       const occupiedSlots = new Set<string>();
       allItems.forEach((item: any) => {
@@ -241,8 +249,8 @@ export default function ConfigureChallengePage() {
         const end = new Date(item.end_time);
         const current = new Date(start);
         while (current < end) {
-          const hours = current.getHours().toString().padStart(2, "0");
-          const minutes = current.getMinutes().toString().padStart(2, "0");
+          const hours = current.getHours().toString().padStart(2, '0');
+          const minutes = current.getMinutes().toString().padStart(2, '0');
           occupiedSlots.add(`${hours}:${minutes}`);
           current.setMinutes(current.getMinutes() + 30);
         }
@@ -257,7 +265,7 @@ export default function ConfigureChallengePage() {
       for (let hour = 7; hour <= 22; hour++) {
         for (const minute of [0, 30]) {
           if (hour === 22 && minute === 30) break;
-          const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
           let available = !occupiedSlots.has(time);
           if (hour * 60 + minute + 30 > closingMinutes) available = false;
           if (isToday) {
@@ -271,11 +279,9 @@ export default function ConfigureChallengePage() {
 
       setSlots(generatedSlots);
     } catch (error) {
-      console.error("Error loading slots:", error);
-      setExistingBookings([]);
+      console.error('Error loading slots:', error);
       setSlots([]);
     } finally {
-      setLoadingSlots(false);
     }
   }
 
@@ -287,13 +293,13 @@ export default function ConfigureChallengePage() {
       }
       if (prev.length === 0) return [time];
       const allSlots = [...prev, time].sort((a, b) => {
-        const [hA, mA] = a.split(":").map(Number);
-        const [hB, mB] = b.split(":").map(Number);
+        const [hA, mA] = a.split(':').map(Number);
+        const [hB, mB] = b.split(':').map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
       });
       for (let i = 1; i < allSlots.length; i++) {
-        const [hPrev, mPrev] = allSlots[i - 1].split(":").map(Number);
-        const [hCurr, mCurr] = allSlots[i].split(":").map(Number);
+        const [hPrev, mPrev] = allSlots[i - 1].split(':').map(Number);
+        const [hCurr, mCurr] = allSlots[i].split(':').map(Number);
         if (hCurr * 60 + mCurr - (hPrev * 60 + mPrev) !== 30) return [time];
       }
       return allSlots;
@@ -318,7 +324,11 @@ export default function ConfigureChallengePage() {
   }
 
   function isSameCalendarDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
   function openDatePickerModal() {
@@ -350,7 +360,7 @@ export default function ConfigureChallengePage() {
   }
 
   function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
@@ -374,32 +384,34 @@ export default function ConfigureChallengePage() {
 
   async function handleSubmit() {
     if (selectedSlots.length === 0 || !selectedCourt) {
-      setError("Seleziona un campo e almeno uno slot orario");
+      setError('Seleziona un campo e almeno uno slot orario');
       return;
     }
-    if (matchType === "doppio" && (!myPartner || !opponentPartner)) {
-      setError("Per il doppio devi selezionare entrambi i compagni");
+    if (matchType === 'doppio' && (!myPartner || !opponentPartner)) {
+      setError('Per il doppio devi selezionare entrambi i compagni');
       return;
     }
 
     setSending(true);
-    setError("");
+    setError('');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await getSessionUser();
       if (!user) {
-        setError("Devi essere autenticato");
+        setError('Devi essere autenticato');
         return;
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      if (!token) throw new Error("Sessione scaduta, effettua di nuovo il login.");
+      if (!token) throw new Error('Sessione scaduta, effettua di nuovo il login.');
 
       const firstSlot = selectedSlots[0];
       const lastSlot = selectedSlots[selectedSlots.length - 1];
-      const [startHours, startMinutes] = firstSlot.split(":").map(Number);
-      const [endHours, endMinutes] = lastSlot.split(":").map(Number);
+      const [startHours, startMinutes] = firstSlot.split(':').map(Number);
+      const [endHours, endMinutes] = lastSlot.split(':').map(Number);
 
       const startTime = new Date(selectedDate);
       startTime.setHours(startHours, startMinutes, 0, 0);
@@ -409,47 +421,54 @@ export default function ConfigureChallengePage() {
       const duration = selectedSlots.length * 30;
 
       if (editChallengeId) {
-        const existingChallengeResponse = await fetch(`/api/arena/challenges?challenge_id=${editChallengeId}`);
+        const existingChallengeResponse = await fetch(
+          `/api/arena/challenges?challenge_id=${editChallengeId}`,
+        );
         const existingData = await existingChallengeResponse.json();
         const existingChallenge = existingData.challenge;
         let bookingId = existingChallenge?.booking_id;
 
+        // Spostare la prenotazione = annullare la vecchia e crearne una nuova: la
+        // modifica diretta (PUT) non è consentita agli atleti. Prima si chiamava
+        // un endpoint inesistente e la prenotazione restava col vecchio orario.
+        // Se l'annullamento non è permesso (es. controproposta dell'avversario,
+        // che non è il proprietario) la prenotazione originale resta invariata.
+        let needsNewBooking = !existingChallenge?.booking_id;
         if (existingChallenge?.booking_id) {
-          await fetch(`/api/bookings/${existingChallenge.booking_id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({
-              court: selectedCourt,
-              start_time: startTime.toISOString(),
-              end_time: endTime.toISOString(),
-              notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"}`,
-            }),
+          const deleteResponse = await fetch(`/api/bookings?id=${existingChallenge.booking_id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
           });
-        } else {
-          const bookingResponse = await fetch("/api/bookings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          needsNewBooking = deleteResponse.ok;
+        }
+
+        if (needsNewBooking) {
+          const bookingResponse = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({
               user_id: user.id,
               court: selectedCourt,
-              type: "campo",
+              type: 'campo',
               start_time: startTime.toISOString(),
               end_time: endTime.toISOString(),
-              status: "confirmed",
-              notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"}`,
+              status: 'confirmed',
+              notes: `Sfida Arena: ${challengeType === 'ranked' ? 'Ranked' : 'Amichevole'} - ${
+                matchType === 'singolo' ? 'Singolo' : 'Doppio'
+              }`,
             }),
           });
           if (!bookingResponse.ok) {
             const bookingError = await bookingResponse.json();
-            throw new Error(bookingError.error || "Errore nella prenotazione del campo");
+            throw new Error(bookingError.error || 'Errore nella prenotazione del campo');
           }
           const bookingData = await bookingResponse.json();
           bookingId = bookingData.booking?.id;
         }
 
-        const challengeResponse = await fetch("/api/arena/challenges", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+        const challengeResponse = await fetch('/api/arena/challenges', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             challenge_id: editChallengeId,
             scheduled_date: startTime.toISOString(),
@@ -458,46 +477,48 @@ export default function ConfigureChallengePage() {
             duration_minutes: duration,
             match_type: matchType,
             challenge_type: challengeType,
-            my_partner_id: matchType === "doppio" ? myPartner : null,
-            opponent_partner_id: matchType === "doppio" ? opponentPartner : null,
+            my_partner_id: matchType === 'doppio' ? myPartner : null,
+            opponent_partner_id: matchType === 'doppio' ? opponentPartner : null,
             booking_id: bookingId,
             message: message.trim() || null,
-            status: isCounterProposal ? "counter_proposal" : undefined,
+            status: isCounterProposal ? 'counter_proposal' : undefined,
           }),
         });
 
         if (!challengeResponse.ok) {
           const challengeError = await challengeResponse.json();
-          throw new Error(challengeError.error || "Errore nella modifica della sfida");
+          throw new Error(challengeError.error || 'Errore nella modifica della sfida');
         }
 
-        setSuccess("Sfida modificata con successo!");
+        setSuccess('Sfida modificata con successo!');
         setTimeout(() => {
           router.push(`${dashboardBase}/arena/challenge/${editChallengeId}`);
         }, 1500);
       } else {
-        const bookingResponse = await fetch("/api/bookings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        const bookingResponse = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             user_id: user.id,
             court: selectedCourt,
-            type: "campo",
+            type: 'campo',
             start_time: startTime.toISOString(),
             end_time: endTime.toISOString(),
-            status: "confirmed",
-            notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"}`,
+            status: 'confirmed',
+            notes: `Sfida Arena: ${challengeType === 'ranked' ? 'Ranked' : 'Amichevole'} - ${
+              matchType === 'singolo' ? 'Singolo' : 'Doppio'
+            }`,
           }),
         });
         if (!bookingResponse.ok) {
           const bookingError = await bookingResponse.json();
-          throw new Error(bookingError.error || "Errore nella prenotazione del campo");
+          throw new Error(bookingError.error || 'Errore nella prenotazione del campo');
         }
         const bookingData = await bookingResponse.json();
 
-        const challengeResponse = await fetch("/api/arena/challenges", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const challengeResponse = await fetch('/api/arena/challenges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             challenger_id: user.id,
             opponent_id: opponentId,
@@ -507,36 +528,23 @@ export default function ConfigureChallengePage() {
             duration_minutes: duration,
             match_type: matchType,
             challenge_type: challengeType,
-            my_partner_id: matchType === "doppio" ? myPartner : null,
-            opponent_partner_id: matchType === "doppio" ? opponentPartner : null,
+            my_partner_id: matchType === 'doppio' ? myPartner : null,
+            opponent_partner_id: matchType === 'doppio' ? opponentPartner : null,
             booking_id: bookingData.booking?.id,
             message: message.trim() || null,
           }),
         });
         if (!challengeResponse.ok) {
           const challengeError = await challengeResponse.json();
-          throw new Error(challengeError.error || "Errore nella creazione della sfida");
-        }
-        const challengeData = await challengeResponse.json();
-
-        if (message.trim()) {
-          await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              recipient_id: opponentId,
-              message: message.trim(),
-              challenge_id: challengeData.challenge?.id,
-            }),
-          });
+          throw new Error(challengeError.error || 'Errore nella creazione della sfida');
         }
 
-        setSuccess("Sfida creata con successo!");
+        setSuccess('Sfida creata con successo!');
         setTimeout(() => {
           router.push(`${dashboardBase}/arena?success=challenge_created`);
         }, 1500);
       }
-    } catch (error: any) {
+    } catch (error) {
       setError(error.message);
     } finally {
       setSending(false);
@@ -547,17 +555,27 @@ export default function ConfigureChallengePage() {
     const map: Record<string, string> = {};
     if (currentUserProfile?.avatar_url) map[currentUserProfile.id] = currentUserProfile.avatar_url;
     if (opponent?.avatar_url) map[opponent.id] = opponent.avatar_url;
-    players.forEach((p) => { if (p.avatar_url) map[p.id] = p.avatar_url; });
+    players.forEach((p) => {
+      if (p.avatar_url) map[p.id] = p.avatar_url;
+    });
     return map;
   }, [currentUserProfile, opponent, players]);
 
   const selectedParticipants = useMemo((): SelectedParticipant[] => {
     const me: SelectedParticipant = currentUserProfile
-      ? { userId: currentUserProfile.id, fullName: currentUserProfile.full_name, isRegistered: true }
-      : { fullName: "Tu", isRegistered: true };
+      ? {
+          userId: currentUserProfile.id,
+          fullName: currentUserProfile.full_name,
+          isRegistered: true,
+        }
+      : { fullName: 'Tu', isRegistered: true };
     if (!opponent) return [me];
-    const opp: SelectedParticipant = { userId: opponent.id, fullName: opponent.full_name, isRegistered: true };
-    if (matchType !== "doppio") return [me, opp];
+    const opp: SelectedParticipant = {
+      userId: opponent.id,
+      fullName: opponent.full_name,
+      isRegistered: true,
+    };
+    if (matchType !== 'doppio') return [me, opp];
     const parts: SelectedParticipant[] = [me];
     if (myPartner) {
       const p = players.find((pl) => pl.id === myPartner);
@@ -572,7 +590,7 @@ export default function ConfigureChallengePage() {
     selectedDate &&
     selectedCourt &&
     selectedSlots.length > 0 &&
-    (matchType === "singolo" || (matchType === "doppio" && myPartner));
+    (matchType === 'singolo' || (matchType === 'doppio' && myPartner));
 
   const isSlotAvailable = (time: string): boolean => {
     const slot = slots.find((s) => s.time === time);
@@ -580,13 +598,15 @@ export default function ConfigureChallengePage() {
   };
 
   const fullDateLabel = (() => {
-    const value = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it });
+    const value = format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it });
     return value.charAt(0).toUpperCase() + value.slice(1);
   })();
 
-  const mobileWeekdayLabel = format(selectedDate, "EEE", { locale: it });
+  const mobileWeekdayLabel = format(selectedDate, 'EEE', { locale: it });
   const mobileDateLabel = (() => {
-    const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`;
+    const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel
+      .slice(1, 3)
+      .toLowerCase()} ${format(selectedDate, 'dd MMM yyyy', { locale: it })}`;
     return raw.replace(/(\d{2} )(\w)/, (_, day, char) => day + char.toUpperCase());
   })();
 
@@ -612,13 +632,18 @@ export default function ConfigureChallengePage() {
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">
+          <Link
+            href={`${dashboardBase}/arena`}
+            className="hover:text-secondary/80 transition-colors"
+          >
             Arena
           </Link>
-          {" › "}
-          <span>{editChallengeId ? "Modifica Sfida" : "Configura Sfida"}</span>
+          {' › '}
+          <span>{editChallengeId ? 'Modifica Sfida' : 'Configura Sfida'}</span>
         </p>
-        <h1 className="text-4xl font-bold text-secondary">{editChallengeId ? "Modifica Sfida" : "Configura Sfida"}</h1>
+        <h1 className="text-4xl font-bold text-secondary">
+          {editChallengeId ? 'Modifica Sfida' : 'Configura Sfida'}
+        </h1>
       </div>
 
       {/* Messages */}
@@ -657,7 +682,10 @@ export default function ConfigureChallengePage() {
             className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
             title="Scegli data"
           >
-            <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
+            <span
+              className="inline-flex items-center justify-center sm:hidden"
+              style={{ gap: '6px' }}
+            >
               <Calendar className="h-5 w-5 text-white shrink-0" />
               <span className="font-bold text-white text-lg leading-none text-center whitespace-nowrap">
                 {mobileDateLabel}
@@ -686,93 +714,99 @@ export default function ConfigureChallengePage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
         </div>
         <div className="p-4 sm:p-6">
-            <div className="space-y-6">
-              {/* Tipo Sfida */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
-                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {CHALLENGE_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setChallengeType(type.value)}
-                      className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                        challengeType === type.value
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tipo Match */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
-                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {MATCH_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setMatchType(type.value)}
-                      className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                        matchType === type.value
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-
-
-              {/* Formato Match */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
-                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {ARENA_MATCH_FORMATS.map((fmt) => (
-                    <button
-                      key={fmt.value}
-                      type="button"
-                      onClick={() => setMatchFormat(fmt.value)}
-                      className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                        matchFormat === fmt.value
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {fmt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Campo */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
-                <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                  {COURTS.map((court) => (
-                    <button
-                      key={court}
-                      type="button"
-                      onClick={() => handleCourtChange(court)}
-                      className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                        selectedCourt === court
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {court}
-                    </button>
-                  ))}
-                </div>
+          <div className="space-y-6">
+            {/* Tipo Sfida */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Tipo sfida *
+              </label>
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {CHALLENGE_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setChallengeType(type.value)}
+                    className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      challengeType === type.value
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Tipo Match */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Tipo match *
+              </label>
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {MATCH_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setMatchType(type.value)}
+                    className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      matchType === type.value
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Formato Match */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Formato match *
+              </label>
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {ARENA_MATCH_FORMATS.map((fmt) => (
+                  <button
+                    key={fmt.value}
+                    type="button"
+                    onClick={() => setMatchFormat(fmt.value)}
+                    className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      matchFormat === fmt.value
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                    }`}
+                  >
+                    {fmt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Campo */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Campo *
+              </label>
+              <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                {COURTS.map((court) => (
+                  <button
+                    key={court}
+                    type="button"
+                    onClick={() => handleCourtChange(court)}
+                    className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      selectedCourt === court
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                    }`}
+                  >
+                    {court}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -783,33 +817,33 @@ export default function ConfigureChallengePage() {
         </div>
         <div className="p-4 sm:p-6">
           <AthletesSelector
-            athletes={players.map(p => ({ ...p, email: '', role: 'atleta' as UserRole }))}
+            athletes={players.map((p) => ({ ...p, email: '', role: 'atleta' as UserRole }))}
             selectedAthletes={selectedParticipants}
             onAthleteAdd={(participant) => {
-              if (matchType !== "doppio") return;
+              if (matchType !== 'doppio') return;
               const uid = participant.userId;
               if (!uid || uid === currentUserId || uid === opponent.id) return;
               if (!myPartner) setMyPartner(uid);
             }}
             onAthleteRemove={(index) => {
               if (index === 0) return;
-              if (matchType !== "doppio") return;
+              if (matchType !== 'doppio') return;
               const oppIdx = selectedParticipants.findIndex((p) => p.userId === opponent.id);
               if (index === oppIdx) return;
-              if (index < oppIdx) setMyPartner("");
+              if (index < oppIdx) setMyPartner('');
             }}
             participantLabelByIndex={(index) => {
-              if (index === 0) return "Tu";
+              if (index === 0) return 'Tu';
               const oppIdx = selectedParticipants.findIndex((p) => p.userId === opponent.id);
-              if (index === oppIdx) return "Avversario";
-              return "Il tuo partner";
+              if (index === oppIdx) return 'Avversario';
+              return 'Il tuo partner';
             }}
             participantToneByIndex={(index) => {
               const oppIdx = selectedParticipants.findIndex((p) => p.userId === opponent.id);
-              return index >= oppIdx ? "dark" : "secondary";
+              return index >= oppIdx ? 'dark' : 'secondary';
             }}
-            selectedDisplayOrder={matchType === "doppio" ? [0, 1, 2] : [0, 1]}
-            maxAthletes={matchType === "doppio" ? 3 : 2}
+            selectedDisplayOrder={matchType === 'doppio' ? [0, 1, 2] : [0, 1]}
+            maxAthletes={matchType === 'doppio' ? 3 : 2}
             allowGuestParticipants={false}
             avatarByUserId={avatarByUserId}
           />
@@ -821,7 +855,8 @@ export default function ConfigureChallengePage() {
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
           <p className="text-xs text-secondary/60 sm:text-right">
-            Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
+            Apertura:{' '}
+            <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
           </p>
         </div>
         <div className="p-4 sm:p-6">
@@ -851,8 +886,10 @@ export default function ConfigureChallengePage() {
               </div>
 
               {/* Griglia slot selezionabili */}
-              <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
-
+              <div
+                className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative"
+                style={{ minHeight: '70px' }}
+              >
                 {/* Slot cliccabili */}
                 {Array.from({ length: 16 }, (_, hourIndex) => {
                   const hour = 7 + hourIndex;
@@ -875,7 +912,9 @@ export default function ConfigureChallengePage() {
                             : 'bg-gray-100 cursor-not-allowed'
                         }`}
                         onClick={() => handleSlotClick(time1, available1)}
-                        title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                        title={`${time1} - ${
+                          available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'
+                        }`}
                       >
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                       </div>
@@ -883,7 +922,10 @@ export default function ConfigureChallengePage() {
                   }
 
                   return (
-                    <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                    <div
+                      key={hour}
+                      className="border-r border-gray-200 last:border-r-0 relative flex"
+                    >
                       <div
                         className={`flex-1 relative transition-colors cursor-pointer ${
                           isSelected1
@@ -893,7 +935,9 @@ export default function ConfigureChallengePage() {
                             : 'bg-gray-100 cursor-not-allowed'
                         }`}
                         onClick={() => handleSlotClick(time1, available1)}
-                        title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                        title={`${time1} - ${
+                          available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'
+                        }`}
                       />
                       <div
                         className={`flex-1 relative transition-colors cursor-pointer ${
@@ -904,7 +948,9 @@ export default function ConfigureChallengePage() {
                             : 'bg-gray-100 cursor-not-allowed'
                         }`}
                         onClick={() => handleSlotClick(time2, available2)}
-                        title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                        title={`${time2} - ${
+                          available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'
+                        }`}
                       />
                       <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                     </div>
@@ -919,7 +965,9 @@ export default function ConfigureChallengePage() {
       {/* Note */}
       <div className="page-card">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio (opzionale)</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">
+            Messaggio (opzionale)
+          </h2>
         </div>
         <div className="p-4 sm:p-6">
           <textarea
@@ -946,7 +994,7 @@ export default function ConfigureChallengePage() {
             <span>Invio in corso...</span>
           </>
         ) : (
-          <span>{editChallengeId ? "Salva Modifiche" : "Invia Sfida"}</span>
+          <span>{editChallengeId ? 'Salva Modifiche' : 'Invia Sfida'}</span>
         )}
       </button>
 
@@ -957,12 +1005,16 @@ export default function ConfigureChallengePage() {
         <ModalContent
           size="sm"
           showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
         >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
           </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+          <ModalBody className="px-4 py-4 bg-white">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <button
@@ -985,16 +1037,21 @@ export default function ConfigureChallengePage() {
               </div>
               <div className="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
                 {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
+                  <span key={day} className="py-1">
+                    {day}
+                  </span>
                 ))}
               </div>
               <div className="calendar-grid grid grid-cols-7 gap-1">
                 {calendarDays.map(({ date, isCurrentMonth }) => {
                   const isSelected = isSameCalendarDay(date, pendingDate);
                   const isTodayDate = isSameCalendarDay(date, new Date());
-                  const today = new Date(); today.setHours(0, 0, 0, 0);
-                  const maxDate = getMaxDate(); maxDate.setHours(23, 59, 59, 999);
-                  const normalizedDay = new Date(date); normalizedDay.setHours(12, 0, 0, 0);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const maxDate = getMaxDate();
+                  maxDate.setHours(23, 59, 59, 999);
+                  const normalizedDay = new Date(date);
+                  normalizedDay.setHours(12, 0, 0, 0);
                   const isDisabled = normalizedDay < today || normalizedDay > maxDate;
 
                   return (
@@ -1005,13 +1062,15 @@ export default function ConfigureChallengePage() {
                       disabled={isDisabled}
                       className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-lg text-sm leading-none transition-colors ${
                         isDisabled
-                          ? "text-gray-300 cursor-not-allowed"
+                          ? 'text-gray-300 cursor-not-allowed'
                           : isSelected
-                          ? "bg-secondary text-white font-semibold"
+                          ? 'bg-secondary text-white font-semibold'
                           : isCurrentMonth
-                          ? "text-gray-800 hover:bg-gray-100"
-                          : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && !isDisabled && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                          ? 'text-gray-800 hover:bg-gray-100'
+                          : 'text-gray-400 hover:bg-gray-50'
+                      } ${
+                        !isSelected && !isDisabled && isTodayDate ? 'ring-1 ring-secondary/40' : ''
+                      }`}
                     >
                       {date.getDate()}
                     </button>
@@ -1020,7 +1079,7 @@ export default function ConfigureChallengePage() {
               </div>
             </div>
           </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
             <button
               type="button"
               onClick={handleDatePickerToday}

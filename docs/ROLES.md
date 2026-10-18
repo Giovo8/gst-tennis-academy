@@ -4,12 +4,12 @@ La piattaforma usa quattro ruoli utente, definiti dall'enum PostgreSQL `user_rol
 
 ## I quattro ruoli
 
-| Ruolo | Dashboard | Descrizione |
-|---|---|---|
-| `atleta` | `/dashboard/atleta` | Prenota campi e lezioni, si iscrive a corsi e tornei, partecipa all'Arena, usa la chat |
-| `maestro` | `/dashboard/maestro` | Gestisce le proprie lezioni e prenotazioni, corsi, video-lezioni e comunicazioni |
-| `gestore` | `/dashboard/admin` | Gestione operativa della struttura; nella quasi totalità delle API è equiparato ad `admin` |
-| `admin` | `/dashboard/admin` | Accesso completo: utenti, campi, tornei, news/AI, statistiche, log |
+| Ruolo     | Dashboard            | Descrizione                                                                                |
+| --------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| `atleta`  | `/dashboard/atleta`  | Prenota campi e lezioni, si iscrive a corsi e tornei, partecipa all'Arena, usa la chat     |
+| `maestro` | `/dashboard/maestro` | Gestisce le proprie lezioni e prenotazioni, corsi, video-lezioni e comunicazioni           |
+| `gestore` | `/dashboard/admin`   | Gestione operativa della struttura; nella quasi totalità delle API è equiparato ad `admin` |
+| `admin`   | `/dashboard/admin`   | Accesso completo: utenti, campi, tornei, news/AI, statistiche, log                         |
 
 Definizioni e helper in `src/lib/roles.ts`:
 
@@ -23,15 +23,16 @@ Definizioni e helper in `src/lib/roles.ts`:
 
 ### Atleta — `src/app/dashboard/atleta/(main)/`
 
-| Sezione | Pagina |
-|---|---|
-| Prenotazioni campi/lezioni | `bookings/` |
-| Corsi (iscrizioni, calendario) | `corsi/` |
-| Arena (sfide 1v1, classifica) | `arena/` |
-| Tornei (iscrizione, bracket) | `tornei/` |
-| Video-lezioni assegnate | `videos/` |
-| Comunicazioni | `mail/` |
-| Profilo (avatar, certificato medico) | `profile/` |
+| Sezione                              | Pagina           |
+| ------------------------------------ | ---------------- |
+| Prenotazioni campi/lezioni           | `bookings/`      |
+| Corsi (iscrizioni, calendario)       | `corsi/`         |
+| Arena (sfide 1v1, classifica)        | `arena/`         |
+| Tornei (iscrizione, bracket)         | `tornei/`        |
+| Video-lezioni assegnate              | `videos/`        |
+| Chat (messaggi diretti e gruppi)     | `mail/`          |
+| Profilo (avatar, certificato medico) | `profile/`       |
+| Centro notifiche                     | `notifications/` |
 
 ### Maestro — `src/app/dashboard/maestro/(main)/`
 
@@ -41,22 +42,23 @@ I vecchi percorsi `/dashboard/coach/*` vengono rediretti a `/dashboard/maestro/*
 
 ### Gestore e Admin — `src/app/dashboard/admin/`
 
-| Sezione | Pagina |
-|---|---|
-| Utenti (dati, ruoli) | `users/` |
-| Prenotazioni (tutte) | `bookings/` |
-| Corsi | `corsi/` |
-| Campi e blocchi | `courts/` |
-| Tornei (creazione, bracket, punteggi) | `tornei/` |
-| News + configurazione AI | `news/` |
-| Video-lezioni | `video-lessons/` |
-| Staff (pagina pubblica) | `staff/` |
-| Codici invito | `invite-codes/` |
-| Candidature lavora-con-noi | `job-applications/` |
-| Statistiche | `statistiche/` |
-| Log attività | `platform-logs/` |
-| Chat (vista admin) | `chat/` |
-| Notifiche | `notifications/` |
+| Sezione                                             | Pagina              |
+| --------------------------------------------------- | ------------------- |
+| Utenti (dati, ruoli)                                | `users/`            |
+| Prenotazioni (tutte)                                | `bookings/`         |
+| Corsi                                               | `corsi/`            |
+| Campi e blocchi                                     | `courts/`           |
+| Tornei (creazione, bracket, punteggi)               | `tornei/`           |
+| News + configurazione AI                            | `news/`             |
+| Video-lezioni                                       | `video-lessons/`    |
+| Staff (pagina pubblica)                             | `staff/`            |
+| Codici invito                                       | `invite-codes/`     |
+| Candidature lavora-con-noi                          | `job-applications/` |
+| Arena (gestione sfide e classifica)                 | `(main)/arena/`     |
+| Vista maestro (solo con ruolo secondario `maestro`) | `maestro/`          |
+| Log attività (solo admin)                           | `platform-logs/`    |
+| Chat (vista admin)                                  | `chat/`             |
+| Notifiche                                           | `notifications/`    |
 
 `gestore` e `admin` condividono la stessa area: nella maggior parte delle API il controllo è `allowedRoles: ["admin", "gestore"]` (o l'helper `isAdmin`). Le poche differenze sono puntuali e vanno verificate nelle singole route.
 
@@ -75,7 +77,7 @@ Tre livelli, dal più esterno al più interno.
 `src/lib/auth/verifyAuth.ts`: verifica il Bearer token con Supabase e, se viene passato `allowedRoles`, confronta il ruolo del profilo. Ritorna un risultato tipizzato (`AuthSuccessResponse | AuthErrorResponse`): 401 per token mancante/non valido, 403 per ruolo insufficiente.
 
 ```ts
-const auth = await verifyAuth(request, { allowedRoles: ["admin", "gestore"] });
+const auth = await verifyAuth(request, { allowedRoles: ['admin', 'gestore'] });
 if (!auth.success) return auth.response;
 ```
 
@@ -99,8 +101,8 @@ Le route server che usano la **service role key** (`src/lib/supabase/serverClien
 
 ## Riepilogo
 
-| Livello | Meccanismo | Natura |
-|---|---|---|
-| API route | `verifyAuth(allowedRoles)` / `getRouteAuth()` | Server-side, vincolante |
-| Pagine `/dashboard/*` | `AuthGuard` | Solo client-side (UX, non sicurezza) |
-| Database | RLS + `get_my_role()` | Ultima linea di difesa (salvo service role) |
+| Livello               | Meccanismo                                    | Natura                                      |
+| --------------------- | --------------------------------------------- | ------------------------------------------- |
+| API route             | `verifyAuth(allowedRoles)` / `getRouteAuth()` | Server-side, vincolante                     |
+| Pagine `/dashboard/*` | `AuthGuard`                                   | Solo client-side (UX, non sicurezza)        |
+| Database              | RLS + `get_my_role()`                         | Ultima linea di difesa (salvo service role) |

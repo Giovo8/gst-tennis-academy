@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { X } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 interface ModalContextType {
   isOpen: boolean;
@@ -12,10 +12,10 @@ interface ModalContextType {
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
-export function useModal() {
+function useModal() {
   const context = useContext(ModalContext);
   if (!context) {
-    throw new Error("useModal must be used within Modal component");
+    throw new Error('useModal must be used within Modal component');
   }
   return context;
 }
@@ -28,7 +28,7 @@ interface ModalProps {
 
 export function Modal({ children, open: controlledOpen, onOpenChange }: ModalProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  
+
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : uncontrolledOpen;
 
@@ -48,12 +48,12 @@ export function Modal({ children, open: controlledOpen, onOpenChange }: ModalPro
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
@@ -64,40 +64,26 @@ export function Modal({ children, open: controlledOpen, onOpenChange }: ModalPro
   );
 }
 
-export function ModalTrigger({ children, asChild }: { children: ReactNode; asChild?: boolean }) {
-  const { openModal } = useModal();
-
-  if (asChild) {
-    return <div onClick={openModal}>{children}</div>;
-  }
-
-  return (
-    <button onClick={openModal} type="button">
-      {children}
-    </button>
-  );
-}
-
 interface ModalContentProps {
   children: ReactNode;
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "full";
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   closeOnOverlayClick?: boolean;
   showBuiltinClose?: boolean;
 }
 
 const sizeClasses = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  full: "max-w-full mx-4",
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  full: 'max-w-full mx-4',
 };
 
 export function ModalContent({
   children,
-  className = "",
-  size = "md",
+  className = '',
+  size = 'md',
   closeOnOverlayClick = true,
   showBuiltinClose = true,
 }: ModalContentProps) {
@@ -113,9 +99,9 @@ export function ModalContent({
       <div
         className={`
           relative w-full ${sizeClasses[size]}
-          bg-white dark:bg-slate-900
+          bg-white
           rounded-xl shadow-2xl
-          border border-slate-200 dark:border-slate-800
+          border border-slate-200
           animate-slide-in
           ${className}
         `}
@@ -126,7 +112,7 @@ export function ModalContent({
         {showBuiltinClose && (
           <button
             onClick={closeModal}
-            className="absolute top-6 right-4 z-10 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
+            className="absolute top-6 right-4 z-10 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
             aria-label="Close modal"
           >
             <X className="h-5 w-5" />
@@ -138,22 +124,38 @@ export function ModalContent({
   );
 }
 
-export function ModalHeader({ children, className = "", withCloseButton = false, closeButtonClassName = "" }: { children: ReactNode; className?: string; withCloseButton?: boolean; closeButtonClassName?: string }) {
+export function ModalHeader({
+  children,
+  className = '',
+  withCloseButton = false,
+  closeButtonClassName = '',
+}: {
+  children: ReactNode;
+  className?: string;
+  withCloseButton?: boolean;
+  closeButtonClassName?: string;
+}) {
   return (
-    <div className={twMerge("px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800", withCloseButton && "flex items-center justify-between gap-3", className)}>
+    <div
+      className={twMerge(
+        'px-6 pt-6 pb-4 border-b border-slate-200',
+        withCloseButton && 'flex items-center justify-between gap-3',
+        className,
+      )}
+    >
       {children}
       {withCloseButton && <ModalCloseButton className={closeButtonClassName} />}
     </div>
   );
 }
 
-export function ModalCloseButton({ className = "" }: { className?: string }) {
+function ModalCloseButton({ className = '' }: { className?: string }) {
   const { closeModal } = useModal();
   return (
     <button
       onClick={closeModal}
       type="button"
-      className={`shrink-0 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors ${className}`}
+      className={`shrink-0 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors ${className}`}
       aria-label="Close modal"
     >
       <X className="h-5 w-5" />
@@ -161,29 +163,37 @@ export function ModalCloseButton({ className = "" }: { className?: string }) {
   );
 }
 
-export function ModalTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <h2 className={`text-xl font-semibold text-slate-900 dark:text-white ${className}`}>
-      {children}
-    </h2>
-  );
+export function ModalTitle({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <h2 className={`text-xl font-semibold text-slate-900 ${className}`}>{children}</h2>;
 }
 
-export function ModalDescription({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <p className={`mt-1 text-sm text-slate-600 dark:text-slate-400 ${className}`}>
-      {children}
-    </p>
-  );
-}
-
-export function ModalBody({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function ModalBody({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return <div className={`px-6 py-4 ${className}`}>{children}</div>;
 }
 
-export function ModalFooter({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function ModalFooter({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={`px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 ${className}`}>
+    <div
+      className={`px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 ${className}`}
+    >
       {children}
     </div>
   );

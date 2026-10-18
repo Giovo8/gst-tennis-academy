@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { Flags, SetCells } from '@/components/live-tennis/MatchScore';
 import Reveal from '@/components/landing/Reveal';
@@ -203,6 +202,21 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
     { key: 'results', label: 'Risultati' },
   ];
 
+  // Indicatore della tab attiva: un solo elemento che scorre con una transizione
+  // CSS su left/width (prima era un layoutId di framer-motion).
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+  const liveCount = liveMatches.length;
+  useLayoutEffect(() => {
+    function measure() {
+      const el = tabRefs.current[activeMode];
+      if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+    }
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [activeMode, ready, liveCount]);
+
   // Se il provider non risponde la sezione viene nascosta
   if (failedDay === today && !ready) return null;
 
@@ -234,12 +248,22 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
           ) : (
             <>
               <div className={`w-full max-w-full mx-auto mb-4 ${embedded ? '' : 'sm:w-fit'}`}>
-                <div className="flex gap-1 p-1 rounded-lg bg-secondary shadow-sm">
+                <div className="relative flex gap-1 p-1 rounded-lg bg-secondary shadow-sm">
+                  {pill && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-1 bottom-1 rounded-md bg-[#023047] shadow-sm transition-[left,width] duration-300 ease-out"
+                      style={{ left: pill.left, width: pill.width }}
+                    />
+                  )}
                   {tabs.map((t) => {
                     const selected = t.key === activeMode;
                     return (
                       <button
                         key={t.key}
+                        ref={(el) => {
+                          tabRefs.current[t.key] = el;
+                        }}
                         type="button"
                         onClick={() => selectMode(t.key)}
                         className={`relative flex-1 ${
@@ -248,13 +272,6 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
                           selected ? 'text-white' : 'text-white/70 hover:text-white'
                         }`}
                       >
-                        {selected && (
-                          <motion.span
-                            layoutId="live-tab-pill"
-                            className="absolute inset-0 rounded-md bg-[#023047] shadow-sm"
-                            transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-                          />
-                        )}
                         <span className="relative z-10">{t.label}</span>
                         {t.count !== undefined && (
                           <span

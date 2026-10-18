@@ -1,19 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
-import { signupSchema } from "@/lib/validation/schemas";
-import { sanitizeObject } from "@/lib/security/sanitize-server";
-import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
-import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
-import { getAdminUsersNotificationLink } from "@/lib/notifications/links";
-import { sendSignupEmailToGestori } from "@/lib/email/signup-notifications";
-import logger from "@/lib/logger/secure-logger";
-import env from "@/lib/config/env";
-import { HTTP_STATUS, ERROR_MESSAGES, USER_ROLES } from "@/lib/constants/app";
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { signupSchema } from '@/lib/validation/schemas';
+import { sanitizeObject } from '@/lib/security/sanitize-server';
+import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from '@/lib/security/rate-limiter';
+import { notifyAdmins } from '@/lib/notifications/notifyAdmins';
+import { getAdminUsersNotificationLink } from '@/lib/notifications/links';
+import { sendSignupEmailToGestori } from '@/lib/email/signup-notifications';
+import logger from '@/lib/logger/secure-logger';
+import env from '@/lib/config/env';
+import { HTTP_STATUS, ERROR_MESSAGES, USER_ROLES } from '@/lib/constants/app';
 
 /**
  * POST /api/auth/signup
  * User registration endpoint
- * 
+ *
  * Security features:
  * - Rate limiting to prevent abuse
  * - Strong password validation
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
             'X-RateLimit-Remaining': rateLimit.remaining.toString(),
             'X-RateLimit-Reset': rateLimit.reset.toString(),
           },
-        }
+        },
       );
     }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     if (!validationResult.success) {
       logger.warn('Signup validation failed', {
-        errors: validationResult.error.errors.map(e => ({
+        errors: validationResult.error.errors.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
         })),
@@ -65,19 +65,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: ERROR_MESSAGES.INVALID_INPUT,
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.errors.map((e) => ({
             field: e.path.join('.'),
             message: e.message,
           })),
         },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
-    const { email, password, fullName, phone, role, inviteCode } = validationResult.data;
+    const { email, password, fullName, phone, inviteCode } = validationResult.data;
     userEmail = email;
 
-    // Additional role validation - only allow specific roles
+    // Create Supabase admin client
+    const supabaseAdmin = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // La registrazione è solo su invito e il ruolo è quello del codice: il ruolo
+    // inviato dal client viene ignorato (prima bastava mandare role: "maestro").
+    const normalizedCode = inviteCode?.trim().toUpperCase();
+    if (!normalizedCode) {
+      return NextResponse.json(
+        { error: 'Codice invito richiesto' },
+        { status: HTTP_STATUS.BAD_REQUEST },
+      );
+    }
+
+    const { data: inviteCodeRecord } = await supabaseAdmin
+      .from('invite_codes')
+      .select('id, code, role, uses_remaining, expires_at')
+      .eq('code', normalizedCode)
+      .single();
+
+    const inviteExpired = Boolean(
+      inviteCodeRecord?.expires_at && new Date(inviteCodeRecord.expires_at) < new Date(),
+    );
+    const inviteExhausted =
+      inviteCodeRecord?.uses_remaining !== null &&
+      inviteCodeRecord?.uses_remaining !== undefined &&
+      inviteCodeRecord.uses_remaining <= 0;
+    if (!inviteCodeRecord || inviteExpired || inviteExhausted) {
+      logger.security('Signup with invalid invite code', { email, clientId });
+      return NextResponse.json(
+        { error: 'Codice invito non valido, scaduto o esaurito' },
+        { status: HTTP_STATUS.BAD_REQUEST },
+      );
+    }
+
+    // Dalla registrazione pubblica si diventa solo atleta o maestro, anche con un
+    // codice di ruolo superiore: gli account staff si creano dal pannello admin.
+    const role = inviteCodeRecord.role as string;
     const allowedRoles = [USER_ROLES.ATLETA, USER_ROLES.MAESTRO];
     if (!allowedRoles.includes(role as 'atleta' | 'maestro')) {
       logger.security('Attempt to register with unauthorized role', {
@@ -87,21 +128,9 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(
         { error: 'Ruolo non autorizzato' },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
-
-    // Create Supabase admin client
-    const supabaseAdmin = createClient(
-      env.supabaseUrl,
-      env.supabaseServiceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
 
     // Check if user already exists
     const { data: existingUser } = await supabaseAdmin
@@ -112,10 +141,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       logger.warn('Signup attempt with existing email', { email });
-      return NextResponse.json(
-        { error: 'Email già registrata' },
-        { status: HTTP_STATUS.CONFLICT }
-      );
+      return NextResponse.json({ error: 'Email già registrata' }, { status: HTTP_STATUS.CONFLICT });
     }
 
     // Create user with auto-confirmation
@@ -139,7 +165,7 @@ export async function POST(request: NextRequest) {
       // Generic error to avoid user enumeration
       return NextResponse.json(
         { error: 'Errore durante la registrazione' },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
@@ -149,7 +175,7 @@ export async function POST(request: NextRequest) {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Verify profile was created
-    const { data: profile, error: profileCheckError } = await supabaseAdmin
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('id', userId)
@@ -172,43 +198,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Mark invite code as used if provided
-    if (inviteCode) {
-      // Fetch the invite code record to get its ID and uses_remaining
-      const { data: inviteCodeRecord } = await supabaseAdmin
+    // Segna il codice invito come usato (già validato sopra)
+    if (inviteCodeRecord.uses_remaining !== null) {
+      await supabaseAdmin
         .from('invite_codes')
-        .select('id, uses_remaining')
-        .eq('code', inviteCode)
-        .single();
-
-      if (inviteCodeRecord) {
-        // Decrement uses_remaining if applicable
-        if (inviteCodeRecord.uses_remaining !== null) {
-          await supabaseAdmin
-            .from('invite_codes')
-            .update({ uses_remaining: inviteCodeRecord.uses_remaining - 1 })
-            .eq('id', inviteCodeRecord.id);
-        }
-
-        // Record usage in invite_code_uses
-        await supabaseAdmin.from('invite_code_uses').insert({
-          invite_code_id: inviteCodeRecord.id,
-          user_id: userId,
-        });
-
-        // Log invite code usage in activity_log
-        await supabaseAdmin.from('activity_log').insert({
-          action: 'invite_code_used',
-          entity_type: 'invite_code',
-          entity_id: inviteCode,
-          user_id: userId,
-          metadata: {
-            code: inviteCode,
-            role,
-          },
-        });
-      }
+        .update({ uses_remaining: inviteCodeRecord.uses_remaining - 1 })
+        .eq('id', inviteCodeRecord.id);
     }
+
+    await supabaseAdmin.from('invite_code_uses').insert({
+      invite_code_id: inviteCodeRecord.id,
+      user_id: userId,
+    });
+
+    await supabaseAdmin.from('activity_log').insert({
+      action: 'invite_code_used',
+      entity_type: 'invite_code',
+      entity_id: inviteCodeRecord.code,
+      user_id: userId,
+      metadata: {
+        code: inviteCodeRecord.code,
+        role,
+      },
+    });
 
     // Log successful registration
     logger.auth('User registered', userId, true);
@@ -225,8 +237,8 @@ export async function POST(request: NextRequest) {
     });
 
     await notifyAdmins({
-      type: "general",
-      title: "Nuova registrazione utente",
+      type: 'general',
+      title: 'Nuova registrazione utente',
       message: `${fullName} (${email}) si è registrato come ${role}.`,
       link: getAdminUsersNotificationLink(userId),
     });
@@ -238,7 +250,7 @@ export async function POST(request: NextRequest) {
       role,
       phone: phone || null,
       inviteCode: inviteCode || null,
-      notifyAthlete: role === "atleta",
+      notifyAthlete: role === 'atleta',
     });
 
     const duration = Date.now() - startTime;
@@ -252,7 +264,7 @@ export async function POST(request: NextRequest) {
           email,
         },
       },
-      { status: HTTP_STATUS.CREATED }
+      { status: HTTP_STATUS.CREATED },
     );
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -261,7 +273,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }

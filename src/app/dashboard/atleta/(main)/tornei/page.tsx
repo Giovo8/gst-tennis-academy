@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState, Suspense } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { createNotification } from "@/lib/notifications/createNotification";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, Suspense } from 'react';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Trophy,
   Target,
@@ -12,7 +13,7 @@ import {
   Search,
   SlidersHorizontal,
   X,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -37,13 +38,12 @@ interface Tournament {
 function AtletaTorneiPageInner() {
   const router = useRouter();
   const pathname = usePathname();
-  const dashboardBase = pathname.split("/tornei")[0];
+  const dashboardBase = pathname.split('/tornei')[0];
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [registering, setRegistering] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "available" | "my">("all");
-  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<'all' | 'available' | 'my'>('all');
+  const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
@@ -52,7 +52,9 @@ function AtletaTorneiPageInner() {
   }, []);
 
   async function loadTournaments() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
     if (!user) return;
 
     try {
@@ -65,11 +67,11 @@ function AtletaTorneiPageInner() {
 
         // Load user's registered tournaments
         const { data: registrations } = await supabase
-          .from("tournament_participants")
-          .select("tournament_id")
-          .eq("user_id", user.id);
+          .from('tournament_participants')
+          .select('tournament_id')
+          .eq('user_id', user.id);
 
-        const registeredIds = new Set(registrations?.map(r => r.tournament_id) || []);
+        const registeredIds = new Set(registrations?.map((r) => r.tournament_id) || []);
 
         // Process tournaments
         const processed = allTournaments.map((t: any) => ({
@@ -80,71 +82,33 @@ function AtletaTorneiPageInner() {
         }));
 
         // Separate active tournaments only
-        const active = processed.filter((t: any) =>
-          t.status !== 'Concluso' &&
-          t.status !== 'Completato' &&
-          t.status !== 'Chiuso'
+        const active = processed.filter(
+          (t: any) => t.status !== 'Concluso' && t.status !== 'Completato' && t.status !== 'Chiuso',
         );
 
         setTournaments(active.filter((t: any) => !t.is_registered));
         setMyTournaments(active.filter((t: any) => t.is_registered));
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.message || 'Errore caricamento tornei');
     } finally {
       setLoading(false);
     }
   }
 
-  async function registerForTournament(tournamentId: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    setRegistering(tournamentId);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const tournament = tournaments.find(t => t.id === tournamentId);
-
-    const { error } = await supabase
-      .from("tournament_participants")
-      .insert({
-        tournament_id: tournamentId,
-        user_id: user.id,
-      });
-
-    if (!error) {
-      // Send notification to user
-      if (tournament) {
-        await createNotification({
-          userId: user.id,
-          type: "tournament",
-          title: "Iscrizione al torneo confermata",
-          message: `Ti sei iscritto con successo al torneo: ${tournament.title}`,
-          link: `${dashboardBase}/tornei`,
-        });
-
-        // Move tournament from available to my tournaments
-        setTournaments(tournaments.filter(t => t.id !== tournamentId));
-        setMyTournaments([...myTournaments, { ...tournament, is_registered: true }]);
-      }
-    }
-
-    setRegistering(null);
-  }
-
   // Get current list based on active tab
   const getCurrentTournaments = () => {
     switch (activeTab) {
-      case "all":
+      case 'all':
         return [...myTournaments, ...tournaments];
-      case "my":
+      case 'my':
         return myTournaments;
-      case "available":
+      case 'available':
         // Solo tornei non iscritti, con iscrizioni aperte e posti liberi
         return tournaments.filter(
           (t) =>
-            t.status === "Aperto" &&
-            !(t.max_participants > 0 && (t.current_participants || 0) >= t.max_participants)
+            t.status === 'Aperto' &&
+            !(t.max_participants > 0 && (t.current_participants || 0) >= t.max_participants),
         );
       default:
         return [];
@@ -163,17 +127,21 @@ function AtletaTorneiPageInner() {
   // Determine border color based on status - using CSS variables from design system
   const getBorderColor = (tournament: Tournament) => {
     // Palette allineata a dashboard/admin/tornei
-    if (tournament.status === "Aperto") {
+    if (tournament.status === 'Aperto') {
       return (tournament.current_participants || 0) >= (tournament.max_participants || 0) &&
         (tournament.max_participants || 0) > 0
-        ? "#023047"
-        : "var(--secondary)";
-    } else if (tournament.status === "In Corso" || tournament.status === "In corso") {
-      return "#023b52";
-    } else if (tournament.status === "Completato" || tournament.status === "Concluso" || tournament.status === "Chiuso") {
-      return "#9ca3af";
+        ? '#023047'
+        : 'var(--secondary)';
+    } else if (tournament.status === 'In Corso' || tournament.status === 'In corso') {
+      return '#023b52';
+    } else if (
+      tournament.status === 'Completato' ||
+      tournament.status === 'Concluso' ||
+      tournament.status === 'Chiuso'
+    ) {
+      return '#9ca3af';
     }
-    return "var(--secondary)"; // default
+    return 'var(--secondary)'; // default
   };
 
   return (
@@ -202,9 +170,9 @@ function AtletaTorneiPageInner() {
             type="button"
             onClick={() => setIsAdvancedFiltersOpen((prev) => !prev)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
-              isAdvancedFiltersOpen || activeTab !== "all"
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+              isAdvancedFiltersOpen || activeTab !== 'all'
+                ? 'border-secondary bg-secondary text-white hover:opacity-90'
+                : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
             }`}
             aria-label="Mostra o nascondi filtri"
             title="Filtri"
@@ -218,20 +186,20 @@ function AtletaTorneiPageInner() {
             <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
               <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
                 {[
-                  { value: "all", label: "Tutti" },
-                  { value: "my", label: "I Miei Tornei" },
-                  { value: "available", label: "Disponibili" },
+                  { value: 'all', label: 'Tutti' },
+                  { value: 'my', label: 'I Miei Tornei' },
+                  { value: 'available', label: 'Disponibili' },
                 ].map((option) => {
                   const isSelected = activeTab === option.value;
                   return (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setActiveTab(option.value as "all" | "available" | "my")}
+                      onClick={() => setActiveTab(option.value as 'all' | 'available' | 'my')}
                       className={`h-11 shrink-0 rounded-lg border px-4 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
                         isSelected
-                          ? "border-secondary bg-secondary text-white"
-                          : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                          ? 'border-secondary bg-secondary text-white'
+                          : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
                       }`}
                     >
                       {option.label}
@@ -243,8 +211,8 @@ function AtletaTorneiPageInner() {
               <button
                 type="button"
                 onClick={() => {
-                  setSearch("");
-                  setActiveTab("all");
+                  setSearch('');
+                  setActiveTab('all');
                 }}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
                 aria-label="Reset filtri"
@@ -267,30 +235,34 @@ function AtletaTorneiPageInner() {
         <div className="text-center py-20 rounded-xl bg-white">
           <Trophy className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">
-            {activeTab === "all"
-              ? (myTournaments.length === 0 && tournaments.length === 0 ? "Nessun torneo attivo" : "Nessun torneo trovato")
-              : activeTab === "my"
-                ? (myTournaments.length === 0 ? "Non sei iscritto a nessun torneo" : "Nessun torneo trovato")
-                : (tournaments.length === 0 ? "Nessun torneo disponibile" : "Nessun torneo trovato")
-            }
+            {activeTab === 'all'
+              ? myTournaments.length === 0 && tournaments.length === 0
+                ? 'Nessun torneo attivo'
+                : 'Nessun torneo trovato'
+              : activeTab === 'my'
+              ? myTournaments.length === 0
+                ? 'Non sei iscritto a nessun torneo'
+                : 'Nessun torneo trovato'
+              : tournaments.length === 0
+              ? 'Nessun torneo disponibile'
+              : 'Nessun torneo trovato'}
           </h3>
           <p className="text-secondary/70 mb-6">
-            {activeTab === "all"
-              ? (myTournaments.length === 0 && tournaments.length === 0
-                  ? "Nuovi tornei saranno annunciati presto"
-                  : "Prova a modificare la ricerca")
-              : activeTab === "my"
-                ? (myTournaments.length === 0
-                    ? "Iscriviti a un torneo dalla sezione \"Disponibili\""
-                    : "Prova a modificare la ricerca")
-                : (tournaments.length === 0
-                    ? "Nuovi tornei saranno annunciati presto"
-                    : "Prova a modificare la ricerca")
-            }
+            {activeTab === 'all'
+              ? myTournaments.length === 0 && tournaments.length === 0
+                ? 'Nuovi tornei saranno annunciati presto'
+                : 'Prova a modificare la ricerca'
+              : activeTab === 'my'
+              ? myTournaments.length === 0
+                ? 'Iscriviti a un torneo dalla sezione "Disponibili"'
+                : 'Prova a modificare la ricerca'
+              : tournaments.length === 0
+              ? 'Nuovi tornei saranno annunciati presto'
+              : 'Prova a modificare la ricerca'}
           </p>
-          {activeTab === "my" && myTournaments.length === 0 && (
+          {activeTab === 'my' && myTournaments.length === 0 && (
             <button
-              onClick={() => setActiveTab("available")}
+              onClick={() => setActiveTab('available')}
               className="px-6 py-2.5 bg-secondary text-white rounded-lg font-semibold hover:opacity-90 transition-all"
             >
               Vedi Tornei Disponibili
@@ -303,8 +275,13 @@ function AtletaTorneiPageInner() {
             const bg = getBorderColor(tournament);
             const tType = tournament.tournament_type || tournament.competition_type;
             const TournamentIcon =
-              tType === "girone_eliminazione" ? Target : tType === "campionato" ? UsersIcon : Trophy;
-            const participantCount = tournament.current_participants || tournament.participant_count || 0;
+              tType === 'girone_eliminazione'
+                ? Target
+                : tType === 'campionato'
+                ? UsersIcon
+                : Trophy;
+            const participantCount =
+              tournament.current_participants || tournament.participant_count || 0;
             const maxParticipants = tournament.max_participants || 0;
 
             return (
@@ -320,9 +297,7 @@ function AtletaTorneiPageInner() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-sm truncate">
-                      {tournament.title}
-                    </p>
+                    <p className="font-semibold text-white text-sm truncate">{tournament.title}</p>
                     <p className="text-xs text-white/70 mt-0.5 truncate">
                       {participantCount}/{maxParticipants} iscritti
                     </p>
@@ -330,10 +305,10 @@ function AtletaTorneiPageInner() {
 
                   <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
                     {tournament.is_registered
-                      ? "Iscritto"
-                      : !tournament.status || tournament.status === "Aperto"
-                        ? "Iscrizioni aperte"
-                        : tournament.status}
+                      ? 'Iscritto'
+                      : !tournament.status || tournament.status === 'Aperto'
+                      ? 'Iscrizioni aperte'
+                      : tournament.status}
                   </span>
                 </div>
               </div>
@@ -352,10 +327,7 @@ function AtletaTorneiPageInner() {
                 <p className="text-sm font-semibold text-red-800 mb-1">Errore</p>
                 <p className="text-xs text-red-700">{error}</p>
               </div>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-600 hover:text-red-800"
-              >
+              <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
                 ✕
               </button>
             </div>
@@ -368,11 +340,13 @@ function AtletaTorneiPageInner() {
 
 export default function AtletaTorneiPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+        </div>
+      }
+    >
       <AtletaTorneiPageInner />
     </Suspense>
   );

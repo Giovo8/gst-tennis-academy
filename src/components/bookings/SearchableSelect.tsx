@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronDown } from 'lucide-react';
 
-export interface SearchableOption {
+interface SearchableOption {
   value: string;
   label: string;
 }
@@ -20,7 +20,7 @@ interface SearchableSelectProps {
   dropdownClassName?: string;
 }
 
-export function SearchableSelect({
+function SearchableSelect({
   value,
   onChange,
   options,
@@ -31,33 +31,33 @@ export function SearchableSelect({
   dropdownClassName,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
   const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(query.toLowerCase())
+    opt.label.toLowerCase().includes(query.toLowerCase()),
   );
 
   const handleSelect = (val: string) => {
     onChange(val);
     setOpen(false);
-    setQuery("");
+    setQuery('');
   };
 
   const handleToggle = () => {
     if (!open && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setDropdownStyle({
-        position: "fixed",
+        position: 'fixed',
         top: rect.bottom + 4,
         left: rect.left,
         width: rect.width,
         zIndex: 9999,
       });
     } else {
-      setQuery("");
+      setQuery('');
     }
     setOpen((prev) => !prev);
   };
@@ -66,38 +66,33 @@ export function SearchableSelect({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
+      if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
         setOpen(false);
-        setQuery("");
+        setQuery('');
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
   const dropdown = open ? (
     <div
       style={dropdownStyle}
-      className={dropdownClassName ?? "rounded-lg border border-black/10 bg-white shadow-lg"}
+      className={dropdownClassName ?? 'rounded-lg border border-black/10 bg-white shadow-lg'}
     >
       <div className="p-2 border-b border-black/10">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={searchPlaceholder || "Cerca..."}
+          placeholder={searchPlaceholder || 'Cerca...'}
           className="w-full rounded-lg border border-black/10 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           autoFocus
         />
       </div>
       <div className="max-h-56 overflow-auto py-1">
         {filteredOptions.length === 0 ? (
-          <div className="px-3 py-2 text-xs text-secondary/40">
-            Nessun risultato
-          </div>
+          <div className="px-3 py-2 text-xs text-secondary/40">Nessun risultato</div>
         ) : (
           filteredOptions.map((opt) => (
             <button
@@ -107,8 +102,10 @@ export function SearchableSelect({
                 e.preventDefault();
                 handleSelect(opt.value);
               }}
-              className={`w-full px-3 ${itemClassName ?? "py-1.5"} text-left text-sm hover:bg-secondary/5 ${
-                opt.value === value ? "bg-gray-50 font-semibold" : ""
+              className={`w-full px-3 ${
+                itemClassName ?? 'py-1.5'
+              } text-left text-sm hover:bg-secondary/5 ${
+                opt.value === value ? 'bg-gray-50 font-semibold' : ''
               }`}
             >
               {opt.label}
@@ -127,15 +124,15 @@ export function SearchableSelect({
         onClick={handleToggle}
         className={
           triggerClassName ??
-          "w-full rounded-lg border border-black/10 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-0 focus-visible:border-black/10"
+          'w-full rounded-lg border border-black/10 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-0 focus-visible:border-black/10'
         }
       >
-        <span className={selectedOption ? "" : "text-secondary/40"}>
-          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
+        <span className={selectedOption ? '' : 'text-secondary/40'}>
+          {selectedOption ? selectedOption.label : placeholder || 'Seleziona'}
         </span>
         <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
       </button>
-      {typeof document !== "undefined" && createPortal(dropdown, document.body)}
+      {typeof document !== 'undefined' && createPortal(dropdown, document.body)}
     </div>
   );
 }

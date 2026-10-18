@@ -2,54 +2,53 @@ import {
   getBookingDashboardLinkForRole,
   getAdminUsersNotificationLink,
   getUsersDashboardLinkForRole,
-  resolveDashboardLinkForRole,
-} from "@/lib/notifications/links";
+  resolveNotificationLink,
+} from '@/lib/notifications/links';
 
-describe("notification links", () => {
-  it("builds the canonical admin users link", () => {
-    expect(getAdminUsersNotificationLink("user-123")).toBe("/dashboard/admin/users/user-123");
-    expect(getAdminUsersNotificationLink()).toBe("/dashboard/admin/users");
+describe('notification links', () => {
+  it('builds the canonical admin users link', () => {
+    expect(getAdminUsersNotificationLink('user-123')).toBe('/dashboard/admin/users/user-123');
+    expect(getAdminUsersNotificationLink()).toBe('/dashboard/admin/users');
   });
 
-  it("keeps admin links unchanged for gestore recipients", () => {
-    expect(resolveDashboardLinkForRole("/dashboard/admin/users/user-123", "gestore")).toBe(
-      "/dashboard/admin/users/user-123"
+  it('keeps stored links unchanged', () => {
+    expect(resolveNotificationLink('/dashboard/admin/users/user-123')).toBe(
+      '/dashboard/admin/users/user-123',
     );
-    expect(resolveDashboardLinkForRole("/dashboard/admin/bookings/booking-1", "gestore")).toBe(
-      "/dashboard/admin/bookings/booking-1"
+    expect(resolveNotificationLink('/dashboard/atleta/bookings/booking-1')).toBe(
+      '/dashboard/atleta/bookings/booking-1',
     );
+    expect(resolveNotificationLink(null)).toBeNull();
   });
 
-  it("leaves non-staff links unchanged", () => {
-    expect(resolveDashboardLinkForRole("/dashboard/maestro/agenda", "maestro")).toBe(
-      "/dashboard/maestro/agenda"
-    );
-  });
-
-  it("builds booking dashboard links by recipient role", () => {
-    expect(getBookingDashboardLinkForRole("atleta", "booking-1")).toBe(
-      "/dashboard/atleta/bookings/booking-1"
-    );
-    expect(getBookingDashboardLinkForRole("gestore", "booking-1")).toBe(
-      "/dashboard/admin/bookings/booking-1"
-    );
-    expect(getBookingDashboardLinkForRole("maestro", "booking-1")).toBe(
-      "/dashboard/maestro/agenda"
-    );
-    expect(getBookingDashboardLinkForRole("admin", "booking-1")).toBe(
-      "/dashboard/admin/bookings/booking-1"
+  it('redirects legacy maestro agenda links to bookings', () => {
+    expect(resolveNotificationLink('/dashboard/maestro/agenda')).toBe(
+      '/dashboard/maestro/bookings',
     );
   });
 
-  it("builds users dashboard links by recipient role", () => {
-    expect(getUsersDashboardLinkForRole("atleta", "user-123")).toBe(
-      "/dashboard/atleta/profile"
+  it('builds booking dashboard links by recipient role', () => {
+    expect(getBookingDashboardLinkForRole('atleta', 'booking-1')).toBe(
+      '/dashboard/atleta/bookings/booking-1',
     );
-    expect(getUsersDashboardLinkForRole("gestore", "user-123")).toBe(
-      "/dashboard/admin/users/user-123"
+    expect(getBookingDashboardLinkForRole('gestore', 'booking-1')).toBe(
+      '/dashboard/admin/bookings/booking-1',
     );
-    expect(getUsersDashboardLinkForRole("admin", "user-123")).toBe(
-      "/dashboard/admin/users/user-123"
+    expect(getBookingDashboardLinkForRole('maestro', 'booking-1')).toBe(
+      '/dashboard/maestro/bookings/booking-1',
+    );
+    expect(getBookingDashboardLinkForRole('admin', 'booking-1')).toBe(
+      '/dashboard/admin/bookings/booking-1',
+    );
+  });
+
+  it('builds users dashboard links by recipient role', () => {
+    expect(getUsersDashboardLinkForRole('atleta', 'user-123')).toBe('/dashboard/atleta/profile');
+    expect(getUsersDashboardLinkForRole('gestore', 'user-123')).toBe(
+      '/dashboard/admin/users/user-123',
+    );
+    expect(getUsersDashboardLinkForRole('admin', 'user-123')).toBe(
+      '/dashboard/admin/users/user-123',
     );
   });
 });

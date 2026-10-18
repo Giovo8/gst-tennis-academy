@@ -106,5 +106,3 @@ export async function applyRateLimit(
     reset: Math.ceil((entry.resetTime - now) / 1000),
   };
 }
-
-export default { getClientIdentifier, applyRateLimit, RATE_LIMITS };

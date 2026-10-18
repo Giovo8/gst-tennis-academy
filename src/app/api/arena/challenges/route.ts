@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from '@/lib/auth/routeAuth';
 import {
   fetchEnrichedChallenge,
   fetchEnrichedChallenges,
   notifyOpponentOfNewChallenge,
   notifyChallengeStatusChange,
-} from "@/lib/arena/challengeService";
+} from '@/lib/arena/challengeService';
 
 // GET - Fetch challenges
 export async function GET(req: Request) {
@@ -15,14 +15,14 @@ export async function GET(req: Request) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("user_id");
-    const status = searchParams.get("status");
-    const challengeId = searchParams.get("challenge_id");
+    const userId = searchParams.get('user_id');
+    const status = searchParams.get('status');
+    const challengeId = searchParams.get('challenge_id');
 
     if (challengeId) {
       const challenge = await fetchEnrichedChallenge(challengeId);
       if (!challenge) {
-        return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+        return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
       }
       return NextResponse.json({ challenge });
     }
@@ -30,8 +30,11 @@ export async function GET(req: Request) {
     const challenges = await fetchEnrichedChallenges(userId, status);
     return NextResponse.json({ challenges });
   } catch (error) {
-    console.error("Error in GET /api/arena/challenges:", error);
-    return NextResponse.json({ error: (error instanceof Error ? error.message : null) || "Internal server error" }, { status: 500 });
+    console.error('Error in GET /api/arena/challenges:', error);
+    return NextResponse.json(
+      { error: (error instanceof Error ? error.message : null) || 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -62,22 +65,21 @@ export async function POST(req: Request) {
       return forbidden();
     }
 
-    const initialStatus =
-      isAdmin(auth.role) ? "accepted" : "pending";
+    const initialStatus = isAdmin(auth.role) ? 'accepted' : 'pending';
 
     if (!challenger_id || !opponent_id) {
       return NextResponse.json(
-        { error: "Challenger and opponent IDs are required" },
+        { error: 'Challenger and opponent IDs are required' },
         { status: 400 },
       );
     }
 
     if (challenger_id === opponent_id) {
-      return NextResponse.json({ error: "Cannot challenge yourself" }, { status: 400 });
+      return NextResponse.json({ error: 'Cannot challenge yourself' }, { status: 400 });
     }
 
     const { data, error } = await supabaseServer
-      .from("arena_challenges")
+      .from('arena_challenges')
       .insert([
         {
           challenger_id,
@@ -85,10 +87,10 @@ export async function POST(req: Request) {
           message: message || null,
           scheduled_date: scheduled_date || null,
           court: court || null,
-          match_format: match_format || "best_of_3",
+          match_format: match_format || 'best_of_3',
           duration_minutes: duration_minutes || 120,
-          match_type: match_type || "singolo",
-          challenge_type: challenge_type || "ranked",
+          match_type: match_type || 'singolo',
+          challenge_type: challenge_type || 'ranked',
           my_partner_id: my_partner_id || null,
           opponent_partner_id: opponent_partner_id || null,
           booking_id: booking_id || null,
@@ -103,7 +105,7 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error("Error creating challenge:", error);
+      console.error('Error creating challenge:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -121,14 +123,20 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ challenge: data }, { status: 201 });
   } catch (error) {
-    console.error("Error in POST /api/arena/challenges:", error);
-    return NextResponse.json({ error: (error instanceof Error ? error.message : null) || "Internal server error" }, { status: 500 });
+    console.error('Error in POST /api/arena/challenges:', error);
+    return NextResponse.json(
+      { error: (error instanceof Error ? error.message : null) || 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
 // PATCH - Update challenge (accept, decline, complete)
 export async function PATCH(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const body = await req.json();
     const {
       challenge_id,
@@ -149,12 +157,12 @@ export async function PATCH(req: Request) {
     } = body;
 
     if (!challenge_id) {
-      return NextResponse.json({ error: "Challenge ID is required" }, { status: 400 });
+      return NextResponse.json({ error: 'Challenge ID is required' }, { status: 400 });
     }
 
-    if (status === "completed" && !winner_id) {
+    if (status === 'completed' && !winner_id) {
       return NextResponse.json(
-        { error: "Nel tennis non ci possono essere pareggi. Devi specificare un vincitore." },
+        { error: 'Nel tennis non ci possono essere pareggi. Devi specificare un vincitore.' },
         { status: 400 },
       );
     }
@@ -175,20 +183,35 @@ export async function PATCH(req: Request) {
     if (opponent_partner_id !== undefined) updateData.opponent_partner_id = opponent_partner_id;
     if (message !== undefined) updateData.message = message;
 
-    // Fetch previous state before update to drive notification logic
+    // Stato precedente (per le notifiche) e partecipanti (per l'autorizzazione)
     const { data: previousData } = await supabaseServer
-      .from("arena_challenges")
-      .select("status, booking_id")
-      .eq("id", challenge_id)
+      .from('arena_challenges')
+      .select('status, booking_id, challenger_id, opponent_id, my_partner_id, opponent_partner_id')
+      .eq('id', challenge_id)
       .single();
+
+    if (!previousData) {
+      return NextResponse.json({ error: 'Sfida non trovata' }, { status: 404 });
+    }
+
+    // Possono modificare la sfida solo i giocatori coinvolti oppure admin/gestore
+    const participants = [
+      previousData.challenger_id,
+      previousData.opponent_id,
+      previousData.my_partner_id,
+      previousData.opponent_partner_id,
+    ];
+    if (!isAdmin(auth.role) && !participants.includes(auth.user.id)) {
+      return forbidden();
+    }
 
     const previousStatus = previousData?.status ?? null;
     const previousBookingId = previousData?.booking_id || null;
 
     const { data, error } = await supabaseServer
-      .from("arena_challenges")
+      .from('arena_challenges')
       .update(updateData)
-      .eq("id", challenge_id)
+      .eq('id', challenge_id)
       .select(
         `*,
         challenger:profiles!arena_challenges_challenger_id_fkey(id, full_name, avatar_url),
@@ -197,37 +220,37 @@ export async function PATCH(req: Request) {
       .single();
 
     if (error) {
-      console.error("Error updating challenge:", error);
+      console.error('Error updating challenge:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     const linkedBookingId =
       booking_id !== undefined ? booking_id : data.booking_id || previousBookingId;
 
-    if (status === "cancelled" && linkedBookingId) {
+    if (status === 'cancelled' && linkedBookingId) {
       const { error: bookingCancelError } = await supabaseServer
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", linkedBookingId);
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', linkedBookingId);
 
       if (bookingCancelError) {
-        console.error("Error cancelling linked booking:", bookingCancelError);
+        console.error('Error cancelling linked booking:', bookingCancelError);
 
         if (previousStatus) {
           const { error: rollbackError } = await supabaseServer
-            .from("arena_challenges")
+            .from('arena_challenges')
             .update({ status: previousStatus })
-            .eq("id", challenge_id);
+            .eq('id', challenge_id);
 
           if (rollbackError) {
             console.error(
-              "Error rolling back challenge status after booking cancellation failure:",
+              'Error rolling back challenge status after booking cancellation failure:',
               rollbackError,
             );
           }
         }
 
-        return NextResponse.json({ error: "Failed to cancel linked booking" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to cancel linked booking' }, { status: 500 });
       }
     }
 
@@ -243,15 +266,18 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ challenge: data });
   } catch (error) {
-    console.error("Error in PATCH /api/arena/challenges:", error);
-    return NextResponse.json({ error: (error instanceof Error ? error.message : null) || "Internal server error" }, { status: 500 });
+    console.error('Error in PATCH /api/arena/challenges:', error);
+    return NextResponse.json(
+      { error: (error instanceof Error ? error.message : null) || 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
 // PUT - Update challenge (alias for PATCH)
 export async function PUT(req: Request) {
   const { searchParams } = new URL(req.url);
-  const challengeIdFromQuery = searchParams.get("challenge_id");
+  const challengeIdFromQuery = searchParams.get('challenge_id');
 
   const body = await req.json();
 
@@ -260,7 +286,7 @@ export async function PUT(req: Request) {
   }
 
   const newReq = new Request(req.url, {
-    method: "PATCH",
+    method: 'PATCH',
     headers: req.headers,
     body: JSON.stringify(body),
   });
@@ -271,26 +297,43 @@ export async function PUT(req: Request) {
 // DELETE - Cancel challenge
 export async function DELETE(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const { searchParams } = new URL(req.url);
-    const challengeId = searchParams.get("challenge_id");
+    const challengeId = searchParams.get('challenge_id');
 
     if (!challengeId) {
-      return NextResponse.json({ error: "Challenge ID is required" }, { status: 400 });
+      return NextResponse.json({ error: 'Challenge ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseServer
-      .from("arena_challenges")
-      .delete()
-      .eq("id", challengeId);
+    // Eliminazione consentita solo a chi ha lanciato la sfida oppure ad admin/gestore
+    const { data: existing } = await supabaseServer
+      .from('arena_challenges')
+      .select('challenger_id')
+      .eq('id', challengeId)
+      .single();
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Sfida non trovata' }, { status: 404 });
+    }
+    if (!isAdmin(auth.role) && existing.challenger_id !== auth.user.id) {
+      return forbidden();
+    }
+
+    const { error } = await supabaseServer.from('arena_challenges').delete().eq('id', challengeId);
 
     if (error) {
-      console.error("Error deleting challenge:", error);
+      console.error('Error deleting challenge:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error in DELETE /api/arena/challenges:", error);
-    return NextResponse.json({ error: (error instanceof Error ? error.message : null) || "Internal server error" }, { status: 500 });
+    console.error('Error in DELETE /api/arena/challenges:', error);
+    return NextResponse.json(
+      { error: (error instanceof Error ? error.message : null) || 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

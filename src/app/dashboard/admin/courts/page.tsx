@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Loader2,
@@ -17,18 +17,17 @@ import {
   GraduationCap,
   Wrench,
   Flag,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from "@/components/ui";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+} from '@/components/ui';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 type Block = {
   id: string;
@@ -44,13 +43,15 @@ export default function CourtsBlockPage() {
   const router = useRouter();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filterType, setFilterType] = useState("all");
-  const [filterCourt, setFilterCourt] = useState("all");
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"active" | "expired" | "cancelled" | "all">("active");
+  const [filterType, setFilterType] = useState('all');
+  const [filterCourt, setFilterCourt] = useState('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'active' | 'expired' | 'cancelled' | 'all'>(
+    'active',
+  );
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -63,34 +64,34 @@ export default function CourtsBlockPage() {
       setLoading(true);
 
       const { data, error } = await supabase
-        .from("court_blocks")
-        .select("*")
-        .order("start_time", { ascending: false });
+        .from('court_blocks')
+        .select('*')
+        .order('start_time', { ascending: false });
 
       if (!error && data) {
         setBlocks(data);
       }
     } catch (err) {
-      console.error("Error loading blocks:", err);
+      console.error('Error loading blocks:', err);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleDeleteBlock(blockIds: string[]) {
-    if (!confirm("Sei sicuro di voler disattivare questo blocco?")) return;
+    if (!confirm('Sei sicuro di voler disattivare questo blocco?')) return;
 
     try {
       const { error } = await supabase
-        .from("court_blocks")
+        .from('court_blocks')
         .update({ is_disabled: true })
-        .in("id", blockIds);
+        .in('id', blockIds);
 
       if (!error) {
         setBlocks((prev) => prev.filter((block) => !blockIds.includes(block.id)));
       }
     } catch (err) {
-      console.error("Error deleting block:", err);
+      console.error('Error deleting block:', err);
     }
   }
 
@@ -105,7 +106,10 @@ export default function CourtsBlockPage() {
     const viewportPadding = 8;
 
     let left = buttonRect.right - menuWidth;
-    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuWidth - viewportPadding));
+    left = Math.max(
+      viewportPadding,
+      Math.min(left, window.innerWidth - menuWidth - viewportPadding),
+    );
 
     let top = buttonRect.bottom + 6;
     if (top + menuHeight > window.innerHeight - viewportPadding) {
@@ -120,32 +124,36 @@ export default function CourtsBlockPage() {
   function groupConsecutiveBlocks(blocks: Block[]) {
     if (blocks.length === 0) return [];
 
-    const sorted = [...blocks].sort((a, b) => 
-      a.court_id.localeCompare(b.court_id) || 
-      new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    const sorted = [...blocks].sort(
+      (a, b) =>
+        a.court_id.localeCompare(b.court_id) ||
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
     );
 
     // Crea una mappa per raggruppare per campo + motivo + orario
-    const groupMap = new Map<string, {
-      id: string;
-      court_id: string;
-      start_time: string;
-      end_time: string;
-      reason?: string;
-      is_disabled: boolean;
-      blockIds: string[];
-      allDates: Array<{start: string, end: string}>;
-    }>();
+    const groupMap = new Map<
+      string,
+      {
+        id: string;
+        court_id: string;
+        start_time: string;
+        end_time: string;
+        reason?: string;
+        is_disabled: boolean;
+        blockIds: string[];
+        allDates: Array<{ start: string; end: string }>;
+      }
+    >();
 
     for (const block of sorted) {
       const blockStart = new Date(block.start_time);
       const blockEnd = new Date(block.end_time);
       const startTime = blockStart.getHours() * 60 + blockStart.getMinutes();
       const endTime = blockEnd.getHours() * 60 + blockEnd.getMinutes();
-      
+
       // Chiave: campo + motivo + orario
-      const key = `${block.court_id}|${block.reason || ""}|${startTime}|${endTime}`;
-      
+      const key = `${block.court_id}|${block.reason || ''}|${startTime}|${endTime}`;
+
       if (!groupMap.has(key)) {
         groupMap.set(key, {
           id: block.id,
@@ -155,12 +163,12 @@ export default function CourtsBlockPage() {
           reason: block.reason,
           is_disabled: block.is_disabled,
           blockIds: [block.id],
-          allDates: [{start: block.start_time, end: block.end_time}]
+          allDates: [{ start: block.start_time, end: block.end_time }],
         });
       } else {
         const group = groupMap.get(key)!;
         group.blockIds.push(block.id);
-        group.allDates.push({start: block.start_time, end: block.end_time});
+        group.allDates.push({ start: block.start_time, end: block.end_time });
         // Aggiorna la data finale del gruppo all'ultima data
         if (new Date(block.end_time) > new Date(group.end_time)) {
           group.end_time = block.end_time;
@@ -175,79 +183,79 @@ export default function CourtsBlockPage() {
 
   // Determina tipo, colore e icona in base al motivo
   function getBlockStyle(reason?: string) {
-    const reasonText = (reason || "").trim();
+    const reasonText = (reason || '').trim();
     const reasonLower = reasonText.toLowerCase();
 
-    if (reasonLower.includes("corso adulti")) {
+    if (reasonLower.includes('corso adulti')) {
       return {
-        type: "Corso Adulti",
-        borderColor: "border-frozen-lake-700",
-        iconColor: "text-frozen-lake-700",
-        bgHover: "hover:bg-frozen-lake-50",
-        icon: GraduationCap
-      };
-    }
-    
-    if (reasonLower.includes("corsi") || reasonLower.includes("tennis")) {
-      return {
-        type: "Corsi Tennis",
-        borderColor: "border-frozen-lake-700",
-        iconColor: "text-frozen-lake-700",
-        bgHover: "hover:bg-frozen-lake-50",
-        icon: GraduationCap
-      };
-    } else if (reasonLower.includes("manutenzione")) {
-      return {
-        type: "Manutenzione",
-        borderColor: "border-frozen-lake-800",
-        iconColor: "text-frozen-lake-800",
-        bgHover: "hover:bg-frozen-lake-50",
-        icon: Wrench
-      };
-    } else if (reasonLower.includes("evento")) {
-      return {
-        type: "Evento",
-        borderColor: "border-frozen-lake-900",
-        iconColor: "text-frozen-lake-900",
-        bgHover: "hover:bg-frozen-lake-50",
-        icon: Flag
+        type: 'Corso Adulti',
+        borderColor: 'border-frozen-lake-700',
+        iconColor: 'text-frozen-lake-700',
+        bgHover: 'hover:bg-frozen-lake-50',
+        icon: GraduationCap,
       };
     }
 
-    if (reasonLower.startsWith("altro")) {
+    if (reasonLower.includes('corsi') || reasonLower.includes('tennis')) {
       return {
-        type: "Altro",
-        borderColor: "border-frozen-lake-700",
-        iconColor: "text-frozen-lake-700",
-        bgHover: "hover:bg-frozen-lake-50",
-        icon: Shield
+        type: 'Corsi Tennis',
+        borderColor: 'border-frozen-lake-700',
+        iconColor: 'text-frozen-lake-700',
+        bgHover: 'hover:bg-frozen-lake-50',
+        icon: GraduationCap,
+      };
+    } else if (reasonLower.includes('manutenzione')) {
+      return {
+        type: 'Manutenzione',
+        borderColor: 'border-frozen-lake-800',
+        iconColor: 'text-frozen-lake-800',
+        bgHover: 'hover:bg-frozen-lake-50',
+        icon: Wrench,
+      };
+    } else if (reasonLower.includes('evento')) {
+      return {
+        type: 'Evento',
+        borderColor: 'border-frozen-lake-900',
+        iconColor: 'text-frozen-lake-900',
+        bgHover: 'hover:bg-frozen-lake-50',
+        icon: Flag,
       };
     }
-    
+
+    if (reasonLower.startsWith('altro')) {
+      return {
+        type: 'Altro',
+        borderColor: 'border-frozen-lake-700',
+        iconColor: 'text-frozen-lake-700',
+        bgHover: 'hover:bg-frozen-lake-50',
+        icon: Shield,
+      };
+    }
+
     // Default
     return {
-      type: reasonText ? "Altro" : "Blocco",
-      borderColor: "border-frozen-lake-700",
-      iconColor: "text-frozen-lake-700",
-      bgHover: "hover:bg-frozen-lake-50",
-      icon: Shield
+      type: reasonText ? 'Altro' : 'Blocco',
+      borderColor: 'border-frozen-lake-700',
+      iconColor: 'text-frozen-lake-700',
+      bgHover: 'hover:bg-frozen-lake-50',
+      icon: Shield,
     };
   }
 
   const typeOptions = Array.from(
-    new Set(groupedBlocks.map((block) => getBlockStyle(block.reason).type))
+    new Set(groupedBlocks.map((block) => getBlockStyle(block.reason).type)),
   ).sort((a, b) => a.localeCompare(b));
 
-  const courtOptions = Array.from(new Set(groupedBlocks.map((block) => block.court_id))).sort((a, b) =>
-    a.localeCompare(b)
+  const courtOptions = Array.from(new Set(groupedBlocks.map((block) => block.court_id))).sort(
+    (a, b) => a.localeCompare(b),
   );
 
   const hasActiveFilters =
-    filterType !== "all" ||
-    filterCourt !== "all" ||
-    filterDateFrom !== "" ||
-    filterDateTo !== "" ||
-    filterStatus !== "active";
+    filterType !== 'all' ||
+    filterCourt !== 'all' ||
+    filterDateFrom !== '' ||
+    filterDateTo !== '' ||
+    filterStatus !== 'active';
 
   const nowMs = Date.now();
 
@@ -255,19 +263,19 @@ export default function CourtsBlockPage() {
     const isExpired = new Date(block.end_time).getTime() < nowMs;
     const isCancelled = block.is_disabled;
 
-    if (filterStatus === "active" && (isExpired || isCancelled)) return false;
-    if (filterStatus === "expired" && (!isExpired || isCancelled)) return false;
-    if (filterStatus === "cancelled" && !isCancelled) return false;
+    if (filterStatus === 'active' && (isExpired || isCancelled)) return false;
+    if (filterStatus === 'expired' && (!isExpired || isCancelled)) return false;
+    if (filterStatus === 'cancelled' && !isCancelled) return false;
 
     const blockType = getBlockStyle(block.reason).type;
-    const blockSearch = `${block.court_id} ${block.reason || ""} ${blockType}`.toLowerCase();
+    const blockSearch = `${block.court_id} ${block.reason || ''} ${blockType}`.toLowerCase();
     const matchesSearch = search.trim().length === 0 || blockSearch.includes(search.toLowerCase());
     if (!matchesSearch) return false;
 
-    if (filterType !== "all" && blockType !== filterType) return false;
-    if (filterCourt !== "all" && block.court_id !== filterCourt) return false;
+    if (filterType !== 'all' && blockType !== filterType) return false;
+    if (filterCourt !== 'all' && block.court_id !== filterCourt) return false;
 
-    const blockDate = block.start_time.split("T")[0];
+    const blockDate = block.start_time.split('T')[0];
     if (filterDateFrom && blockDate < filterDateFrom) return false;
     if (filterDateTo && blockDate > filterDateTo) return false;
 
@@ -275,19 +283,14 @@ export default function CourtsBlockPage() {
   });
 
   const sortedBlocks = [...filteredBlocks].sort(
-    (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+    (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
   );
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return format(date, "dd/MM/yy", { locale: it });
-  };
-
   const formatBlockDateTime = (start: Date, end: Date) => {
-    const startDate = format(start, "d/MM/yy", { locale: it });
-    const endDate = format(end, "d/MM/yy", { locale: it });
-    const startTime = format(start, "HH:mm");
-    const endTime = format(end, "HH:mm");
+    const startDate = format(start, 'd/MM/yy', { locale: it });
+    const endDate = format(end, 'd/MM/yy', { locale: it });
+    const startTime = format(start, 'HH:mm');
+    const endTime = format(end, 'HH:mm');
 
     if (startDate === endDate) {
       return `${startDate} · ${startTime} - ${endTime}`;
@@ -297,20 +300,20 @@ export default function CourtsBlockPage() {
   };
 
   const getBlockTitle = (reason?: string) => {
-    const text = (reason || "").trim();
-    if (!text) return "Blocco campo";
+    const text = (reason || '').trim();
+    if (!text) return 'Blocco campo';
 
     const altroWithParens = text.match(/^Altro\s*\(([^)]+)\)(?:\s*-\s*(.+))?$/i);
     if (altroWithParens) {
-      const custom = (altroWithParens[1] || "").trim();
-      const notes = (altroWithParens[2] || "").trim();
+      const custom = (altroWithParens[1] || '').trim();
+      const notes = (altroWithParens[2] || '').trim();
       if (custom && notes) return `${custom} - ${notes}`;
-      return custom || notes || "Altro";
+      return custom || notes || 'Altro';
     }
 
     const altroSimple = text.match(/^Altro\s*-\s*(.+)$/i);
     if (altroSimple) {
-      return (altroSimple[1] || "").trim() || "Altro";
+      return (altroSimple[1] || '').trim() || 'Altro';
     }
 
     return text;
@@ -333,8 +336,8 @@ export default function CourtsBlockPage() {
         onClick={() => setIsFilterModalOpen(true)}
         className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
           hasActiveFilters
-            ? "border-secondary bg-secondary text-white hover:opacity-90"
-            : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+            ? 'border-secondary bg-secondary text-white hover:opacity-90'
+            : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
         }`}
         aria-label="Apri filtri blocchi campi"
         title="Filtri"
@@ -354,7 +357,7 @@ export default function CourtsBlockPage() {
           >
             Prenotazioni
           </Link>
-          {" › "}
+          {' › '}
           <span>Blocco Campi</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">Blocco Campi</h1>
@@ -370,9 +373,7 @@ export default function CourtsBlockPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {renderSearchWithFilter()}
-      </div>
+      <div className="flex flex-col gap-3">{renderSearchWithFilter()}</div>
 
       {/* Lista blocchi */}
       {loading ? (
@@ -384,9 +385,7 @@ export default function CourtsBlockPage() {
         <div className="text-center py-20 rounded-lg bg-white">
           <Shield className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessun blocco attivo</h3>
-          <p className="text-secondary/60 mb-6">
-            Prova a modificare i filtri di ricerca
-          </p>
+          <p className="text-secondary/60 mb-6">Prova a modificare i filtri di ricerca</p>
           <Link
             href="/dashboard/admin/courts/new"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-opacity"
@@ -405,17 +404,17 @@ export default function CourtsBlockPage() {
             const dateTimeLabel = formatBlockDateTime(firstDate, lastDate);
 
             const cardBg =
-              blockStyle.type === "Corso Adulti"
-                ? "#023047"
-                : blockStyle.type === "Corsi Tennis"
-                  ? "#05384c"
-                  : blockStyle.type === "Manutenzione"
-                    ? "var(--color-frozen-lake-900)"
-                    : blockStyle.type === "Evento"
-                      ? "var(--color-frozen-lake-900)"
-                      : blockStyle.type === "Altro"
-                        ? "var(--secondary)"
-                        : "var(--color-frozen-lake-800)";
+              blockStyle.type === 'Corso Adulti'
+                ? '#023047'
+                : blockStyle.type === 'Corsi Tennis'
+                ? '#05384c'
+                : blockStyle.type === 'Manutenzione'
+                ? 'var(--color-frozen-lake-900)'
+                : blockStyle.type === 'Evento'
+                ? 'var(--color-frozen-lake-900)'
+                : blockStyle.type === 'Altro'
+                ? 'var(--secondary)'
+                : 'var(--color-frozen-lake-800)';
 
             return (
               <div
@@ -430,7 +429,9 @@ export default function CourtsBlockPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-sm truncate">{getBlockTitle(block.reason)}</p>
+                    <p className="font-semibold text-white text-sm truncate">
+                      {getBlockTitle(block.reason)}
+                    </p>
                     <p className="text-xs text-white/70 mt-0.5 truncate">
                       {block.court_id} · {dateTimeLabel}
                     </p>
@@ -458,7 +459,13 @@ export default function CourtsBlockPage() {
                     </button>
                     {openMenuId === block.id && menuPosition && (
                       <>
-                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            closeActionMenu();
+                          }}
+                        />
                         <div
                           className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
                           style={{ top: menuPosition.top, left: menuPosition.left }}
@@ -479,7 +486,10 @@ export default function CourtsBlockPage() {
                           </button>
                           <Link
                             href={`/dashboard/admin/courts/modifica?id=${block.id}`}
-                            onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeActionMenu();
+                            }}
                             className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -513,15 +523,22 @@ export default function CourtsBlockPage() {
         <ModalContent
           size="md"
           showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
         >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="text-white text-lg">Filtra Blocchi Campi</ModalTitle>
           </ModalHeader>
 
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+          <ModalBody className="px-4 py-4 bg-white space-y-4">
             <div className="space-y-1">
-              <label htmlFor="courts-type-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="courts-type-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Tipo
               </label>
               <select
@@ -540,7 +557,10 @@ export default function CourtsBlockPage() {
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="courts-court-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="courts-court-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Campo
               </label>
               <select
@@ -559,7 +579,10 @@ export default function CourtsBlockPage() {
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="courts-status-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="courts-status-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Stato
               </label>
               <select
@@ -577,7 +600,10 @@ export default function CourtsBlockPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label htmlFor="courts-date-from-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                <label
+                  htmlFor="courts-date-from-filter"
+                  className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+                >
                   Data da
                 </label>
                 <input
@@ -589,7 +615,10 @@ export default function CourtsBlockPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="courts-date-to-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                <label
+                  htmlFor="courts-date-to-filter"
+                  className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+                >
                   Data a
                 </label>
                 <input
@@ -603,15 +632,15 @@ export default function CourtsBlockPage() {
             </div>
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
             <button
               type="button"
               onClick={() => {
-                setFilterType("all");
-                setFilterCourt("all");
-                setFilterDateFrom("");
-                setFilterDateTo("");
-                setFilterStatus("active");
+                setFilterType('all');
+                setFilterCourt('all');
+                setFilterDateFrom('');
+                setFilterDateTo('');
+                setFilterStatus('active');
               }}
               className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
             >

@@ -1,16 +1,27 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { createPortal } from "react-dom";
-import { supabase } from "@/lib/supabase/client";
-import { Bell, BellRing, Mail, Trophy, Megaphone, CalendarClock, Users, Video, X, Swords } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { supabase } from '@/lib/supabase/client';
+import { getSessionUser } from '@/lib/auth/clientSession';
+import {
+  Bell,
+  Mail,
+  Trophy,
+  Megaphone,
+  CalendarClock,
+  Users,
+  Video,
+  X,
+  Swords,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 import {
   getMessageNotificationLink,
-  resolveDashboardLinkForRole,
-} from "@/lib/notifications/links";
+  resolveNotificationLink as resolveStoredLink,
+} from '@/lib/notifications/links';
 
 interface Notification {
   id: string;
@@ -23,78 +34,110 @@ interface Notification {
   created_at: string;
 }
 
-function isVideoNotification(notification: Pick<Notification, "type" | "title" | "message">) {
+function isVideoNotification(notification: Pick<Notification, 'type' | 'title' | 'message'>) {
   const text = `${notification.title} ${notification.message}`.toLowerCase();
-  return notification.type === "video" || text.includes("video");
+  return notification.type === 'video' || text.includes('video');
 }
 
-export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize = "w-9 h-9", buttonRounded = "rounded-lg", closeSignal = 0, onOpen, onOpenChange, showBorder = true, buttonClassName = "" }: { iconSize?: string; buttonSize?: string; buttonRounded?: string; closeSignal?: number; onOpen?: () => void; onOpenChange?: (isOpen: boolean) => void; showBorder?: boolean; buttonClassName?: string }) {
+export default function NotificationsDropdown({
+  iconSize = 'h-4 w-4',
+  buttonSize = 'w-9 h-9',
+  buttonRounded = 'rounded-lg',
+  closeSignal = 0,
+  onOpen,
+  onOpenChange,
+  showBorder = true,
+  buttonClassName = '',
+}: {
+  iconSize?: string;
+  buttonSize?: string;
+  buttonRounded?: string;
+  closeSignal?: number;
+  onOpen?: () => void;
+  onOpenChange?: (isOpen: boolean) => void;
+  showBorder?: boolean;
+  buttonClassName?: string;
+}) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  // Ref (non state) perché loadNotifications gira anche dentro timer e callback realtime
+  const roleLoadedRef = useRef(false);
+  const lastSignatureRef = useRef('');
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPos, setDropdownPos] = useState({ bottom: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  useEffect(() => { if (closeSignal > 0) setIsOpen(false); }, [closeSignal]);
+  useEffect(() => {
+    if (closeSignal > 0) setIsOpen(false);
+  }, [closeSignal]);
 
   useEffect(() => {
     onOpenChange?.(isOpen);
   }, [isOpen, onOpenChange]);
 
   async function loadNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
     if (!user) return;
 
-    if (!currentUserRole) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+    const [profileResult, notificationsResult] = await Promise.all([
+      roleLoadedRef.current
+        ? Promise.resolve(null)
+        : supabase.from('profiles').select('role').eq('id', user.id).single(),
+      supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]);
 
-      if (profile?.role) {
-        setCurrentUserRole(profile.role);
-      }
+    if (profileResult?.data?.role) {
+      roleLoadedRef.current = true;
+      setCurrentUserRole(profileResult.data.role);
     }
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
+    const { data, error } = notificationsResult;
     if (data && !error) {
+      // Aggiorna lo stato solo se qualcosa è cambiato: evita re-render a vuoto
+      const signature = data.map((n) => `${n.id}:${n.is_read ? 1 : 0}`).join('|');
+      if (signature === lastSignatureRef.current) return;
+      lastSignatureRef.current = signature;
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     }
   }
 
   function resolveNotificationLink(notification: Notification): string | null {
-    if (notification.type === "message" && currentUserRole) {
+    if (notification.type === 'message' && currentUserRole) {
       return getMessageNotificationLink(currentUserRole);
     }
 
     let targetLink = notification.link || null;
 
-    if (notification.type === "booking" && notification.link === "/dashboard/admin/bookings") {
+    if (notification.type === 'booking' && notification.link === '/dashboard/admin/bookings') {
       const bookingSearchLink = buildBookingSearchLink(notification.message);
       if (bookingSearchLink) {
         targetLink = bookingSearchLink;
       }
     }
 
-    return resolveDashboardLinkForRole(targetLink, currentUserRole);
+    return resolveStoredLink(targetLink);
   }
 
   function buildBookingSearchLink(message: string): string | null {
-    const bookingPattern = /campo\s+(.+?)\s+per\s+il\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
-    const batchBookingPattern = /sul\s+(.+?)\s+a partire dal\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
+    const bookingPattern =
+      /campo\s+(.+?)\s+per\s+il\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
+    const batchBookingPattern =
+      /sul\s+(.+?)\s+a partire dal\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
 
     const bookingMatch = message.match(bookingPattern) || message.match(batchBookingPattern);
     if (!bookingMatch) {
@@ -110,45 +153,60 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
   }
 
   useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     loadNotifications();
 
+    // Aggiornamenti in tempo reale sulle notifiche dell'utente; il polling resta
+    // solo come rete di sicurezza, lento e a scheda visibile.
+    getSessionUser().then(({ data: { user } }) => {
+      if (cancelled || !user) return;
+      channel = supabase
+        .channel(`notifications-dropdown-${user.id}-${Math.random().toString(36).slice(2)}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          () => loadNotifications(),
+        )
+        .subscribe();
+    });
+
     const interval = setInterval(() => {
-      loadNotifications();
-    }, 5000);
+      if (document.visibilityState === 'visible') loadNotifications();
+    }, 60000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') loadNotifications();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (channel) supabase.removeChannel(channel);
     };
   }, []);
 
-  async function markAsRead(notificationId: string) {
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", notificationId);
-
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-  }
-
   async function markAllAsRead() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
     if (!user) return;
 
     await supabase
-      .from("notifications")
+      .from('notifications')
       .update({ is_read: true })
-      .eq("user_id", user.id)
-      .eq("is_read", false);
+      .eq('user_id', user.id)
+      .eq('is_read', false);
 
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
   }
 
   function getNotificationIcon(notification: Notification) {
-    const iconClass = "h-6 w-6 text-white";
+    const iconClass = 'h-6 w-6 text-white';
     const iconStroke = 2.5;
 
     if (isVideoNotification(notification)) {
@@ -156,20 +214,21 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
     }
 
     switch (notification.type) {
-      case "message":
+      case 'message':
         return <Mail className={iconClass} strokeWidth={iconStroke} />;
-      case "tournament":
+      case 'tournament':
         return <Trophy className={iconClass} strokeWidth={iconStroke} />;
-      case "announcement":
+      case 'announcement':
         return <Megaphone className={iconClass} strokeWidth={iconStroke} />;
-      case "booking": {
+      case 'booking': {
         const text = `${notification.title} ${notification.message}`.toLowerCase();
-        if (text.includes("lezione")) return <Users className={iconClass} strokeWidth={iconStroke} />;
+        if (text.includes('lezione'))
+          return <Users className={iconClass} strokeWidth={iconStroke} />;
         return <CalendarClock className={iconClass} strokeWidth={iconStroke} />;
       }
-      case "arena_challenge":
+      case 'arena_challenge':
         return <Swords className={iconClass} strokeWidth={iconStroke} />;
-      case "arena_challenge_booked":
+      case 'arena_challenge_booked':
         return <Swords className={iconClass} strokeWidth={iconStroke} />;
       default:
         return <Bell className={iconClass} strokeWidth={iconStroke} />;
@@ -178,23 +237,23 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
 
   function getNotificationBadgeColor(notification: Notification): string {
     const text = `${notification.title} ${notification.message}`.toLowerCase();
-    const isLezione = notification.type === "booking" && text.includes("lezione");
+    const isLezione = notification.type === 'booking' && text.includes('lezione');
 
-    if (isLezione) return "#023047";
+    if (isLezione) return '#023047';
 
     const typeColorMap: Record<string, string> = {
-      booking: "var(--secondary)",
-      arena_challenge: "var(--secondary)",
-      arena_challenge_booked: "var(--secondary)",
-      tournament: "#6d28d9",
-      message: "#0369a1",
-      success: "#15803d",
-      warning: "#b45309",
-      error: "#b91c1c",
-      announcement: "var(--secondary)",
+      booking: 'var(--secondary)',
+      arena_challenge: 'var(--secondary)',
+      arena_challenge_booked: 'var(--secondary)',
+      tournament: '#6d28d9',
+      message: '#0369a1',
+      success: '#15803d',
+      warning: '#b45309',
+      error: '#b91c1c',
+      announcement: 'var(--secondary)',
     };
 
-    return typeColorMap[notification.type] ?? "var(--secondary)";
+    return typeColorMap[notification.type] ?? 'var(--secondary)';
   }
 
   const notificationItem = (notification: Notification) => (
@@ -206,7 +265,7 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
         setIsOpen(false);
       }}
       className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-        !notification.is_read ? "bg-blue-50/50" : ""
+        !notification.is_read ? 'bg-blue-50/50' : ''
       }`}
     >
       <div className="flex gap-3">
@@ -217,12 +276,8 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
           {getNotificationIcon(notification)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 mb-1">
-            {notification.title}
-          </p>
-          <p className="text-xs text-gray-600 mb-2">
-            {notification.message}
-          </p>
+          <p className="text-sm font-semibold text-gray-900 mb-1">{notification.title}</p>
+          <p className="text-xs text-gray-600 mb-2">{notification.message}</p>
           <span className="text-xs text-gray-400">
             {formatDistanceToNow(new Date(notification.created_at), {
               addSuffix: true,
@@ -254,7 +309,6 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
             onOpen?.();
             if (buttonRef.current) {
               const rect = buttonRef.current.getBoundingClientRect();
-              const dropdownWidth = 384;
               setDropdownPos({
                 bottom: window.innerHeight - rect.top + 8,
                 left: rect.left,
@@ -262,7 +316,13 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
             }
           }
         }}
-        className={`relative flex items-center justify-center ${buttonSize} ${buttonRounded} ${showBorder ? 'border' : ''} transition-colors ${isOpen ? "bg-secondary text-white border-secondary" : "bg-white text-secondary border-black/10 hover:bg-secondary hover:text-white hover:border-secondary"} ${buttonClassName}`}
+        className={`relative flex items-center justify-center ${buttonSize} ${buttonRounded} ${
+          showBorder ? 'border' : ''
+        } transition-colors ${
+          isOpen
+            ? 'bg-secondary text-white border-secondary'
+            : 'bg-white text-secondary border-black/10 hover:bg-secondary hover:text-white hover:border-secondary'
+        } ${buttonClassName}`}
         title="Notifiche"
       >
         {isOpen ? (
@@ -272,66 +332,83 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
         )}
         {!isOpen && unreadCount > 0 && (
           <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-white text-secondary text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-secondary">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {/* Desktop Dropdown + overlay — portaled to body to escape sidebar stacking context */}
-      {mounted && isOpen && createPortal(
-        <>
-          {/* Overlay */}
-          <div
-            className="hidden lg:block fixed inset-0"
-            style={{ zIndex: 9998 }}
-            onClick={() => setIsOpen(false)}
-          />
-          {/* Dropdown */}
-          <div
-            className="hidden lg:block fixed w-96 bg-white rounded-lg shadow-xl border border-black/10"
-            style={{ zIndex: 9999, bottom: dropdownPos.bottom, left: dropdownPos.left }}
-          >
-            <div className="px-4 py-3 bg-secondary border-b border-black/10 flex items-center justify-between rounded-t-md">
-              <h3 className="font-semibold text-white">Notifiche</h3>
+      {mounted &&
+        isOpen &&
+        createPortal(
+          <>
+            {/* Overlay */}
+            <div
+              className="hidden lg:block fixed inset-0"
+              style={{ zIndex: 9998 }}
+              onClick={() => setIsOpen(false)}
+            />
+            {/* Dropdown */}
+            <div
+              className="hidden lg:block fixed w-96 bg-white rounded-lg shadow-xl border border-black/10"
+              style={{ zIndex: 9999, bottom: dropdownPos.bottom, left: dropdownPos.left }}
+            >
+              <div className="px-4 py-3 bg-secondary border-b border-black/10 flex items-center justify-between rounded-t-md">
+                <h3 className="font-semibold text-white">Notifiche</h3>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto">
+                {notifications.length === 0 ? (
+                  emptyState
+                ) : (
+                  <div>{notifications.map(notificationItem)}</div>
+                )}
+              </div>
             </div>
-            <div className="max-h-[400px] overflow-y-auto">
-              {notifications.length === 0 ? emptyState : <div>{notifications.map(notificationItem)}</div>}
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
 
       {/* Mobile backdrop + panel — portaled to body to escape header stacking context */}
-      {mounted && createPortal(
-        <>
-          {/* Backdrop */}
-          <div
-            className={`lg:hidden fixed inset-0 bg-white transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-            style={{ zIndex: 108 }}
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
-          {/* Panel */}
-          <div
-            className={`lg:hidden fixed top-[6rem] left-6 right-6 bg-white rounded-lg border border-black/10 shadow-lg [transform:translateZ(0)] flex flex-col max-h-[calc(100dvh-7rem)] overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
-            style={{ zIndex: 109 }}
-          >
-            <div className="px-4 py-3 bg-secondary border-b border-black/10 flex items-center justify-between flex-shrink-0">
-              <h3 className="font-semibold text-white">Notifiche</h3>
-              {unreadCount > 0 && (
-                <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-semibold text-white">
-                  {unreadCount}
-                </span>
-              )}
+      {mounted &&
+        createPortal(
+          <>
+            {/* Backdrop */}
+            <div
+              className={`lg:hidden fixed inset-0 bg-white transition-opacity duration-300 ${
+                isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+              style={{ zIndex: 108 }}
+              onClick={() => setIsOpen(false)}
+              aria-hidden="true"
+            />
+            {/* Panel */}
+            <div
+              className={`lg:hidden fixed top-[6rem] left-6 right-6 bg-white rounded-lg border border-black/10 shadow-lg [transform:translateZ(0)] flex flex-col max-h-[calc(100dvh-7rem)] overflow-hidden transition-all duration-300 ease-in-out ${
+                isOpen
+                  ? 'opacity-100 translate-y-0 pointer-events-auto'
+                  : 'opacity-0 -translate-y-3 pointer-events-none'
+              }`}
+              style={{ zIndex: 109 }}
+            >
+              <div className="px-4 py-3 bg-secondary border-b border-black/10 flex items-center justify-between flex-shrink-0">
+                <h3 className="font-semibold text-white">Notifiche</h3>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-semibold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {notifications.length === 0 ? (
+                  emptyState
+                ) : (
+                  <div>{notifications.map(notificationItem)}</div>
+                )}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {notifications.length === 0 ? emptyState : <div>{notifications.map(notificationItem)}</div>}
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

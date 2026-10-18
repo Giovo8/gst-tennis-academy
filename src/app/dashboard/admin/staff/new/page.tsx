@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import { CheckCircle, AlertCircle, Loader2, Upload, Link as LinkIcon, X } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+import { CheckCircle, AlertCircle, Loader2, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 type FormData = {
@@ -23,26 +23,26 @@ type FormData = {
 export default function NewStaffPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const editId = searchParams.get("id");
+  const editId = searchParams.get('id');
   const isEditMode = !!editId;
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditMode);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [imageUrlInput, setImageUrlInput] = useState('');
 
   const [formData, setFormData] = useState<FormData>({
-    full_name: "",
-    role: "",
-    bio: "",
-    image_url: "",
-    facebook_url: "",
-    instagram_url: "",
-    linkedin_url: "",
-    twitter_url: "",
+    full_name: '',
+    role: '',
+    bio: '',
+    image_url: '',
+    facebook_url: '',
+    instagram_url: '',
+    linkedin_url: '',
+    twitter_url: '',
     order_index: 0,
     active: true,
   });
@@ -55,30 +55,26 @@ export default function NewStaffPage() {
 
   async function loadStaffMember() {
     try {
-      const { data, error } = await supabase
-        .from("staff")
-        .select("*")
-        .eq("id", editId)
-        .single();
+      const { data, error } = await supabase.from('staff').select('*').eq('id', editId).single();
 
       if (error) throw error;
 
       if (data) {
         setFormData({
-          full_name: data.full_name || "",
-          role: data.role || "",
-          bio: data.bio || "",
-          image_url: data.image_url || "",
-          facebook_url: data.facebook_url || "",
-          instagram_url: data.instagram_url || "",
-          linkedin_url: data.linkedin_url || "",
-          twitter_url: data.twitter_url || "",
+          full_name: data.full_name || '',
+          role: data.role || '',
+          bio: data.bio || '',
+          image_url: data.image_url || '',
+          facebook_url: data.facebook_url || '',
+          instagram_url: data.instagram_url || '',
+          linkedin_url: data.linkedin_url || '',
+          twitter_url: data.twitter_url || '',
           order_index: data.order_index || 0,
           active: data.active ?? true,
         });
       }
-    } catch (err: any) {
-      setError("Errore nel caricamento dei dati");
+    } catch {
+      setError('Errore nel caricamento dei dati');
     } finally {
       setLoadingData(false);
     }
@@ -87,8 +83,8 @@ export default function NewStaffPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     try {
       const dataToSave = {
@@ -105,43 +101,38 @@ export default function NewStaffPage() {
       };
 
       if (isEditMode) {
-        const { error } = await supabase
-          .from("staff")
-          .update(dataToSave)
-          .eq("id", editId);
+        const { error } = await supabase.from('staff').update(dataToSave).eq('id', editId);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("staff")
-          .insert(dataToSave);
+        const { error } = await supabase.from('staff').insert(dataToSave);
 
         if (error) throw error;
       }
 
-      setSuccess(isEditMode ? "Membro aggiornato con successo!" : "Membro creato con successo!");
+      setSuccess(isEditMode ? 'Membro aggiornato con successo!' : 'Membro creato con successo!');
       setTimeout(() => {
-        router.push("/dashboard/admin/staff");
+        router.push('/dashboard/admin/staff');
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || "Errore durante il salvataggio");
+    } catch (err) {
+      setError(err.message || 'Errore durante il salvataggio');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Sei sicuro di voler eliminare questo membro dello staff?")) {
+    if (!confirm('Sei sicuro di voler eliminare questo membro dello staff?')) {
       return;
     }
 
     try {
-      const { error } = await supabase.from("staff").delete().eq("id", editId);
+      const { error } = await supabase.from('staff').delete().eq('id', editId);
 
       if (error) throw error;
 
-      router.push("/dashboard/admin/staff");
-    } catch (err: any) {
+      router.push('/dashboard/admin/staff');
+    } catch {
       setError("Errore durante l'eliminazione");
     }
   }
@@ -155,7 +146,7 @@ export default function NewStaffPage() {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       toast.warning("Il file deve essere un'immagine");
       return;
     }
@@ -166,22 +157,22 @@ export default function NewStaffPage() {
     try {
       // Validate file before upload
       if (file.size === 0) {
-        throw new Error("Il file è vuoto");
+        throw new Error('Il file è vuoto');
       }
 
       // Create FormData - critical for mobile compatibility
       const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
+      uploadFormData.append('file', file);
       if (formData.image_url) {
-        uploadFormData.append("oldImageUrl", formData.image_url);
+        uploadFormData.append('oldImageUrl', formData.image_url);
       }
 
       // Add timeout for mobile network reliability
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const response = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const response = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: uploadFormData,
         signal: controller.signal,
       });
@@ -189,7 +180,7 @@ export default function NewStaffPage() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        let errorMessage = "Upload failed";
+        let errorMessage = 'Upload failed';
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || `HTTP ${response.status}`;
@@ -200,23 +191,22 @@ export default function NewStaffPage() {
       }
 
       const responseData = await response.json();
-      
+
       if (!responseData.url) {
-        throw new Error("Server non ha restituito un URL valido");
+        throw new Error('Server non ha restituito un URL valido');
       }
 
       setFormData({ ...formData, image_url: responseData.url });
-
     } catch (error) {
-      let errorMsg = "Errore sconosciuto";
-      
+      let errorMsg = 'Errore sconosciuto';
+
       if (error instanceof Error) {
         errorMsg = error.message;
-      } else if (typeof error === "string") {
+      } else if (typeof error === 'string') {
         errorMsg = error;
       }
 
-      console.error("Upload error details:", {
+      console.error('Upload error details:', {
         message: errorMsg,
         fileName: file?.name,
         fileSize: file?.size,
@@ -226,31 +216,32 @@ export default function NewStaffPage() {
 
       // Provide specific error messages based on error type
       let userMessage = "Errore durante l'upload dell'immagine";
-      
-      if (errorMsg.includes("abort")) {
-        userMessage = "⏱️ Timeout durante l'upload. La connessione è troppo lenta. Riprova con una connessione migliore.";
-      } else if (errorMsg.includes("Network") || errorMsg.includes("fetch")) {
-        userMessage = "🌐 Errore di connessione. Verifica la connessione internet e riprova.";
-      } else if (errorMsg.includes("File too large")) {
+
+      if (errorMsg.includes('abort')) {
+        userMessage =
+          "⏱️ Timeout durante l'upload. La connessione è troppo lenta. Riprova con una connessione migliore.";
+      } else if (errorMsg.includes('Network') || errorMsg.includes('fetch')) {
+        userMessage = '🌐 Errore di connessione. Verifica la connessione internet e riprova.';
+      } else if (errorMsg.includes('File too large')) {
         userMessage = "📦 L'immagine è troppo grande. Massimo 5MB.";
-      } else if (errorMsg.includes("must be an image")) {
+      } else if (errorMsg.includes('must be an image')) {
         userMessage = "🖼️ Il file deve essere un'immagine valida (JPG, PNG, GIF, WebP).";
-      } else if (errorMsg.includes("vuoto")) {
-        userMessage = "⚠️ Il file è vuoto o corrotto.";
-      } else if (errorMsg.includes("URL valido")) {
-        userMessage = "❌ Errore server: il file non è stato salvato correttamente.";
-      } else if (errorMsg.includes("HTTP")) {
+      } else if (errorMsg.includes('vuoto')) {
+        userMessage = '⚠️ Il file è vuoto o corrotto.';
+      } else if (errorMsg.includes('URL valido')) {
+        userMessage = '❌ Errore server: il file non è stato salvato correttamente.';
+      } else if (errorMsg.includes('HTTP')) {
         userMessage = `❌ ${errorMsg}`;
       } else {
         userMessage = `❌ ${errorMsg}`;
       }
-      
+
       toast.error(userMessage);
     } finally {
       setUploadingImage(false);
       // Reset file input
       const fileInput = document.getElementById('staff-image-upload') as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
+      if (fileInput) fileInput.value = '';
     }
   }
 
@@ -260,12 +251,12 @@ export default function NewStaffPage() {
     try {
       new URL(imageUrlInput);
     } catch {
-      toast.warning("Inserisci un URL valido");
+      toast.warning('Inserisci un URL valido');
       return;
     }
 
     setFormData({ ...formData, image_url: imageUrlInput });
-    setImageUrlInput("");
+    setImageUrlInput('');
     setShowImageModal(false);
   }
 
@@ -286,11 +277,11 @@ export default function NewStaffPage() {
           <Link href="/dashboard/admin/staff" className="hover:text-secondary/80 transition-colors">
             Staff
           </Link>
-          {" › "}
-          <span>{isEditMode ? "Modifica Membro" : "Nuovo Membro"}</span>
+          {' › '}
+          <span>{isEditMode ? 'Modifica Membro' : 'Nuovo Membro'}</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">
-          {isEditMode ? "Modifica Membro" : "Nuovo Membro"}
+          {isEditMode ? 'Modifica Membro' : 'Nuovo Membro'}
         </h1>
       </div>
 
@@ -306,7 +297,7 @@ export default function NewStaffPage() {
           </div>
         </div>
       )}
-      
+
       {success && (
         <div className="mt-2">
           <div className="bg-green-50 rounded-xl border border-green-200 p-4 flex items-start gap-3">
@@ -324,7 +315,9 @@ export default function NewStaffPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Membro</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                Informazioni Membro
+              </h2>
             </div>
             <div className="p-6 space-y-6">
               {/* Nome Completo */}
@@ -395,12 +388,12 @@ export default function NewStaffPage() {
                       ) : (
                         <Upload className="h-4 w-4" />
                       )}
-                      {formData.image_url ? "Cambia immagine" : "Carica immagine"}
+                      {formData.image_url ? 'Cambia immagine' : 'Carica immagine'}
                     </button>
                     {formData.image_url && (
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, image_url: "" })}
+                        onClick={() => setFormData({ ...formData, image_url: '' })}
                         className="p-2.5 rounded-lg border border-gray-300 bg-white text-secondary hover:bg-gray-50 transition-all"
                         title="Rimuovi immagine"
                       >
@@ -507,7 +500,9 @@ export default function NewStaffPage() {
                   <input
                     type="number"
                     value={formData.order_index}
-                    onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, order_index: parseInt(e.target.value) || 0 })
+                    }
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
@@ -548,7 +543,9 @@ export default function NewStaffPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full ${isEditMode ? "sm:flex-1" : "sm:w-full"} flex items-center justify-center px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`w-full ${
+                isEditMode ? 'sm:flex-1' : 'sm:w-full'
+              } flex items-center justify-center px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {loading ? (
                 <>
@@ -556,7 +553,7 @@ export default function NewStaffPage() {
                   Salvataggio...
                 </>
               ) : (
-                <>{isEditMode ? "Aggiorna Membro" : "Crea Membro"}</>
+                <>{isEditMode ? 'Aggiorna Membro' : 'Crea Membro'}</>
               )}
             </button>
           </div>
@@ -598,9 +595,7 @@ export default function NewStaffPage() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Massimo 5MB - Formati: JPG, PNG, GIF
-                </p>
+                <p className="text-xs text-gray-500 mt-2">Massimo 5MB - Formati: JPG, PNG, GIF</p>
               </div>
 
               {/* Divider */}

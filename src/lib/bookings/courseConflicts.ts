@@ -1,4 +1,4 @@
-import { parseItalyLocalToUTC } from "./bookingTimeRestrictions";
+import { parseItalyLocalToUTC } from './bookingTimeRestrictions';
 
 /**
  * Logica condivisa per rilevare la sovrapposizione tra un corso programmato
@@ -37,39 +37,39 @@ export interface CourseScheduleRow {
 
 /** Campi da selezionare dalla tabella `courses` per il controllo conflitti. */
 export const COURSE_CONFLICT_SELECT =
-  "id, name, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides";
+  'id, name, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides';
 
 const WEEKDAY_MAP: Record<string, string> = {
-  Sun: "dom",
-  Mon: "lun",
-  Tue: "mar",
-  Wed: "mer",
-  Thu: "gio",
-  Fri: "ven",
-  Sat: "sab",
+  Sun: 'dom',
+  Mon: 'lun',
+  Tue: 'mar',
+  Wed: 'mer',
+  Thu: 'gio',
+  Fri: 'ven',
+  Sat: 'sab',
 };
 
 const TIME_RANGE_RE = /(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/;
 
 /** Data locale italiana (YYYY-MM-DD) per un dato istante. */
-export function italyDateStr(instant: Date): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Rome",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
+function italyDateStr(instant: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Rome',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   }).formatToParts(instant);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}`;
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 /** Nome breve del giorno della settimana italiano (dom..sab) per un istante. */
-export function italyDayName(instant: Date): string {
-  const wd = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Rome",
-    weekday: "short",
+function italyDayName(instant: Date): string {
+  const wd = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome',
+    weekday: 'short',
   }).format(instant);
-  return WEEKDAY_MAP[wd] ?? "";
+  return WEEKDAY_MAP[wd] ?? '';
 }
 
 /** Campi di un periodo: `courts` (multi-campo) se presente, altrimenti `court` singolo legacy. */
@@ -87,9 +87,9 @@ function periodCourts(p: CourseSchedulePeriod | undefined | null): string[] {
  * Un periodo può occupare più campi contemporaneamente (stesso giorno/ora).
  */
 export function resolveCourseCourtsForDate(
-  course: Pick<CourseScheduleRow, "court_name" | "schedule_periods" | "lesson_overrides">,
+  course: Pick<CourseScheduleRow, 'court_name' | 'schedule_periods' | 'lesson_overrides'>,
   dateStr: string,
-  dayCode: string
+  dayCode: string,
 ): string[] {
   if (course.lesson_overrides?.[dateStr]) {
     return [course.lesson_overrides[dateStr]];
@@ -108,7 +108,7 @@ export function resolveCourseCourtsForDate(
  * senza riferimento a una data specifica (per viste elenco/ricerca).
  */
 export function courseAllCourtsSummary(
-  course: Pick<CourseScheduleRow, "court_name" | "schedule_periods">
+  course: Pick<CourseScheduleRow, 'court_name' | 'schedule_periods'>,
 ): string[] {
   const periods = course.schedule_periods ?? [];
   const fromPeriods = periods.flatMap((p) => periodCourts(p));
@@ -125,7 +125,7 @@ export function courseOccupiesSlot(
   course: CourseScheduleRow,
   court: string,
   startISO: string,
-  endISO: string
+  endISO: string,
 ): boolean {
   const bookingStart = new Date(startISO);
   const bookingEnd = new Date(endISO);
@@ -175,7 +175,7 @@ export function findCourseConflict(
   courses: CourseScheduleRow[] | null | undefined,
   court: string,
   startISO: string,
-  endISO: string
+  endISO: string,
 ): CourseScheduleRow | null {
   for (const course of courses ?? []) {
     if (courseOccupiesSlot(course, court, startISO, endISO)) return course;
@@ -184,7 +184,7 @@ export function findCourseConflict(
 }
 
 /** Slot prenotazione minimale usato per il controllo inverso (corso → prenotazioni). */
-export interface BookingSlotLike {
+interface BookingSlotLike {
   id?: string;
   court: string;
   start_time: string;
@@ -198,9 +198,9 @@ export interface BookingSlotLike {
  */
 export function findBookingsBlockedByCourse(
   course: CourseScheduleRow,
-  bookings: BookingSlotLike[] | null | undefined
+  bookings: BookingSlotLike[] | null | undefined,
 ): BookingSlotLike[] {
   return (bookings ?? []).filter((b) =>
-    courseOccupiesSlot(course, b.court, b.start_time, b.end_time)
+    courseOccupiesSlot(course, b.court, b.start_time, b.end_time),
   );
 }

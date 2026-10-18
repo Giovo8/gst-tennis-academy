@@ -1,18 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import {
-  CalendarPlus,
-  CalendarClock,
-  Trophy,
-  Video,
-  Swords,
-} from "lucide-react";
-import WeatherCard from "@/components/dashboard/WeatherCard";
-import AthleteNewsCarousel from "@/components/dashboard/AthleteNewsCarousel";
-import LiveScoresSection from "@/components/landing/LiveScoresSection";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { CalendarPlus, CalendarClock, Trophy, Video, Swords } from 'lucide-react';
+import WeatherCard from '@/components/dashboard/WeatherCard';
+import AthleteNewsCarousel from '@/components/dashboard/AthleteNewsCarousel';
+import LiveScoresSection from '@/components/landing/LiveScoresSection';
 
 interface UpcomingBooking {
   id: string;
@@ -33,7 +28,13 @@ interface UpcomingCourseLesson {
 }
 
 const COURSE_DAY_INDEX: Record<string, number> = {
-  dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
+  dom: 0,
+  lun: 1,
+  mar: 2,
+  mer: 3,
+  gio: 4,
+  ven: 5,
+  sab: 6,
 };
 
 function computeCourseLessonDates(course: {
@@ -55,12 +56,12 @@ function computeCourseLessonDates(course: {
 
 export default function AtletaDashboard() {
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("");
   const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingCourseLesson[]>([]);
 
-  const dashboardCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const dashboardCardHeaderClassName = "px-6 py-4 border-b border-black/10 flex items-center gap-2 bg-gray-50";
+  const dashboardCardClassName = 'bg-white rounded-lg border border-black/10 overflow-hidden';
+  const dashboardCardHeaderClassName =
+    'px-6 py-4 border-b border-black/10 flex items-center gap-2 bg-gray-50';
 
   useEffect(() => {
     void loadDashboardData();
@@ -69,7 +70,7 @@ export default function AtletaDashboard() {
   async function loadDashboardData() {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await getSessionUser();
     if (!user) {
       setLoading(false);
       return;
@@ -77,53 +78,54 @@ export default function AtletaDashboard() {
 
     const now = new Date().toISOString();
 
-    // Round 1: profilo, prenotazioni e iscrizioni ai corsi in parallelo
-    const [{ data: profile }, { data: bookingsData }, { data: enrollments }] = await Promise.all([
-      supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+    // Round 1: prenotazioni e iscrizioni ai corsi in parallelo
+    const [{ data: bookingsData }, { data: enrollments }] = await Promise.all([
       supabase
-        .from("bookings")
-        .select("id, court, type, notes, start_time, end_time, coach_id")
-        .eq("user_id", user.id)
-        .neq("status", "cancelled")
-        .gte("start_time", now)
-        .order("start_time", { ascending: true })
+        .from('bookings')
+        .select('id, court, type, notes, start_time, end_time, coach_id')
+        .eq('user_id', user.id)
+        .neq('status', 'cancelled')
+        .gte('start_time', now)
+        .order('start_time', { ascending: true })
         .limit(20),
-      supabase.from("course_enrollments").select("course_id").eq("user_id", user.id),
+      supabase.from('course_enrollments').select('course_id').eq('user_id', user.id),
     ]);
 
-    if (profile) setUserName(profile.full_name || "Atleta");
-
     const bookings = (bookingsData || []) as UpcomingBooking[];
-    const coachIds = Array.from(new Set(bookings.map((b) => b.coach_id).filter(Boolean))) as string[];
+    const coachIds = Array.from(
+      new Set(bookings.map((b) => b.coach_id).filter(Boolean)),
+    ) as string[];
     const enrollmentIds = (enrollments ?? []).map((e: { course_id: string }) => e.course_id);
 
     // Round 2: coaches e corsi in parallelo (dipendono entrambi dal round 1)
     const [coachesData, coursesData] = await Promise.all([
       coachIds.length > 0
-        ? supabase.from("profiles").select("id, full_name").in("id", coachIds).then((r) => r.data)
+        ? supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', coachIds)
+            .then((r) => r.data)
         : Promise.resolve(null),
       enrollmentIds.length > 0
         ? supabase
-            .from("courses")
-            .select("id, name, schedule_days, schedule_time, start_date, end_date")
-            .in("id", enrollmentIds)
-            .eq("is_active", true)
+            .from('courses')
+            .select('id, name, schedule_days, schedule_time, start_date, end_date')
+            .in('id', enrollmentIds)
+            .eq('is_active', true)
             .then((r) => r.data)
         : Promise.resolve(null),
     ]);
 
     const coachNameById = new Map<string, string>();
     for (const coach of coachesData || []) {
-      coachNameById.set(coach.id, coach.full_name || "Maestro");
+      coachNameById.set(coach.id, coach.full_name || 'Maestro');
     }
 
     setUpcomingBookings(
       bookings.slice(0, 10).map((booking) => ({
         ...booking,
-        coach_name: booking.coach_id
-          ? coachNameById.get(booking.coach_id) || "Maestro"
-          : undefined,
-      }))
+        coach_name: booking.coach_id ? coachNameById.get(booking.coach_id) || 'Maestro' : undefined,
+      })),
     );
 
     if (enrollmentIds.length > 0) {
@@ -169,7 +171,10 @@ export default function AtletaDashboard() {
 
       <WeatherCard />
 
-      <Link href="/dashboard/atleta/bookings" className="block bg-secondary rounded-lg text-white overflow-hidden hover:opacity-90 transition-opacity">
+      <Link
+        href="/dashboard/atleta/bookings"
+        className="block bg-secondary rounded-lg text-white overflow-hidden hover:opacity-90 transition-opacity"
+      >
         <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
@@ -177,7 +182,9 @@ export default function AtletaDashboard() {
             </div>
             <span className="font-bold text-lg">Prossimi Impegni</span>
           </div>
-          <span className="text-2xl font-bold leading-none">{upcomingBookings.length + upcomingLessons.length}</span>
+          <span className="text-2xl font-bold leading-none">
+            {upcomingBookings.length + upcomingLessons.length}
+          </span>
         </div>
       </Link>
 
@@ -207,25 +214,37 @@ export default function AtletaDashboard() {
 
       {/* AZIONI RAPIDE */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Link href="/dashboard/atleta/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/atleta/bookings/new"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <CalendarPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-medium text-white">Nuova Prenotazione</span>
         </Link>
-        <Link href="/dashboard/atleta/arena" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/atleta/arena"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <Swords className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-medium text-white">Vai ad Arena</span>
         </Link>
-        <Link href="/dashboard/atleta/videos" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/atleta/videos"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-medium text-white">Apri Video Lab</span>
         </Link>
-        <Link href="/dashboard/atleta/tornei" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/atleta/tornei"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <Trophy className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>

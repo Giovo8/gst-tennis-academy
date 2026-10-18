@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
 import logger from '@/lib/logger/secure-logger';
 
 export async function createClient() {
@@ -17,7 +16,7 @@ export async function createClient() {
         set(name: string, value: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value, ...options });
-          } catch (error) {
+          } catch {
             // Expected when called from a Server Component; sessions are
             // refreshed by middleware. Logged at debug for diagnostics.
             logger.debug('Supabase cookie set skipped (Server Component context)', {
@@ -28,7 +27,7 @@ export async function createClient() {
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
+          } catch {
             // Expected when called from a Server Component; sessions are
             // refreshed by middleware. Logged at debug for diagnostics.
             logger.debug('Supabase cookie remove skipped (Server Component context)', {
@@ -37,6 +36,6 @@ export async function createClient() {
           }
         },
       },
-    }
+    },
   );
 }

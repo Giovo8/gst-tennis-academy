@@ -1,10 +1,14 @@
-import env from "@/lib/config/env";
-import logger from "@/lib/logger/secure-logger";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getEmailFromAddress, getResendClient } from "@/lib/email/resend-client";
-import { logEmailDispatch } from "@/lib/email/email-log";
-import { getUsersDashboardLinkForRole } from "@/lib/notifications/links";
-import { normalizeEmail, escapeHtml, getGestoreRecipients, type EmailRecipient } from "@/lib/email/email-utils";
+import env from '@/lib/config/env';
+import logger from '@/lib/logger/secure-logger';
+import { getEmailFromAddress, getResendClient } from '@/lib/email/resend-client';
+import { logEmailDispatch } from '@/lib/email/email-log';
+import { getUsersDashboardLinkForRole } from '@/lib/notifications/links';
+import {
+  normalizeEmail,
+  escapeHtml,
+  getGestoreRecipients,
+  type EmailRecipient,
+} from '@/lib/email/email-utils';
 
 type SendSignupNotificationInput = {
   userId: string;
@@ -16,15 +20,15 @@ type SendSignupNotificationInput = {
   notifyAthlete?: boolean;
 };
 
-type SignupRecipientRole = "gestore" | "atleta";
+type SignupRecipientRole = 'gestore' | 'atleta';
 
 type SignupRecipient = EmailRecipient & {
   role: SignupRecipientRole;
 };
 
 function getAthleteRecipient(params: SendSignupNotificationInput): SignupRecipient | null {
-  const normalizedRole = String(params.role || "").toLowerCase();
-  if (!params.notifyAthlete || normalizedRole !== "atleta") {
+  const normalizedRole = String(params.role || '').toLowerCase();
+  if (!params.notifyAthlete || normalizedRole !== 'atleta') {
     return null;
   }
 
@@ -37,16 +41,21 @@ function getAthleteRecipient(params: SendSignupNotificationInput): SignupRecipie
     id: params.userId,
     email: normalizedEmail,
     full_name: params.fullName,
-    role: "atleta",
+    role: 'atleta',
   };
 }
 
-async function resolveSignupRecipients(params: SendSignupNotificationInput): Promise<SignupRecipient[]> {
+async function resolveSignupRecipients(
+  params: SendSignupNotificationInput,
+): Promise<SignupRecipient[]> {
   const recipientsByEmail = new Map<string, SignupRecipient>();
 
   const gestoriRecipients = await getGestoreRecipients();
   for (const recipient of gestoriRecipients) {
-    recipientsByEmail.set(recipient.email, { ...recipient, role: "gestore" as SignupRecipientRole });
+    recipientsByEmail.set(recipient.email, {
+      ...recipient,
+      role: 'gestore' as SignupRecipientRole,
+    });
   }
 
   const athleteRecipient = getAthleteRecipient(params);
@@ -64,26 +73,31 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
 
     const recipients = await resolveSignupRecipients(params);
     if (recipients.length === 0) {
-      logger.warn("No recipients found for signup email", {
+      logger.warn('No recipients found for signup email', {
         userId: params.userId,
       });
       return;
     }
 
-    const registeredAtLabel = new Date().toLocaleString("it-IT");
-    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
+    const registeredAtLabel = new Date().toLocaleString('it-IT');
+    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, '');
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
-    const safePhone = params.phone?.trim() || "n/d";
-    const safeInviteCode = params.inviteCode?.trim() || "n/d";
+    const safePhone = params.phone?.trim() || 'n/d';
+    const safeInviteCode = params.inviteCode?.trim() || 'n/d';
 
     const subject = `Nuova registrazione utente - ${params.fullName}`;
 
     const results = await Promise.all(
       recipients.map(async (recipient) => {
-        const userUrl = `${appBaseUrl}${getUsersDashboardLinkForRole(recipient.role, params.userId)}`;
+        const userUrl = `${appBaseUrl}${getUsersDashboardLinkForRole(
+          recipient.role,
+          params.userId,
+        )}`;
         const usersUrl = `${appBaseUrl}${getUsersDashboardLinkForRole(recipient.role)}`;
-        const primaryCtaLabel = recipient.role === "atleta" ? "Apri il tuo profilo" : "Apri dettaglio utente";
-        const secondaryCtaLabel = recipient.role === "atleta" ? "Apri dashboard atleta" : "Apri elenco utenti";
+        const primaryCtaLabel =
+          recipient.role === 'atleta' ? 'Apri il tuo profilo' : 'Apri dettaglio utente';
+        const secondaryCtaLabel =
+          recipient.role === 'atleta' ? 'Apri dashboard atleta' : 'Apri elenco utenti';
 
         const html = `
           <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
@@ -102,13 +116,27 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
             <div style="padding: 18px; background: #ffffff;">
               <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova registrazione completata</h2>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
-                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Nome completo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.fullName)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.email)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Ruolo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.role)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Telefono</strong></td><td style="padding: 8px 10px;">${escapeHtml(safePhone)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Invite code</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeInviteCode)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID utente</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.userId)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Registrato il</strong></td><td style="padding: 8px 10px;">${escapeHtml(registeredAtLabel)}</td></tr>
+                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Nome completo</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  params.fullName,
+                )}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  params.email,
+                )}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Ruolo</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  params.role,
+                )}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Telefono</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  safePhone,
+                )}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Invite code</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  safeInviteCode,
+                )}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID utente</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  params.userId,
+                )}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Registrato il</strong></td><td style="padding: 8px 10px;">${escapeHtml(
+                  registeredAtLabel,
+                )}</td></tr>
               </table>
               <p style="margin: 10px 0 0 0;">
                 <a href="${userUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">${primaryCtaLabel}</a>
@@ -121,8 +149,8 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
         `;
 
         const text = [
-          "Nuova registrazione completata",
-          "",
+          'Nuova registrazione completata',
+          '',
           `Nome completo: ${params.fullName}`,
           `Email: ${params.email}`,
           `Ruolo: ${params.role}`,
@@ -130,10 +158,10 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
           `Invite code: ${safeInviteCode}`,
           `ID utente: ${params.userId}`,
           `Registrato il: ${registeredAtLabel}`,
-          "",
+          '',
           `${primaryCtaLabel}: ${userUrl}`,
           `${secondaryCtaLabel}: ${usersUrl}`,
-        ].join("\n");
+        ].join('\n');
 
         const { data, error } = await resend.emails.send({
           from: getEmailFromAddress(),
@@ -144,7 +172,7 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
         });
 
         if (error) {
-          logger.error("Failed to send signup email notification", error, {
+          logger.error('Failed to send signup email notification', error, {
             userId: params.userId,
             recipientEmail: recipient.email,
             recipientRole: recipient.role,
@@ -155,11 +183,11 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
             recipientName: recipient.full_name || null,
             recipientUserId: recipient.id || null,
             subject,
-            templateName: "user_registered_gestore_notification",
-            status: "failed",
-            provider: "resend",
+            templateName: 'user_registered_gestore_notification',
+            status: 'failed',
+            provider: 'resend',
             providerMessageId: null,
-            errorMessage: (error as { message?: string })?.message || "send_failed",
+            errorMessage: (error as { message?: string })?.message || 'send_failed',
             metadata: {
               userId: params.userId,
               recipientRole: recipient.role,
@@ -175,9 +203,9 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
           recipientName: recipient.full_name || null,
           recipientUserId: recipient.id || null,
           subject,
-          templateName: "user_registered_gestore_notification",
-          status: "sent",
-          provider: "resend",
+          templateName: 'user_registered_gestore_notification',
+          status: 'sent',
+          provider: 'resend',
           providerMessageId: data?.id || null,
           metadata: {
             userId: params.userId,
@@ -187,18 +215,18 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
         });
 
         return { success: true, providerMessageId: data?.id || null };
-      })
+      }),
     );
 
     const sentResults = results.filter((result) => result.success);
 
-    logger.info("Signup email notification sent", {
+    logger.info('Signup email notification sent', {
       userId: params.userId,
       recipients: sentResults.length,
       providerMessageIds: sentResults.map((result) => result.providerMessageId).filter(Boolean),
     });
   } catch (error) {
-    logger.error("Unexpected error while sending signup email", error, {
+    logger.error('Unexpected error while sending signup email', error, {
       userId: params.userId,
     });
   }

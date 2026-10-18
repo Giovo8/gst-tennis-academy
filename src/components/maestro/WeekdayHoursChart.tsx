@@ -1,21 +1,27 @@
-"use client";
+'use client';
 
-import { CalendarDays } from "lucide-react";
-import { MAESTRO_COLORS } from "./chartColors";
-import { ChartEmptyState } from "./ChartEmptyState";
+import { CalendarDays } from 'lucide-react';
+import { MAESTRO_COLORS } from './chartColors';
+import { ChartEmptyState } from './ChartEmptyState';
 
-export interface WeekdayPoint {
+interface WeekdayPoint {
   label: string;
   count: number;
 }
 
-const SECONDARY_RGB = "3, 72, 99"; // MAESTRO_COLORS.secondary (#034863)
+const SECONDARY_RGB = '3, 72, 99'; // MAESTRO_COLORS.secondary (#034863)
 
 /**
  * Ore di lezione per giorno della settimana corrente. Il giorno odierno e' evidenziato
  * in una cella grande a sinistra, gli altri 6 giorni in una mini griglia 3x2 a destra.
  */
-export default function WeekdayHoursChart({ data, todayIdx }: { data: WeekdayPoint[]; todayIdx: number }) {
+export default function WeekdayHoursChart({
+  data,
+  todayIdx,
+}: {
+  data: WeekdayPoint[];
+  todayIdx: number;
+}) {
   const total = data.reduce((acc, d) => acc + d.count, 0);
   if (total === 0) {
     return (
@@ -30,7 +36,7 @@ export default function WeekdayHoursChart({ data, todayIdx }: { data: WeekdayPoi
   const max = Math.max(...data.map((d) => d.count));
   const cellStyle = (count: number) => {
     const alpha = count === 0 ? 0.06 : 0.18 + (count / max) * 0.82;
-    return { alpha, textColor: alpha > 0.5 ? "#ffffff" : MAESTRO_COLORS.secondary };
+    return { alpha, textColor: alpha > 0.5 ? '#ffffff' : MAESTRO_COLORS.secondary };
   };
 
   const today = data[todayIdx];

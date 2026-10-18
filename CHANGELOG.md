@@ -5,11 +5,84 @@ All notable changes to GST Tennis Academy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- Codice morto: `TopAthletesCard`, `useBookingsRealtime`, `src/lib/security/sanitize.ts`, `formatCurrency`, tipi `ai-news/types.ts`, componenti `ui/Card` e `ui/Input`, schemi Zod e costanti mai usati.
+- Dipendenza inutilizzata: `isomorphic-dompurify`.
+- Piani e report già applicati o superati: `ANALYSIS.md`, `PLAN_CONTABILITA.md`, `scan_output.txt`, `supabase/README_OLD.md`, `supabase/APPLY_SCHEMA_FIXES.md`.
+
+### Added
+
+- Migrazione `087_rimozione_oggetti_non_usati.sql`: elimina tabelle, colonne, trigger e funzioni che il codice non usa più (Contabilità, vecchia chat, e-commerce, email marketing…). Distruttiva, da applicare dopo un backup.
+- `.env.example` con le sole variabili lette dal codice.
+
+### Performance
+
+- Layout dashboard non bloccanti: niente spinner a tutto schermo, profilo e ruolo caricati in parallelo; `loading.tsx` con skeleton per atleta, maestro e admin.
+- `getSessionUser()` (sessione locale) al posto di `supabase.auth.getUser()` in 46 file client: un round-trip di rete in meno prima di ogni caricamento.
+- Notifiche: Realtime filtrato per utente al posto del polling ogni 5 s (×2 istanze); corretto il bug che rileggeva il profilo a ogni giro.
+- Chat: una sola sottoscrizione realtime per pagina (prima se ne accumulava una a ogni apertura di modale) e niente spinner a ogni nuovo messaggio.
+- AuthGuard con ruolo memorizzato per sessione e listener `onAuthStateChange` finalmente rimosso allo smontaggio.
+- Dashboard admin: ricaricamento realtime con debounce; pagina torneo pubblica: polling solo a scheda visibile e senza ridisegni a vuoto.
+- framer-motion rimosso da landing e shell dashboard (Reveal, titolo hero, hamburger, tab live, DateNavigator, WeatherCard ora in CSS); Recharts caricato con `next/dynamic`.
+- CSS: rimossi `-webkit-overflow-scrolling` su ogni elemento, la transizione del body e le regole dark mode inutilizzate.
+
+### Security
+
+- Registrazione: il ruolo non arriva più dal client (bastava inviare `role: "maestro"`) ma dal codice invito, ora obbligatorio e validato lato server.
+- Rimosso `POST /api/invite-codes/validate`: anonimo, permetteva di assegnare il ruolo di un codice a qualsiasi `user_id` (escalation ad admin). Nuova migrazione `089` che toglie la policy RLS che rendeva leggibili a tutti i codici invito.
+- `/api/arena/challenges`: PATCH/PUT/DELETE ora richiedono sessione e appartenenza alla sfida (o admin/gestore).
+- `/api/upload/news-image`: riservata ad admin/gestore; protezione SSRF estesa (169.254.x, 172.16–31.x, IPv6 privati, niente redirect).
+- `/api/bookings/availability`: richiede sessione; rimossa la modalità "slot singolo" inutilizzata.
+- `/api/notifications`: restano solo le creazioni (link interni, limiti di lunghezza); rimossi GET/PATCH/DELETE inutilizzati che permettevano di modificare notifiche altrui.
+
+### Removed
+
+- Pagine `/accessibility` e `/refund-policy` (anche dalla sitemap).
+
+### Changed
+
+- Hook pre-commit (Prettier su file staged) attivato e reso automatico con lo script `prepare`.
+- 67 `catch (err: any)` senza annotazione esplicita; `Date.now()` fuori dal render in `WeatherCard`.
+
+### Removed (revisione completa file per file)
+
+- 33 API route senza chiamanti (60 restanti) e 14 pagine non più raggiungibili, tra cui `/chat`, `/profile`, gli storici/archivi, `dashboard/news/*` (duplicato di `admin/news/ai`) e `admin/communications`.
+- Vecchia chat "a conversazioni" (`ChatPanel`, presenza, digitazione) e nuova migrazione `088_rimozione_chat_legacy_e_contenuti.sql` per le sue tabelle, da applicare dopo un backup.
+- framer-motion: ultime 6 pagine convertite in CSS e dipendenza disinstallata.
+- ~300 tra import, variabili, funzioni, stati React e tipi inutilizzati; helper orfani (`StatCard`, `TournamentStats`, `sanitizeSearchQuery`…); 59 regole e 80 variabili CSS mai usate, più un blocco CSS duplicato.
+- Script SQL superati in `supabase/scripts/` e `migrations/archive/` (restano solo quelli del setup da zero), `lint-staged.config.js` ignorato, cache della CLI Supabase.
+
+### Fixed
+
+- Query sprecate: pagina statistiche maestro (5 query, tra cui tutte le lezioni passate senza limite), prenotazioni maestro (fino a 2000 prenotazioni + profili + partecipanti mai usati), dashboard admin/atleta/maestro (profilo letto solo per un nome mai mostrato).
+- Chat: messaggi dei gruppi scaricati in parallelo invece che uno alla volta.
+- Notifiche ai maestri: puntavano a `/dashboard/maestro/agenda` (404); ora al dettaglio della prenotazione, e i link già salvati vengono reindirizzati.
+- Audit Arena e utilizzi codici invito: scrivevano/leggevano la tabella inesistente `activity_logs` invece di `activity_log`.
+- Pagina torneo pubblica: gli errori (es. "Devi effettuare il login per iscriverti") ora compaiono come toast invece di essere ignorati.
+- `robots.txt` con URL assoluto della sitemap; BOM rimosso da 4 file.
+
+### Removed (dark mode)
+
+- Eliminata la dark mode: rimosse 273 classi Tailwind `dark:` da 23 file. Prima si attivavano col tema scuro del sistema operativo e scurivano a metà alcune pagine. `:root` ora dichiara `color-scheme: light`.
+
+### Removed (pulizia aggiuntiva)
+
+- `ThemeProvider`/`useTheme` e lo script del tema (il sito è solo in tema chiaro), 4 layout "passthrough" vuoti, 155 import inutilizzati in 50 file, codice morto in `NotificationsDropdown`.
+
+### Changed
+
+- Documentazione riallineata allo stato reale (conteggi, setup del database verificato, API nuove e non usate).
+- Rimossi tutti i plan salvati, compreso `PIANO_MIGLIORAMENTI_TORNEO.md`: i prossimi piani verranno riscritti da zero.
+
 ## [1.4.0] - 2026-06-01
 
 ### Added
 
 #### Arena (Sfide 1v1)
+
 - **Sistema Sfide tra Atleti**: partite 1v1 con ranking e statistiche
   - Tabelle `arena_challenges` e `arena_stats` con trigger automatici per l'aggiornamento delle statistiche
   - Sistema punti aggiornato e tracking dei set vinti (`sets_won`)
@@ -18,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documentazione: `docs/ARENA.md`
 
 #### Sistema Corsi Completo
+
 - **Iscrizioni Corsi**: tabella `course_enrollments` con quote (`fee`) e supporto ospiti/esterni
 - **Presenze Lezioni**: tabella `lesson_attendance` con tracciamento per lezione e supporto ospiti
 - **Pagamenti**: tabella `payments` con supporto ospiti per la gestione delle quote
@@ -25,23 +99,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Programmazione Avanzata**: periodi di calendario, date annullate, date extra e override orari per singola lezione
 
 #### Giocatori Esterni / Ospiti
+
 - Supporto a partecipanti esterni nelle prenotazioni, iscrizioni corsi, presenze e pagamenti
 - Partecipanti prenotazione con numero di telefono dedicato
 
 ### Changed
+
 - **Prenotazioni**: aggiunto vincolo di non sovrapposizione a livello database (`bookings_no_overlap_constraint`) e colonna `created_by`
 - **Gestione Campi**: blocchi campo con eccezioni e flag `is_disabled`
 
 ### Fixed
+
 - Risolte in modo organico le ricorsioni infinite nelle RLS policy (`036_fix_all_rls_recursion_comprehensive.sql`)
 - Corretto il trigger `handle_new_user` per la creazione automatica dei profili
 - Corretti i vincoli di stato delle sfide Arena
 
 ### Security
+
 - Policy RLS estese e consolidate per Arena, corsi, pagamenti e presenze
 - Trigger `handle_new_user` per la creazione sicura dei profili in fase di registrazione
 
 ### Documentation
+
 - **Riscrittura completa della documentazione** in `docs/`: nuova struttura consolidata
   (ARCHITECTURE, DATABASE, API, FEATURES, ROLES, ARENA, EMAIL, DEPLOYMENT, DESIGN_SYSTEM, FRONTEND)
   allineata allo stato attuale del codice
@@ -49,19 +128,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0] - 2025-12-29
 
 ### Changed
+
 - **Footer Redesign**: Simplified and centered footer layout
   - Removed multi-column grid layout
   - Centered all content vertically
   - Kept logo, tagline, social icons, and "Lavora con noi" link
   - Removed "Fatto con ❤️ per il tennis" text
   - Removed contact info cards (Location, Contatti, Orari)
-  
 - **Dashboard Components**: Restored all dashboards to original dark theme
+
   - Reverted from white sidebar layout to dark glassmorphism design
   - Admin, Maestro, and Atleta dashboards use original StatCard and DashboardLinkCard components
   - Maintained gradient backgrounds, backdrop-blur effects, and cyan accent color (#7de3ff)
 
 - **Staff Management**:
+
   - Fixed TypeScript types: changed `StaffMember.id` from `number` to `string` (UUID compatibility)
   - Changed `editingId` type from `number | null` to `string | null`
   - Enhanced error logging in handleSave function
@@ -73,24 +154,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed social feed container sizing to match iframe width (500px)
 
 ### Fixed
-- **TypeScript Errors**: 
+
+- **TypeScript Errors**:
   - Removed invalid `coach` role from DashboardSidebar roleLabels (only valid roles: atleta, maestro, gestore, admin)
   - All TypeScript compilation errors resolved
 
 ### Added
+
 - **Database Migration**: Created `FIX_STAFF_RLS.sql` with Row Level Security policies for staff table
   - SELECT policy for public access
   - INSERT, UPDATE, DELETE policies for admin and gestore roles
   - Awaiting execution in Supabase dashboard
 
 ### Documentation
+
 - Updated CHANGELOG.md with recent changes
 - All code changes properly documented
 
 ## [1.2.0] - 2025-12-29
 
 ### Added
+
 - **Mobile Optimization**: Complete responsive design for smartphone devices
+
   - Touch-friendly buttons (min 44x44px) across all pages
   - Responsive grids: single/double column on mobile, multiple on desktop
   - Mobile-first padding: px-4 on mobile, scaling on larger screens
@@ -104,12 +190,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full profile update via API with service role bypass
 
 ### Changed
+
 - **API Architecture**: Admin operations now use service role via API endpoints
   - `/api/users` (GET): Fetch users bypassing RLS for booking/enrollment
   - `/api/admin/users` (PATCH): Update complete user profiles
   - Authentication via Bearer token pattern
-  
 - **Tournament Detail Page**: Complete UI redesign
+
   - Modern gradient hero header with badges
   - Info cards grid with icons (Calendar, Users, Zap)
   - Role-based action buttons
@@ -121,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User cards: Compact single-line format for better scalability
 
 ### Fixed
+
 - **Modal Rendering**: ManualEnrollment now uses React Portal for proper overlay
 - **RLS Bypass**: Athlete/coach dropdowns now load via API with service role
 - **User Profile Save**: Fixed modifications not saving due to RLS restrictions
@@ -128,11 +216,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Console Cleanup**: Removed 15+ debug console.log statements
 
 ### Optimized
-- **Code Cleanup**: 
+
+- **Code Cleanup**:
   - Removed temporary documentation files (FIX_AVVIA_TORNEO.md)
   - Cleaned debug logging from BookingCalendar and user management
   - Verified no unused imports
-  
 - **Documentation**:
   - Updated DATABASE.md with current schema (20 tables, all fields)
   - Updated API.md with 40+ endpoints and service role patterns
@@ -143,6 +231,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Sistema Tornei Semplificato
+
 - **3 Tipi di Torneo Supportati**:
   - Eliminazione Diretta (tabellone classico a eliminazione)
   - Girone + Eliminazione (fase a gironi seguita da tabellone finale)
@@ -171,12 +260,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 #### Schema Database Aggiornato
+
 - Rinominate colonne: starts_at → start_date, ends_at → end_date
 - Rimossa colonna obsoleta: created_by (non più necessaria)
 - Aggiunte colonne per tornei: tournament_type, num_groups, teams_per_group, teams_advancing, current_phase
 - Statistiche partecipanti: campo stats JSONB con tracking automatico
 
 ### Fixed
+
 - Risolto errore "competition_type column not found"
 - Corretta gestione colori nei componenti tornei (cyan invece di amber)
 - Migliorata validazione numero partecipanti per eliminazione diretta
@@ -186,6 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Phase 33-34: SEO, Documentation & Final Polish
+
 - **SEO Infrastructure**: Complete metadata system with structured data
   - defaultMetadata with Open Graph and Twitter Card support
   - JSON-LD schemas for Organization, Course, and Event types
@@ -209,6 +301,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 5 user roles with granular permissions
 
 #### Phase 30: Testing Infrastructure (Previous)
+
 - **Jest Setup**: Complete testing framework with Next.js integration
   - jest.config.js with coverage thresholds (10% baseline)
   - jest.setup.js with global mocks (Supabase, Next.js router, window.alert)
@@ -224,6 +317,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - @testing-library/user-event 14.6.1
 
 #### Phase 27-29: Profile Enhancement System (Previous)
+
 - **Database**: Migration 008 with 11 new profile fields
   - Bio, birth date, secondary phone, emergency contact JSONB
   - Skill level enum (principiante/intermedio/avanzato/agonista/professionista)
@@ -249,28 +343,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Activity summary and best victory display
 
 #### Phase 23-26: Email System (Previous)
+
 - Complete email infrastructure with Resend integration
 - 11 HTML email templates with GST branding
 - Email automation with triggers and webhooks
 - Admin dashboard with analytics and monitoring
 
 #### Phase 19-22: Announcements System (Previous)
+
 - Admin announcements with priority levels
 - Partner board for sponsors
 - Role-based visibility
 
 #### Phase 15-18: Chat System (Previous)
+
 - Real-time chat with Supabase Realtime
 - Unread message notifications
 - Conversation management
 
 #### Phase 11-14: Tennis Tournaments (Previous)
+
 - Tournament creation and management
 - Group stage and knockout bracket
 - Tennis scoring (sets, games, tie-breaks)
 - Real-time standings
 
 #### Phase 1-10: Core Infrastructure (Previous)
+
 - Next.js 16.1.1 with App Router
 - Supabase authentication and database
 - Role-based access control (5 roles)
@@ -377,6 +476,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Upcoming Features
 
 ### Phase 35: Production Deployment
+
 - Deployment checklist with environment verification
 - Database migrations on production Supabase
 - Monitoring and error tracking setup (Sentry)

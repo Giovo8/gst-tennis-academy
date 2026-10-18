@@ -1,20 +1,31 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, ArrowLeft, Crown, Dumbbell, Home, User, Camera, Upload, Link as LinkIcon, X, FileText, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+import {
+  Loader2,
+  Crown,
+  Dumbbell,
+  Home,
+  User,
+  Upload,
+  Link as LinkIcon,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
+import Link from 'next/link';
+import { toast } from 'sonner';
 
-const WEEK_DAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
+const WEEK_DAYS = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
 type Profile = {
   id: string;
   full_name: string | null;
   email: string;
-  role: "admin" | "gestore" | "maestro" | "atleta";
+  role: 'admin' | 'gestore' | 'maestro' | 'atleta';
   phone: string | null;
   avatar_url: string | null;
   date_of_birth: string | null;
@@ -28,10 +39,12 @@ type ModificaUtentePageProps = {
   basePath?: string;
 };
 
-export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: ModificaUtentePageProps) {
+export default function ModificaUtentePage({
+  basePath = '/dashboard/admin',
+}: ModificaUtentePageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get("id");
+  const userId = searchParams.get('id');
 
   const [user, setUser] = useState<Profile | null>(null);
   const [arenaStats, setArenaStats] = useState<any>(null);
@@ -43,39 +56,53 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   const [uploadingCertificato, setUploadingCertificato] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showCertificatoModal, setShowCertificatoModal] = useState(false);
-  const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita" | null>(null);
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-  const [dateTexts, setDateTexts] = useState({ date_of_birth: "", certificato_medico_scadenza: "", tesserato_scadenza: "" });
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [certificatoLinkUrl, setCertificatoLinkUrl] = useState("");
+  const [activeDateField, setActiveDateField] = useState<
+    'certificato' | 'tesserato' | 'nascita' | null
+  >(null);
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [dateTexts, setDateTexts] = useState({
+    date_of_birth: '',
+    certificato_medico_scadenza: '',
+    tesserato_scadenza: '',
+  });
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [certificatoLinkUrl, setCertificatoLinkUrl] = useState('');
   const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    date_of_birth: "",
-    birth_city: "",
-    fiscal_code: "",
-    address: "",
-    city: "",
-    province: "",
-    postal_code: "",
-    arena_rank: "Bronzo" as const,
-    notes: "",
-    role: "atleta" as "admin" | "gestore" | "maestro" | "atleta",
+    full_name: '',
+    email: '',
+    phone: '',
+    date_of_birth: '',
+    birth_city: '',
+    fiscal_code: '',
+    address: '',
+    city: '',
+    province: '',
+    postal_code: '',
+    arena_rank: 'Bronzo' as const,
+    notes: '',
+    role: 'atleta' as 'admin' | 'gestore' | 'maestro' | 'atleta',
     also_maestro: false,
     email_notifications_enabled: true,
-    certificato_medico_url: "",
-    certificato_medico_scadenza: "",
-    tesserato: "No" as "Sì" | "No" | "Agonista",
-    numero_tessera: "",
-    tesserato_scadenza: ""
+    certificato_medico_url: '',
+    certificato_medico_scadenza: '',
+    tesserato: 'No' as 'Sì' | 'No' | 'Agonista',
+    numero_tessera: '',
+    tesserato_scadenza: '',
   });
 
   const roleLabels = {
-    admin:   { label: "Admin",   icon: Crown,         bgColor: "#023047",          borderLeftColor: "#011a24" },
-    gestore: { label: "Gestore", icon: Home,           bgColor: "#023047",          borderLeftColor: "#011a24" },
-    maestro: { label: "Maestro", icon: Dumbbell,       bgColor: "#05384c",          borderLeftColor: "#022431" },
-    atleta:  { label: "Atleta",  icon: User,      bgColor: "var(--secondary)", borderLeftColor: "#023047" },
+    admin: { label: 'Admin', icon: Crown, bgColor: '#023047', borderLeftColor: '#011a24' },
+    gestore: { label: 'Gestore', icon: Home, bgColor: '#023047', borderLeftColor: '#011a24' },
+    maestro: { label: 'Maestro', icon: Dumbbell, bgColor: '#05384c', borderLeftColor: '#022431' },
+    atleta: {
+      label: 'Atleta',
+      icon: User,
+      bgColor: 'var(--secondary)',
+      borderLeftColor: '#023047',
+    },
   };
 
   useEffect(() => {
@@ -90,23 +117,19 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     if (!userId) return;
 
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
       if (error || !data) {
-        toast.warning("Utente non trovato");
+        toast.warning('Utente non trovato');
         router.push(`${basePath}/users`);
         return;
       }
 
       // Carica anche arena_stats
       const { data: arenaData } = await supabase
-        .from("arena_stats")
-        .select("*")
-        .eq("user_id", userId)
+        .from('arena_stats')
+        .select('*')
+        .eq('user_id', userId)
         .single();
 
       setUser(data);
@@ -118,34 +141,35 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         : [];
 
       setFormData({
-        full_name: data.full_name || "",
+        full_name: data.full_name || '',
         email: data.email,
-        phone: data.phone || "",
-        date_of_birth: data.date_of_birth || "",
-        birth_city: metadata.birth_city || "",
-        fiscal_code: metadata.fiscal_code || "",
-        address: metadata.address || "",
-        city: metadata.city || "",
-        province: metadata.province || "",
-        postal_code: metadata.postal_code || "",
-        arena_rank: "Bronzo" as const,
-        notes: data.bio || "",
+        phone: data.phone || '',
+        date_of_birth: data.date_of_birth || '',
+        birth_city: metadata.birth_city || '',
+        fiscal_code: metadata.fiscal_code || '',
+        address: metadata.address || '',
+        city: metadata.city || '',
+        province: metadata.province || '',
+        postal_code: metadata.postal_code || '',
+        arena_rank: 'Bronzo' as const,
+        notes: data.bio || '',
         role: data.role,
-        also_maestro: ["admin", "gestore"].includes(data.role) && secondaryRoles.includes("maestro"),
+        also_maestro:
+          ['admin', 'gestore'].includes(data.role) && secondaryRoles.includes('maestro'),
         email_notifications_enabled: data.email_notifications_enabled ?? true,
-        certificato_medico_url: metadata.certificato_medico_url || "",
-        certificato_medico_scadenza: metadata.certificato_medico_scadenza || "",
-        tesserato: metadata.tesserato || "No",
-        numero_tessera: metadata.numero_tessera || "",
-        tesserato_scadenza: metadata.tesserato_scadenza || ""
+        certificato_medico_url: metadata.certificato_medico_url || '',
+        certificato_medico_scadenza: metadata.certificato_medico_scadenza || '',
+        tesserato: metadata.tesserato || 'No',
+        numero_tessera: metadata.numero_tessera || '',
+        tesserato_scadenza: metadata.tesserato_scadenza || '',
       });
       setDateTexts({
-        date_of_birth: isoToDisplay(data.date_of_birth || ""),
-        certificato_medico_scadenza: isoToDisplay(metadata.certificato_medico_scadenza || ""),
-        tesserato_scadenza: isoToDisplay(metadata.tesserato_scadenza || ""),
+        date_of_birth: isoToDisplay(data.date_of_birth || ''),
+        certificato_medico_scadenza: isoToDisplay(metadata.certificato_medico_scadenza || ''),
+        tesserato_scadenza: isoToDisplay(metadata.tesserato_scadenza || ''),
       });
     } catch (error) {
-      console.error("Error loading user:", error);
+      console.error('Error loading user:', error);
       toast.error("Errore nel caricamento dell'utente");
       router.push(`${basePath}/users`);
     } finally {
@@ -157,22 +181,20 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     e.preventDefault();
 
     if (!formData.email || !formData.full_name) {
-      toast.warning("Email e Nome sono obbligatori");
+      toast.warning('Email e Nome sono obbligatori');
       return;
     }
 
     setUpdating(true);
     try {
-      const existingMetadata = user?.metadata && typeof user.metadata === "object"
-        ? user.metadata
-        : {};
-      const secondaryRoles = ["admin", "gestore"].includes(formData.role) && formData.also_maestro
-        ? ["maestro"]
-        : [];
+      const existingMetadata =
+        user?.metadata && typeof user.metadata === 'object' ? user.metadata : {};
+      const secondaryRoles =
+        ['admin', 'gestore'].includes(formData.role) && formData.also_maestro ? ['maestro'] : [];
 
       // Aggiorna il profilo
       const { error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
           email: formData.email.trim().toLowerCase(),
           full_name: formData.full_name,
@@ -195,35 +217,33 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             tesserato: formData.tesserato,
             numero_tessera: formData.numero_tessera,
             tesserato_scadenza: formData.tesserato_scadenza,
-          }
+          },
         })
-        .eq("id", userId);
+        .eq('id', userId);
 
       if (error) throw error;
 
       // Aggiorna arena_stats se non esistono
       if (!arenaStats) {
         // Crea arena_stats se non esiste
-        const { error: arenaError } = await supabase
-          .from("arena_stats")
-          .insert({
-            user_id: userId,
-            points: 0,
-            level: "Bronzo",
-            wins: 0,
-            losses: 0,
-            total_matches: 0
-          });
+        const { error: arenaError } = await supabase.from('arena_stats').insert({
+          user_id: userId,
+          points: 0,
+          level: 'Bronzo',
+          wins: 0,
+          losses: 0,
+          total_matches: 0,
+        });
 
         if (arenaError) {
-          console.error("Errore creazione arena:", arenaError);
+          console.error('Errore creazione arena:', arenaError);
         }
       }
 
-      toast.success("Profilo aggiornato con successo!");
+      toast.success('Profilo aggiornato con successo!');
       router.push(`${basePath}/users`);
-    } catch (error: any) {
-      console.error("Error updating user:", error);
+    } catch (error) {
+      console.error('Error updating user:', error);
       toast.error(error.message || "Errore durante l'aggiornamento del profilo");
     } finally {
       setUpdating(false);
@@ -239,7 +259,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       toast.warning("Il file deve essere un'immagine");
       return;
     }
@@ -249,13 +269,13 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
+      uploadFormData.append('file', file);
       if (user.avatar_url) {
-        uploadFormData.append("oldImageUrl", user.avatar_url);
+        uploadFormData.append('oldImageUrl', user.avatar_url);
       }
 
-      const uploadResponse = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const uploadResponse = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: uploadFormData,
       });
 
@@ -267,20 +287,19 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       const publicUrl = uploadPayload.url as string;
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) {
-        console.error("Update error:", updateError);
+        console.error('Update error:', updateError);
         toast.error("Errore durante l'aggiornamento del profilo");
         return;
       }
 
       setUser({ ...user, avatar_url: publicUrl });
-
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      console.error('Error uploading avatar:', error);
       toast.error("Errore durante l'upload dell'immagine");
     } finally {
       setUploadingAvatar(false);
@@ -293,7 +312,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     try {
       new URL(avatarUrl);
     } catch {
-      toast.warning("Inserisci un URL valido");
+      toast.warning('Inserisci un URL valido');
       return;
     }
 
@@ -301,29 +320,28 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     setShowAvatarModal(false);
 
     try {
-      if (user.avatar_url && user.avatar_url.includes("/avatars/")) {
-        const oldPath = user.avatar_url.split("/avatars/").pop();
+      if (user.avatar_url && user.avatar_url.includes('/avatars/')) {
+        const oldPath = user.avatar_url.split('/avatars/').pop();
         if (oldPath) {
-          await supabase.storage.from("avatars").remove([oldPath]);
+          await supabase.storage.from('avatars').remove([oldPath]);
         }
       }
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: avatarUrl })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) {
-        console.error("Update error:", updateError);
+        console.error('Update error:', updateError);
         toast.error("Errore durante l'aggiornamento del profilo");
         return;
       }
 
       setUser({ ...user, avatar_url: avatarUrl });
-      setAvatarUrl("");
-
+      setAvatarUrl('');
     } catch (error) {
-      console.error("Error updating avatar:", error);
+      console.error('Error updating avatar:', error);
       toast.error("Errore durante l'aggiornamento dell'immagine");
     } finally {
       setUploadingAvatar(false);
@@ -338,11 +356,11 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
     try {
       const deleteFormData = new FormData();
-      deleteFormData.append("deleteOnly", "true");
-      deleteFormData.append("oldImageUrl", user.avatar_url);
+      deleteFormData.append('deleteOnly', 'true');
+      deleteFormData.append('oldImageUrl', user.avatar_url);
 
-      const deleteResponse = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const deleteResponse = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: deleteFormData,
       });
 
@@ -352,18 +370,18 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       }
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: null })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) {
         throw updateError;
       }
 
       setUser({ ...user, avatar_url: null });
-      setAvatarUrl("");
+      setAvatarUrl('');
     } catch (error) {
-      console.error("Error removing avatar:", error);
+      console.error('Error removing avatar:', error);
       toast.error("Errore durante la rimozione dell'avatar");
     } finally {
       setUploadingAvatar(false);
@@ -375,11 +393,11 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     try {
       new URL(certificatoLinkUrl);
     } catch {
-      toast.warning("Inserisci un URL valido");
+      toast.warning('Inserisci un URL valido');
       return;
     }
     setFormData((prev) => ({ ...prev, certificato_medico_url: certificatoLinkUrl }));
-    setCertificatoLinkUrl("");
+    setCertificatoLinkUrl('');
     setShowCertificatoModal(false);
   }
 
@@ -388,12 +406,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     if (!file || !userId) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.warning("Il file deve essere inferiore a 10MB");
+      toast.warning('Il file deve essere inferiore a 10MB');
       return;
     }
 
-    if (file.type !== "application/pdf") {
-      toast.warning("Il file deve essere un PDF");
+    if (file.type !== 'application/pdf') {
+      toast.warning('Il file deve essere un PDF');
       return;
     }
 
@@ -401,30 +419,28 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     try {
       // Rimuovi vecchio file se presente
       if (formData.certificato_medico_url) {
-        const oldPath = formData.certificato_medico_url.split("/certificates/").pop();
+        const oldPath = formData.certificato_medico_url.split('/certificates/').pop();
         if (oldPath) {
-          await supabase.storage.from("certificates").remove([oldPath]);
+          await supabase.storage.from('certificates').remove([oldPath]);
         }
       }
 
       const filePath = `${userId}/${Date.now()}_certificato_medico.pdf`;
       const { error: uploadError } = await supabase.storage
-        .from("certificates")
+        .from('certificates')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("certificates")
-        .getPublicUrl(filePath);
+      const { data: urlData } = supabase.storage.from('certificates').getPublicUrl(filePath);
 
       setFormData((prev) => ({ ...prev, certificato_medico_url: urlData.publicUrl }));
     } catch (error) {
-      console.error("Error uploading certificate:", error);
-      toast.error("Errore durante il caricamento del certificato");
+      console.error('Error uploading certificate:', error);
+      toast.error('Errore durante il caricamento del certificato');
     } finally {
       setUploadingCertificato(false);
-      event.target.value = "";
+      event.target.value = '';
     }
   }
 
@@ -441,21 +457,30 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   }, [calendarViewDate]);
 
   function normalizeDate(date: Date): Date {
-    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    return d;
   }
 
   function isSameCalendarDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
-  function toggleDatePicker(field: "certificato" | "tesserato" | "nascita") {
+  function toggleDatePicker(field: 'certificato' | 'tesserato' | 'nascita') {
     if (activeDateField === field) {
       setActiveDateField(null);
       return;
     }
-    const existing = field === "certificato" ? formData.certificato_medico_scadenza
-      : field === "tesserato" ? formData.tesserato_scadenza
-      : formData.date_of_birth;
+    const existing =
+      field === 'certificato'
+        ? formData.certificato_medico_scadenza
+        : field === 'tesserato'
+        ? formData.tesserato_scadenza
+        : formData.date_of_birth;
     const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
     setActiveDateField(field);
     setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
@@ -467,12 +492,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
   function selectCalendarDay(day: Date) {
     if (!activeDateField) return;
-    const iso = normalizeDate(day).toISOString().split("T")[0];
+    const iso = normalizeDate(day).toISOString().split('T')[0];
     const display = isoToDisplay(iso);
-    if (activeDateField === "certificato") {
+    if (activeDateField === 'certificato') {
       setFormData((prev) => ({ ...prev, certificato_medico_scadenza: iso }));
       setDateTexts((prev) => ({ ...prev, certificato_medico_scadenza: display }));
-    } else if (activeDateField === "tesserato") {
+    } else if (activeDateField === 'tesserato') {
       setFormData((prev) => ({ ...prev, tesserato_scadenza: iso }));
       setDateTexts((prev) => ({ ...prev, tesserato_scadenza: display }));
     } else {
@@ -483,120 +508,120 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   }
 
   function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  function renderDateCalendarPanel(field: "certificato" | "tesserato" | "nascita") {
+  function renderDateCalendarPanel(field: 'certificato' | 'tesserato' | 'nascita') {
     const isOpen = activeDateField === field;
-    const selectedIso = field === "certificato" ? formData.certificato_medico_scadenza
-      : field === "tesserato" ? formData.tesserato_scadenza
-      : formData.date_of_birth;
+    const selectedIso =
+      field === 'certificato'
+        ? formData.certificato_medico_scadenza
+        : field === 'tesserato'
+        ? formData.tesserato_scadenza
+        : formData.date_of_birth;
     const selectedDate = selectedIso ? normalizeDate(new Date(selectedIso)) : null;
     return (
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            key="calendar-panel"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white"
-                          : isCurrentMonth
-                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
-                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(-1)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                aria-label="Mese precedente"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-sm font-semibold text-gray-900 capitalize">
+                {getCalendarMonthLabel(calendarViewDate)}
+              </p>
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(1)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                aria-label="Mese successivo"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+              {WEEK_DAYS.map((day) => (
+                <span key={day} className="py-1">
+                  {day}
+                </span>
+              ))}
+            </div>
+            <div className="calendar-grid grid grid-cols-7 gap-1">
+              {calendarDays.map(({ date, isCurrentMonth }) => {
+                const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
+                const isTodayDate = isSameCalendarDay(date, new Date());
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    onClick={() => selectCalendarDay(date)}
+                    className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                      isSelected
+                        ? 'bg-secondary text-white'
+                        : isCurrentMonth
+                        ? 'text-gray-800 border border-gray-200 hover:bg-gray-100'
+                        : 'text-gray-400 border border-gray-100 hover:bg-gray-50'
+                    } ${!isSelected && isTodayDate ? 'ring-1 ring-secondary/40' : ''}`}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   function isoToDisplay(iso: string): string {
-    if (!iso) return "";
-    const parts = iso.split("-");
-    if (parts.length !== 3) return "";
+    if (!iso) return '';
+    const parts = iso.split('-');
+    if (parts.length !== 3) return '';
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
   function displayToIso(text: string): string {
     const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return "";
+    if (!match) return '';
     return `${match[3]}-${match[2]}-${match[1]}`;
   }
 
-  function handleDateTextChange(field: "date_of_birth" | "certificato_medico_scadenza" | "tesserato_scadenza", value: string) {
+  function handleDateTextChange(
+    field: 'date_of_birth' | 'certificato_medico_scadenza' | 'tesserato_scadenza',
+    value: string,
+  ) {
     setDateTexts((prev) => ({ ...prev, [field]: value }));
     const iso = displayToIso(value);
     if (iso) setFormData((prev) => ({ ...prev, [field]: iso }));
-    else if (value === "") setFormData((prev) => ({ ...prev, [field]: "" }));
-  }
-
-  function formatDateLabel(iso: string): string {
-    if (!iso) return "Seleziona data";
-    return new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" });
+    else if (value === '') setFormData((prev) => ({ ...prev, [field]: '' }));
   }
 
   async function handleRemoveCertificato() {
     if (!formData.certificato_medico_url) return;
     setUploadingCertificato(true);
     try {
-      const oldPath = formData.certificato_medico_url.split("/certificates/").pop();
+      const oldPath = formData.certificato_medico_url.split('/certificates/').pop();
       if (oldPath) {
-        await supabase.storage.from("certificates").remove([oldPath]);
+        await supabase.storage.from('certificates').remove([oldPath]);
       }
-      setFormData((prev) => ({ ...prev, certificato_medico_url: "" }));
+      setFormData((prev) => ({ ...prev, certificato_medico_url: '' }));
     } catch (error) {
-      console.error("Error removing certificate:", error);
-      toast.error("Errore durante la rimozione del certificato");
+      console.error('Error removing certificate:', error);
+      toast.error('Errore durante la rimozione del certificato');
     } finally {
       setUploadingCertificato(false);
     }
@@ -605,7 +630,8 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   async function handleResetPassword() {
     if (!user) return;
 
-    if (!confirm(`Sei sicuro di voler resettare la password di ${user.full_name || user.email}?`)) return;
+    if (!confirm(`Sei sicuro di voler resettare la password di ${user.full_name || user.email}?`))
+      return;
 
     setResettingPassword(true);
     try {
@@ -614,24 +640,25 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error("Sessione non valida");
+        throw new Error('Sessione non valida');
       }
 
-      const response = await fetch("/api/admin/users/reset-password", {
-        method: "POST",
+      const response = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ email: user.email }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Errore durante l'invio dell'email di reset password");
+      if (!response.ok)
+        throw new Error(data.error || "Errore durante l'invio dell'email di reset password");
 
-      toast.success("Email di reset password inviata con successo.");
-    } catch (error: any) {
-      console.error("Error resetting password:", error);
+      toast.success('Email di reset password inviata con successo.');
+    } catch (error) {
+      console.error('Error resetting password:', error);
       toast.error(error?.message || "Errore durante l'invio dell'email di reset password");
     } finally {
       setResettingPassword(false);
@@ -641,20 +668,24 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   async function handleDeleteUser() {
     if (!user) return;
 
-    if (!confirm(`Sei sicuro di voler eliminare il profilo di ${user.full_name || user.email}? Questa azione è irreversibile.`)) return;
+    if (
+      !confirm(
+        `Sei sicuro di voler eliminare il profilo di ${
+          user.full_name || user.email
+        }? Questa azione è irreversibile.`,
+      )
+    )
+      return;
 
     setDeletingUser(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
+      const { error } = await supabase.from('profiles').delete().eq('id', user.id);
 
       if (error) throw error;
 
       router.push(`${basePath}/users`);
-    } catch (error: any) {
-      console.error("Error deleting user:", error);
+    } catch (error) {
+      console.error('Error deleting user:', error);
       toast.error(error?.message || "Errore durante l'eliminazione dell'utente");
       setDeletingUser(false);
     }
@@ -662,7 +693,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
   function getInitials(name: string | null, email: string) {
     if (name) {
-      return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+      return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
     }
     return email.slice(0, 2).toUpperCase();
   }
@@ -680,7 +716,10 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     return (
       <div className="text-center py-20">
         <p className="text-secondary">Utente non trovato</p>
-        <Link href={`${basePath}/users`} className="text-secondary hover:underline mt-4 inline-block">
+        <Link
+          href={`${basePath}/users`}
+          className="text-secondary hover:underline mt-4 inline-block"
+        >
           Torna agli utenti
         </Link>
       </div>
@@ -689,7 +728,6 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
   return (
     <div className="space-y-6 pt-3">
-
       {/* Header card utente */}
       {(() => {
         const RoleIcon = roleLabels[formData.role].icon;
@@ -704,7 +742,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
               <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
               <div className="flex-1 min-w-0">
                 <h2 className="text-2xl font-bold text-white truncate">
-                  {formData.full_name || user.full_name || "Nome non impostato"}
+                  {formData.full_name || user.full_name || 'Nome non impostato'}
                 </h2>
               </div>
             </div>
@@ -719,407 +757,453 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Anagrafici</h2>
           </div>
           <div className="px-6 py-6">
-          <div className="space-y-6">
-            {/* Nome Completo */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome Completo *</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                  placeholder="Mario Rossi"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email *</label>
-              <div className="flex-1">
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                  placeholder="utente@esempio.com"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Telefono */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
-              <div className="flex-1">
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                  placeholder="+39 123 456 7890"
-                />
-              </div>
-            </div>
-
-            {/* Data di nascita */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="GG/MM/AAAA"
-                    value={dateTexts.date_of_birth}
-                    onChange={(e) => handleDateTextChange("date_of_birth", e.target.value)}
-                    maxLength={10}
-                    className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => toggleDatePicker("nascita")}
-                    className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
-                    aria-label="Apri calendario"
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </button>
-                </div>
-                {renderDateCalendarPanel("nascita")}
-              </div>
-            </div>
-
-            {/* Città di Nascita */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Città di Nascita</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={formData.birth_city}
-                  onChange={(e) => setFormData({ ...formData, birth_city: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                  placeholder="Roma"
-                />
-              </div>
-            </div>
-
-            {/* Codice Fiscale */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={formData.fiscal_code}
-                  onChange={(e) => setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
-                  placeholder="RSSMRA80A01H501U"
-                  maxLength={16}
-                />
-              </div>
-            </div>
-
-            {/* Residenza - Indirizzo */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                  placeholder="Via Roma, 123"
-                />
-              </div>
-            </div>
-
-            {/* Residenza - Città, Provincia, CAP */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Città / Provincia / CAP</label>
-              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                  placeholder="Milano"
-                />
-                <div className="flex gap-2 sm:gap-3">
-                  <input
-                    type="text"
-                    value={formData.province}
-                    onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
-                    className="w-20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
-                    placeholder="MI"
-                    maxLength={2}
-                  />
-                  <input
-                    type="text"
-                    value={formData.postal_code}
-                    onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                    className="w-24 sm:w-28 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                    placeholder="20100"
-                    maxLength={5}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Ruolo */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo *</label>
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                {Object.entries(roleLabels).map(([role, info]) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        role: role as "admin" | "gestore" | "maestro" | "atleta",
-                        also_maestro: ["admin", "gestore"].includes(role) ? prev.also_maestro : false,
-                      }))
-                    }
-                    className={`w-full px-4 py-2 text-sm text-center rounded-lg border transition-all ${
-                      formData.role === role
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                    }`}
-                  >
-                    {info.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {["admin", "gestore"].includes(formData.role) && (
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo Aggiuntivo</label>
-                <div className="flex-1">
-                  <label className="inline-flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary cursor-pointer hover:border-secondary transition-all">
-                    <input
-                      type="checkbox"
-                      checked={formData.also_maestro}
-                      onChange={(e) => setFormData({ ...formData, also_maestro: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-secondary focus:ring-secondary/30"
-                    />
-                    <span>Anche Maestro (selezionabile nelle prenotazioni)</span>
-                  </label>
-                  <p className="text-xs text-secondary/50 mt-3">
-                    Mantiene i permessi del ruolo principale e abilita il profilo come maestro nelle prenotazioni.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Note */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
-              <div className="flex-1">
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Eventuali note..."
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
-                />
-              </div>
-            </div>
-          </div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-        {/* Sezione Informazioni Corsi */}
-        <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-1">
-          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
-          </div>
-          <div className="px-6 py-6">
             <div className="space-y-6">
-              {/* Certificato Medico */}
+              {/* Nome Completo */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
-                <div className="flex-1 space-y-3">
-                  {formData.certificato_medico_url ? (
-                    <div className="flex w-full items-stretch gap-2">
-                      <a
-                        href={formData.certificato_medico_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
-                      >
-                        Visualizza PDF
-                      </a>
-                      <button
-                        type="button"
-                        onClick={handleRemoveCertificato}
-                        disabled={uploadingCertificato}
-                        className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label="Rimuovi certificato"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex w-full items-stretch gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowCertificatoModal(true)}
-                        disabled={uploadingCertificato}
-                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-lg border border-secondary bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {uploadingCertificato ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                        {uploadingCertificato ? "Caricamento..." : "Carica PDF"}
-                      </button>
-                    </div>
-                  )}
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Nome Completo *
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    placeholder="Mario Rossi"
+                    required
+                  />
                 </div>
               </div>
 
-              {/* Scadenza Certificato */}
+              {/* Email */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Email *
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    placeholder="utente@esempio.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Telefono */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Telefono
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    placeholder="+39 123 456 7890"
+                  />
+                </div>
+              </div>
+
+              {/* Data di nascita */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Data di Nascita
+                </label>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       placeholder="GG/MM/AAAA"
-                      value={dateTexts.certificato_medico_scadenza}
-                      onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
+                      value={dateTexts.date_of_birth}
+                      onChange={(e) => handleDateTextChange('date_of_birth', e.target.value)}
                       maxLength={10}
                       className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                     <button
                       type="button"
-                      onClick={() => toggleDatePicker("certificato")}
+                      onClick={() => toggleDatePicker('nascita')}
                       className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
                       aria-label="Apri calendario"
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </button>
                   </div>
-                  {renderDateCalendarPanel("certificato")}
+                  {renderDateCalendarPanel('nascita')}
                 </div>
               </div>
 
-              {/* Tesserato */}
+              {/* Città di Nascita */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Città di Nascita
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={formData.birth_city}
+                    onChange={(e) => setFormData({ ...formData, birth_city: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    placeholder="Roma"
+                  />
+                </div>
+              </div>
+
+              {/* Codice Fiscale */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Codice Fiscale
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={formData.fiscal_code}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
+                    placeholder="RSSMRA80A01H501U"
+                    maxLength={16}
+                  />
+                </div>
+              </div>
+
+              {/* Residenza - Indirizzo */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Indirizzo
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    placeholder="Via Roma, 123"
+                  />
+                </div>
+              </div>
+
+              {/* Residenza - Città, Provincia, CAP */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Città / Provincia / CAP
+                </label>
                 <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {(["Sì", "No", "Agonista"] as const).map((option) => (
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    placeholder="Milano"
+                  />
+                  <div className="flex gap-2 sm:gap-3">
+                    <input
+                      type="text"
+                      value={formData.province}
+                      onChange={(e) =>
+                        setFormData({ ...formData, province: e.target.value.toUpperCase() })
+                      }
+                      className="w-20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
+                      placeholder="MI"
+                      maxLength={2}
+                    />
+                    <input
+                      type="text"
+                      value={formData.postal_code}
+                      onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                      className="w-24 sm:w-28 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                      placeholder="20100"
+                      maxLength={5}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ruolo */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Ruolo *
+                </label>
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                  {Object.entries(roleLabels).map(([role, info]) => (
                     <button
-                      key={option}
+                      key={role}
                       type="button"
-                      onClick={() => setFormData({ ...formData, tesserato: option })}
-                      className={`px-5 py-2 text-sm rounded-lg border transition-all ${
-                        formData.tesserato === option
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          role: role as 'admin' | 'gestore' | 'maestro' | 'atleta',
+                          also_maestro: ['admin', 'gestore'].includes(role)
+                            ? prev.also_maestro
+                            : false,
+                        }))
+                      }
+                      className={`w-full px-4 py-2 text-sm text-center rounded-lg border transition-all ${
+                        formData.role === role
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                       }`}
                     >
-                      {option}
+                      {info.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Numero Tessera */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+              {['admin', 'gestore'].includes(formData.role) && (
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Ruolo Aggiuntivo
+                  </label>
+                  <div className="flex-1">
+                    <label className="inline-flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary cursor-pointer hover:border-secondary transition-all">
+                      <input
+                        type="checkbox"
+                        checked={formData.also_maestro}
+                        onChange={(e) =>
+                          setFormData({ ...formData, also_maestro: e.target.checked })
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-secondary focus:ring-secondary/30"
+                      />
+                      <span>Anche Maestro (selezionabile nelle prenotazioni)</span>
+                    </label>
+                    <p className="text-xs text-secondary/50 mt-3">
+                      Mantiene i permessi del ruolo principale e abilita il profilo come maestro
+                      nelle prenotazioni.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Note */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Note
+                </label>
                 <div className="flex-1">
-                  <input
-                    type="text"
-                    value={formData.numero_tessera}
-                    onChange={(e) => setFormData({ ...formData, numero_tessera: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                    placeholder="es. FIT-123456"
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Eventuali note..."
+                    rows={3}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
                   />
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Scadenza Tesseramento */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+          {/* Sezione Informazioni Corsi */}
+          <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-1">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                Informazioni Corsi
+              </h2>
+            </div>
+            <div className="px-6 py-6">
+              <div className="space-y-6">
+                {/* Certificato Medico */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Certificato Medico
+                  </label>
+                  <div className="flex-1 space-y-3">
+                    {formData.certificato_medico_url ? (
+                      <div className="flex w-full items-stretch gap-2">
+                        <a
+                          href={formData.certificato_medico_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
+                        >
+                          Visualizza PDF
+                        </a>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCertificato}
+                          disabled={uploadingCertificato}
+                          className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Rimuovi certificato"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex w-full items-stretch gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowCertificatoModal(true)}
+                          disabled={uploadingCertificato}
+                          className="w-full inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-lg border border-secondary bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {uploadingCertificato ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          {uploadingCertificato ? 'Caricamento...' : 'Carica PDF'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Scadenza Certificato */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Scadenza Certificato
+                  </label>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="GG/MM/AAAA"
+                        value={dateTexts.certificato_medico_scadenza}
+                        onChange={(e) =>
+                          handleDateTextChange('certificato_medico_scadenza', e.target.value)
+                        }
+                        maxLength={10}
+                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleDatePicker('certificato')}
+                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                        aria-label="Apri calendario"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {renderDateCalendarPanel('certificato')}
+                  </div>
+                </div>
+
+                {/* Tesserato */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Tesserato
+                  </label>
+                  <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    {(['Sì', 'No', 'Agonista'] as const).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, tesserato: option })}
+                        className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                          formData.tesserato === option
+                            ? 'bg-secondary text-white border-secondary'
+                            : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Numero Tessera */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Numero Tessera
+                  </label>
+                  <div className="flex-1">
                     <input
                       type="text"
-                      placeholder="GG/MM/AAAA"
-                      value={dateTexts.tesserato_scadenza}
-                      onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
-                      maxLength={10}
-                      className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                      value={formData.numero_tessera}
+                      onChange={(e) => setFormData({ ...formData, numero_tessera: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                      placeholder="es. FIT-123456"
                     />
-                    <button
-                      type="button"
-                      onClick={() => toggleDatePicker("tesserato")}
-                      className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
-                      aria-label="Apri calendario"
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                    </button>
                   </div>
-                  {renderDateCalendarPanel("tesserato")}
+                </div>
+
+                {/* Scadenza Tesseramento */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Scadenza Tesseramento
+                  </label>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="GG/MM/AAAA"
+                        value={dateTexts.tesserato_scadenza}
+                        onChange={(e) => handleDateTextChange('tesserato_scadenza', e.target.value)}
+                        maxLength={10}
+                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleDatePicker('tesserato')}
+                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                        aria-label="Apri calendario"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {renderDateCalendarPanel('tesserato')}
+                  </div>
                 </div>
               </div>
-
             </div>
           </div>
-        </div>
 
-        {/* Sezione Avatar */}
-        <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-2">
-          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
-          </div>
-          <div className="px-6 py-6">
-            <div className="flex flex-col gap-4">
-              <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden border border-black/10 lg:aspect-[4/3]">
-                {uploadingAvatar ? (
-                  <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
-                    <Loader2 className="h-7 w-7 animate-spin text-secondary" />
-                  </div>
-                ) : user.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt={user.full_name || "Avatar"}
-                    className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
-                  />
-                ) : (
-                  <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
-                    <span className="text-5xl font-bold text-secondary">
-                      {getInitials(user.full_name, user.email)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className={`w-full ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
-                <button
-                  type="button"
-                  onClick={() => setShowAvatarModal(true)}
-                  disabled={uploadingAvatar}
-                  className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    user.avatar_url ? "flex-1" : "w-full"
-                  }`}
-                >
-                  Cambia Avatar
-                </button>
-                {user.avatar_url && (
+          {/* Sezione Avatar */}
+          <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-2">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
+            </div>
+            <div className="px-6 py-6">
+              <div className="flex flex-col gap-4">
+                <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden border border-black/10 lg:aspect-[4/3]">
+                  {uploadingAvatar ? (
+                    <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                      <Loader2 className="h-7 w-7 animate-spin text-secondary" />
+                    </div>
+                  ) : user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name || 'Avatar'}
+                      className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
+                    />
+                  ) : (
+                    <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                      <span className="text-5xl font-bold text-secondary">
+                        {getInitials(user.full_name, user.email)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className={`w-full ${user.avatar_url ? 'flex items-center gap-2' : ''}`}>
                   <button
                     type="button"
-                    onClick={handleRemoveAvatar}
+                    onClick={() => setShowAvatarModal(true)}
                     disabled={uploadingAvatar}
-                    aria-label="Elimina avatar"
-                    className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      user.avatar_url ? 'flex-1' : 'w-full'
+                    }`}
                   >
-                    <X className="h-4 w-4" />
+                    Cambia Avatar
                   </button>
-                )}
+                  {user.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={uploadingAvatar}
+                      aria-label="Elimina avatar"
+                      className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
 
         {/* Sezione Info Sistema */}
@@ -1128,40 +1212,47 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Info Sistema</h2>
           </div>
           <div className="px-6 py-6">
-          <div className="space-y-6">
-            {/* ID Utente */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={user?.id || ""}
-                  readOnly
-                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
-                />
+            <div className="space-y-6">
+              {/* ID Utente */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  ID Utente
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={user?.id || ''}
+                    readOnly
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              {/* Data Registrazione */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Data Registrazione
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={
+                      user
+                        ? new Date(user.created_at).toLocaleDateString('it-IT', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : ''
+                    }
+                    readOnly
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
+                  />
+                </div>
               </div>
             </div>
-
-            {/* Data Registrazione */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={user ? new Date(user.created_at).toLocaleDateString("it-IT", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  }) : ""}
-                  readOnly
-                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-          </div>
           </div>
         </div>
 
@@ -1172,7 +1263,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             disabled={updating}
             className="flex-1 min-w-[140px] px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50"
           >
-            {updating ? "Salvataggio..." : "Salva Modifiche"}
+            {updating ? 'Salvataggio...' : 'Salva Modifiche'}
           </button>
 
           <button
@@ -1181,7 +1272,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             disabled={resettingPassword}
             className="flex-1 min-w-[140px] px-6 py-3 text-sm font-medium text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {resettingPassword ? "Invio in corso..." : "Resetta Password"}
+            {resettingPassword ? 'Invio in corso...' : 'Resetta Password'}
           </button>
 
           <button
@@ -1190,7 +1281,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             disabled={deletingUser}
             className="flex-1 min-w-[140px] px-6 py-3 text-sm font-medium text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {deletingUser ? "Eliminazione..." : "Elimina"}
+            {deletingUser ? 'Eliminazione...' : 'Elimina'}
           </button>
         </div>
       </form>
@@ -1221,9 +1312,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             <div className="p-6 space-y-4">
               {/* Upload File */}
               <div>
-                <label className="block text-sm font-bold text-secondary mb-2">
-                  Carica un PDF
-                </label>
+                <label className="block text-sm font-bold text-secondary mb-2">Carica un PDF</label>
                 <button
                   type="button"
                   onClick={() => {

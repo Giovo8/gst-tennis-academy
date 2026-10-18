@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
-import NewsImage from "@/components/ui/NewsImage";
+import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+import { sanitizeAINewsBody, sanitizeAINewsTitle } from '@/lib/ai-news/contentSanitizer';
+import NewsImage from '@/components/ui/NewsImage';
 
 const ITEMS_PER_PAGE = 21;
 
 function formatNewsDate(dateString: string | undefined): string {
-  if (!dateString) return "";
+  if (!dateString) return '';
   const date = new Date(dateString);
-  const formatted = new Intl.DateTimeFormat("it-IT", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  const formatted = new Intl.DateTimeFormat('it-IT', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   }).format(date);
   return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
 }
@@ -37,66 +37,36 @@ type NewsPost = {
 
 function isPublishedNews(post: Partial<NewsPost> | null | undefined): boolean {
   if (!post) return false;
-  if (typeof post.is_published === "boolean") return post.is_published;
-  return String(post.stato ?? "").toLowerCase() === "pubblicata";
+  if (typeof post.is_published === 'boolean') return post.is_published;
+  return String(post.stato ?? '').toLowerCase() === 'pubblicata';
 }
 
 function sanitizePost(post: NewsPost): NewsPost {
   return {
     ...post,
-    title: sanitizeAINewsTitle(post.title || ""),
-    content: sanitizeAINewsBody(post.content || ""),
+    title: sanitizeAINewsTitle(post.title || ''),
+    content: sanitizeAINewsBody(post.content || ''),
     excerpt: post.excerpt ? sanitizeAINewsBody(post.excerpt) : post.excerpt,
   };
 }
 
-const defaultPosts: NewsPost[] = [
-  {
-    id: "n1",
-    title: "Stage intensivo pre-torneo",
-    category: "Eventi",
-    image_url: "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=800&q=80",
-    content: "Settimana di match play, video analysis e preparazione atletica per il calendario invernale.",
-    is_published: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "n2",
-    title: "Nuove divise team GST",
-    category: "Novità",
-    image_url: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80",
-    content: "Disponibili le nuove divise ufficiali per team agonistico e junior academy.",
-    is_published: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "n3",
-    title: "Campionato invernale, i vincitori della settimana",
-    category: "Risultati",
-    image_url: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=800&q=80",
-    content: "Rossi e Bianchi dominano il torneo singolare. Gallo e Moretti vincono il doppio misto.",
-    is_published: true,
-    created_at: new Date().toISOString(),
-  },
-];
-
 export default function AdminNewsBoard() {
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>("tutte");
+  const [activeCategory, setActiveCategory] = useState<string>('tutte');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   async function loadNews() {
     const { data, error } = await supabase
-      .from("news")
-      .select("*")
-      .eq("is_published", true)
-      .order("published_at", { ascending: false });
+      .from('news')
+      .select('*')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false });
 
     if (error) {
-      console.error("Error loading news:", error);
+      console.error('Error loading news:', error);
       setPosts([]);
     } else if (data && data.length > 0) {
       const published = (data as NewsPost[])
@@ -113,15 +83,13 @@ export default function AdminNewsBoard() {
     loadNews();
   }, []);
 
-  const categories = Array.from(new Set(posts.map((post) => post.category))).filter(
-    (cat) => !!cat
-  );
+  const categories = Array.from(new Set(posts.map((post) => post.category))).filter((cat) => !!cat);
 
   const filteredPosts = posts.filter((post) =>
-    activeCategory === "tutte" ? true : post.category === activeCategory
+    activeCategory === 'tutte' ? true : post.category === activeCategory,
   );
 
-  const rawPage = Number.parseInt(searchParams.get("page") || "1", 10);
+  const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
   const currentPage = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
   const totalPages = Math.max(1, Math.ceil(filteredPosts.length / ITEMS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -131,9 +99,9 @@ export default function AdminNewsBoard() {
   function updatePage(page: number) {
     const params = new URLSearchParams(searchParams.toString());
     if (page <= 1) {
-      params.delete("page");
+      params.delete('page');
     } else {
-      params.set("page", String(page));
+      params.set('page', String(page));
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
@@ -173,11 +141,11 @@ export default function AdminNewsBoard() {
       {/* Category Filters */}
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button
-          onClick={() => handleCategoryChange("tutte")}
+          onClick={() => handleCategoryChange('tutte')}
           className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
-            activeCategory === "tutte"
-              ? "bg-secondary text-white"
-              : "border border-black/10 text-secondary/70 hover:border-secondary hover:text-secondary"
+            activeCategory === 'tutte'
+              ? 'bg-secondary text-white'
+              : 'border border-black/10 text-secondary/70 hover:border-secondary hover:text-secondary'
           }`}
         >
           Tutte
@@ -188,8 +156,8 @@ export default function AdminNewsBoard() {
             onClick={() => handleCategoryChange(cat)}
             className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
               activeCategory === cat
-                ? "bg-secondary text-white"
-                : "border border-black/10 text-secondary/70 hover:border-secondary hover:text-secondary"
+                ? 'bg-secondary text-white'
+                : 'border border-black/10 text-secondary/70 hover:border-secondary hover:text-secondary'
             }`}
           >
             {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -277,5 +245,3 @@ export default function AdminNewsBoard() {
     </div>
   );
 }
-
-

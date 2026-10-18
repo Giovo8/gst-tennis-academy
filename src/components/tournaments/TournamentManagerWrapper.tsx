@@ -26,7 +26,18 @@ interface TournamentManagerWrapperProps {
   canEditOwnMatches?: boolean;
 }
 
-export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, sectioned = false, onMetaChange, activeTab, onActiveTabChange, hideTabBar = false, highlightUserId = null, canEditOwnMatches = false }: TournamentManagerWrapperProps) {
+export default function TournamentManagerWrapper({
+  tournamentId,
+  isAdmin = true,
+  viewOnly = false,
+  sectioned = false,
+  onMetaChange,
+  activeTab,
+  onActiveTabChange,
+  hideTabBar = false,
+  highlightUserId = null,
+  canEditOwnMatches = false,
+}: TournamentManagerWrapperProps) {
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,21 +52,21 @@ export default function TournamentManagerWrapper({ tournamentId, isAdmin = true,
     try {
       const res = await fetch(`/api/tournaments?id=${tournamentId}`);
       const data = await res.json();
-      
+
       if (res.ok && data.tournament) {
         // Normalizza il torneo per compatibilità
         const tournament = data.tournament;
-        
+
         // Se ha 'format' ma non 'tournament_type', copia il valore
         if (!tournament.tournament_type && tournament.format) {
           tournament.tournament_type = tournament.format;
         }
-        
+
         // Se ha 'competition_type' ma manca 'tournament_type', usa un default
         if (!tournament.tournament_type) {
           tournament.tournament_type = 'eliminazione_diretta';
         }
-        
+
         // Assicura che abbia 'status' e 'current_phase'
         if (!tournament.status) {
           tournament.status = 'Aperto';
@@ -63,12 +74,12 @@ export default function TournamentManagerWrapper({ tournamentId, isAdmin = true,
         if (!tournament.current_phase) {
           tournament.current_phase = 'iscrizioni';
         }
-        
+
         setTournament(tournament);
       } else {
         setError(data.error || 'Errore caricamento torneo');
       }
-    } catch (err) {
+    } catch {
       setError('Errore di rete');
     } finally {
       setLoading(false);

@@ -3,15 +3,18 @@
  * Il caricamento dati (service role) è in tournamentBookingsServer.ts.
  */
 
-export const TOURNAMENT_BOOKING_TYPE = "torneo" as const;
+export const TOURNAMENT_BOOKING_TYPE = 'torneo' as const;
+
+// Partite di torneo: sfumatura più scura del blu delle lezioni (#023047), coerente in timeline e liste.
+export const TOURNAMENT_BOOKING_BACKGROUND = '#02283a';
 
 // tournament_matches.status (it) e match_status (en, alias legacy) che chiudono una partita.
 const CLOSED_MATCH_STATUSES = new Set([
-  "completata",
-  "annullata",
-  "walkover",
-  "completed",
-  "cancelled",
+  'completata',
+  'annullata',
+  'walkover',
+  'completed',
+  'cancelled',
 ]);
 
 export interface TournamentMatchPlayer {
@@ -41,6 +44,15 @@ export interface BookableTournamentMatch {
   booking: TournamentMatchBooking | null;
 }
 
+/** Partita prenotata visibile pubblicamente ("In programma"): solo nomi, turno, campo e orari. */
+export interface PublicScheduledTournamentMatch {
+  id: string;
+  round_name: string | null;
+  player1: { full_name: string };
+  player2: { full_name: string };
+  booking: { court: string; start_time: string; end_time: string };
+}
+
 /** Torneo in corso prenotabile (elenco leggero: le partite si caricano alla selezione). */
 export interface BookableTournament {
   id: string;
@@ -56,7 +68,7 @@ export interface TournamentRound {
 
 /** tournaments.status è testo libero ("In Corso" / "In corso" a seconda del flusso). */
 export function isTournamentInProgress(status: string | null | undefined): boolean {
-  return (status ?? "").trim().toLowerCase() === "in corso";
+  return (status ?? '').trim().toLowerCase() === 'in corso';
 }
 
 /** Una partita è prenotabile se ha entrambi i giocatori e non è chiusa. */
@@ -74,9 +86,9 @@ export function isMatchOpenForBooking(match: {
 
 /** Admin/gestore prenotano qualsiasi partita; gli altri solo quelle in cui giocano. */
 export function canUserBookTournamentMatch(
-  match: Pick<BookableTournamentMatch, "player1" | "player2">,
+  match: Pick<BookableTournamentMatch, 'player1' | 'player2'>,
   userId: string,
-  isPrivileged: boolean
+  isPrivileged: boolean,
 ): boolean {
   if (isPrivileged) return true;
   return match.player1.user_id === userId || match.player2.user_id === userId;
@@ -88,18 +100,21 @@ const PHASE_ORDER: Record<string, number> = { gironi: 0, eliminazione: 1 };
  * Raggruppa le partite per giornata/turno: nel campionato round_name è "Giornata N",
  * nei gironi è il nome del girone, nell'eliminazione il nome del turno.
  */
-export function groupTournamentMatchesByRound(matches: BookableTournamentMatch[]): TournamentRound[] {
+export function groupTournamentMatchesByRound(
+  matches: BookableTournamentMatch[],
+): TournamentRound[] {
   const rounds = new Map<string, TournamentRound & { phaseOrder: number; roundNumber: number }>();
 
   for (const match of matches) {
-    const key = `${match.phase ?? ""}|${match.round_number ?? ""}|${match.round_name ?? ""}`;
+    const key = `${match.phase ?? ''}|${match.round_number ?? ''}|${match.round_name ?? ''}`;
     let round = rounds.get(key);
     if (!round) {
       round = {
         key,
-        label: match.round_name || (match.round_number ? `Giornata ${match.round_number}` : "Partite"),
+        label:
+          match.round_name || (match.round_number ? `Giornata ${match.round_number}` : 'Partite'),
         matches: [],
-        phaseOrder: PHASE_ORDER[match.phase ?? ""] ?? 99,
+        phaseOrder: PHASE_ORDER[match.phase ?? ''] ?? 99,
         roundNumber: match.round_number ?? 0,
       };
       rounds.set(key, round);
@@ -112,7 +127,7 @@ export function groupTournamentMatchesByRound(matches: BookableTournamentMatch[]
       (a, b) =>
         a.phaseOrder - b.phaseOrder ||
         a.roundNumber - b.roundNumber ||
-        a.label.localeCompare(b.label, "it", { numeric: true })
+        a.label.localeCompare(b.label, 'it', { numeric: true }),
     )
     .map(({ key, label, matches: roundMatches }) => ({
       key,
@@ -124,5 +139,5 @@ export function groupTournamentMatchesByRound(matches: BookableTournamentMatch[]
 /** Prima giornata con almeno una partita ancora da prenotare (altrimenti la prima). */
 export function getDefaultRoundKey(rounds: TournamentRound[]): string {
   const firstOpen = rounds.find((round) => round.matches.some((match) => !match.booking));
-  return (firstOpen ?? rounds[0])?.key ?? "";
+  return (firstOpen ?? rounds[0])?.key ?? '';
 }

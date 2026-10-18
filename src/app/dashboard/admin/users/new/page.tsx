@@ -1,50 +1,50 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import { useEffect } from "react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { useEffect } from 'react';
 
 type NewUserPageProps = {
   basePath?: string;
 };
 
-export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPageProps) {
+export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPageProps) {
   const router = useRouter();
-  
+
   useEffect(() => {
-    document.title = "Crea Utente | GST Tennis Academy";
+    document.title = 'Crea Utente | GST Tennis Academy';
   }, []);
-  
+
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [newUser, setNewUser] = useState({
-    email: "",
-    password: "",
-    full_name: "",
-    phone: "",
-    date_of_birth: "",
-    birth_city: "",
-    fiscal_code: "",
-    address: "",
-    city: "",
-    province: "",
-    postal_code: "",
-    arena_rank: "Bronzo" as const,
-    notes: "",
-    role: "atleta" as "admin" | "gestore" | "maestro" | "atleta"
+    email: '',
+    password: '',
+    full_name: '',
+    phone: '',
+    date_of_birth: '',
+    birth_city: '',
+    fiscal_code: '',
+    address: '',
+    city: '',
+    province: '',
+    postal_code: '',
+    arena_rank: 'Bronzo' as const,
+    notes: '',
+    role: 'atleta' as 'admin' | 'gestore' | 'maestro' | 'atleta',
   });
 
   const roleLabels = {
-    admin: { label: "Admin", description: "Accesso completo al sistema" },
-    gestore: { label: "Gestore", description: "Gestione operativa e prenotazioni" },
-    maestro: { label: "Maestro", description: "Gestione lezioni e allievi" },
-    atleta: { label: "Atleta", description: "Accesso base per utenti" },
+    admin: { label: 'Admin', description: 'Accesso completo al sistema' },
+    gestore: { label: 'Gestore', description: 'Gestione operativa e prenotazioni' },
+    maestro: { label: 'Maestro', description: 'Gestione lezioni e allievi' },
+    atleta: { label: 'Atleta', description: 'Accesso base per utenti' },
   };
 
   // Validazione email
@@ -54,39 +54,41 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
     e.preventDefault();
 
     if (!newUser.email || !newUser.password || !newUser.full_name) {
-      setError("Compila tutti i campi obbligatori");
+      setError('Compila tutti i campi obbligatori');
       return;
     }
 
     if (!emailRegex.test(newUser.email)) {
-      setError("Inserisci un indirizzo email valido (es: utente@esempio.com)");
+      setError('Inserisci un indirizzo email valido (es: utente@esempio.com)');
       return;
     }
 
     if (newUser.password.length < 6) {
-      setError("La password deve essere di almeno 6 caratteri");
+      setError('La password deve essere di almeno 6 caratteri');
       return;
     }
 
     if (newUser.password !== confirmPassword) {
-      setError("Le password non corrispondono");
+      setError('Le password non corrispondono');
       return;
     }
 
     setCreating(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     try {
       // Ottieni il token della sessione admin corrente
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Sessione scaduta. Effettua nuovamente il login.");
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessione scaduta. Effettua nuovamente il login.');
 
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           email: newUser.email,
@@ -108,13 +110,13 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Errore durante la creazione dell'utente");
 
-      setSuccess("Utente creato con successo!");
-      
+      setSuccess('Utente creato con successo!');
+
       // Attendi un attimo prima di reindirizzare
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       router.push(`${basePath}/users`);
-    } catch (error: any) {
-      console.error("Error creating user:", error);
+    } catch (error) {
+      console.error('Error creating user:', error);
       setError(error.message || "Errore durante la creazione dell'utente");
     } finally {
       setCreating(false);
@@ -135,7 +137,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
           </div>
         </div>
       )}
-      
+
       {success && (
         <div className="mt-2">
           <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
@@ -152,7 +154,9 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         {/* Informazioni Account */}
         <div className="page-card">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Account
+            </h2>
           </div>
 
           <div className="space-y-0 p-4 sm:p-6">
@@ -181,7 +185,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
               <div className="flex-1">
                 <div className="relative">
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     value={newUser.password}
                     onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                     className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
@@ -207,7 +211,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
               <div className="flex-1">
                 <div className="relative">
                   <input
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
@@ -230,7 +234,9 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         {/* Informazioni Utente */}
         <div className="page-card">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Utente
+            </h2>
           </div>
 
           <div className="space-y-0 p-4 sm:p-6">
@@ -307,7 +313,9 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                 <input
                   type="text"
                   value={newUser.fiscal_code}
-                  onChange={(e) => setNewUser({ ...newUser, fiscal_code: e.target.value.toUpperCase() })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, fiscal_code: e.target.value.toUpperCase() })
+                  }
                   className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
                   placeholder="RSSMRA80A01H501U"
                   maxLength={16}
@@ -347,7 +355,9 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                 <input
                   type="text"
                   value={newUser.province}
-                  onChange={(e) => setNewUser({ ...newUser, province: e.target.value.toUpperCase() })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, province: e.target.value.toUpperCase() })
+                  }
                   className="w-full sm:w-20 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
                   placeholder="MI"
                   maxLength={2}
@@ -368,7 +378,9 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         {/* Informazioni Piattaforma */}
         <div className="page-card">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Piattaforma</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Piattaforma
+            </h2>
           </div>
 
           <div className="space-y-0 p-4 sm:p-6">
@@ -383,7 +395,12 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                     <button
                       key={role}
                       type="button"
-                      onClick={() => setNewUser({ ...newUser, role: role as "admin" | "gestore" | "maestro" | "atleta" })}
+                      onClick={() =>
+                        setNewUser({
+                          ...newUser,
+                          role: role as 'admin' | 'gestore' | 'maestro' | 'atleta',
+                        })
+                      }
                       className={`w-full px-4 py-2 text-sm text-center rounded-lg border transition-all ${
                         newUser.role === role
                           ? 'bg-secondary text-white border-secondary'
@@ -426,7 +443,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
               Creazione in corso...
             </>
           ) : (
-            "Crea Utente"
+            'Crea Utente'
           )}
         </button>
       </form>

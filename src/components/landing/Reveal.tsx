@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 interface RevealProps {
   children: React.ReactNode;
@@ -10,22 +10,38 @@ interface RevealProps {
 }
 
 // Fa comparire il contenuto (dissolvenza + leggera salita) quando entra nello schermo.
+// IntersectionObserver + transizione CSS (classi .reveal in globals.css): stesso
+// effetto di prima senza caricare framer-motion nella landing.
 export default function Reveal({ children, className, delay = 0 }: RevealProps) {
-  const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-  if (reduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const style = delay ? ({ '--reveal-delay': `${delay}s` } as CSSProperties) : undefined;
 
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.6, delay, ease: [0.2, 0.7, 0.2, 1] }}
+    <div
+      ref={ref}
+      className={`reveal${visible ? ' is-visible' : ''}${className ? ` ${className}` : ''}`}
+      style={style}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

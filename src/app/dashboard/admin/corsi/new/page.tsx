@@ -1,9 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
   Calendar as CalendarIcon,
@@ -12,21 +11,23 @@ import {
   ChevronRight,
   Loader2,
   X,
-} from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import { isBookableCoachProfile } from "@/lib/roles";
-import { getCourts } from "@/lib/courts/getCourts";
-import { DEFAULT_COURTS } from "@/lib/courts/constants";
-import { findBookingsBlockedByCourse } from "@/lib/bookings/courseConflicts";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
-import AuthGuard from "@/components/auth/AuthGuard";
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { isBookableCoachProfile } from '@/lib/roles';
+import { getCourts } from '@/lib/courts/getCourts';
+import { DEFAULT_COURTS } from '@/lib/courts/constants';
+import { findBookingsBlockedByCourse } from '@/lib/bookings/courseConflicts';
+import AthletesSelector from '@/components/bookings/AthletesSelector';
+import AuthGuard from '@/components/auth/AuthGuard';
 
 interface Athlete {
   id: string;
   full_name: string;
   email: string;
   phone?: string | null;
-  role: "atleta" | "admin" | "gestore" | "maestro";
+  role: 'atleta' | 'admin' | 'gestore' | 'maestro';
 }
 
 type SelectedAthlete = {
@@ -37,16 +38,26 @@ type SelectedAthlete = {
   isRegistered: boolean;
 };
 
-type SchedulePeriod = { days: string[]; slots: string[]; courts: string[]; start_date: string; end_date: string };
+type SchedulePeriod = {
+  days: string[];
+  slots: string[];
+  courts: string[];
+  start_date: string;
+  end_date: string;
+};
 
 function slotsToTimeStr(slots: string[]): string | null {
   if (slots.length === 0) return null;
   const sorted = [...slots].sort();
   const first = sorted[0];
-  const [lh, lm] = sorted[sorted.length - 1].split(":").map(Number);
-  let endH = lh, endM = lm + 30;
-  if (endM >= 60) { endH++; endM -= 60; }
-  return `${first} – ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+  const [lh, lm] = sorted[sorted.length - 1].split(':').map(Number);
+  let endH = lh,
+    endM = lm + 30;
+  if (endM >= 60) {
+    endH++;
+    endM -= 60;
+  }
+  return `${first} – ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 }
 
 function parseTimeToSlots(timeStr: string): string[] {
@@ -54,43 +65,48 @@ function parseTimeToSlots(timeStr: string): string[] {
   if (!match) return [];
   const [, start, end] = match;
   const slots: string[] = [];
-  let [h, m] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
+  let [h, m] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
   while (h * 60 + m < eh * 60 + em) {
-    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
     m += 30;
-    if (m >= 60) { h++; m -= 60; }
+    if (m >= 60) {
+      h++;
+      m -= 60;
+    }
   }
   return slots;
 }
 
 const DAYS = [
-  { value: "lun", label: "Lun", fullLabel: "Lunedì" },
-  { value: "mar", label: "Mar", fullLabel: "Martedì" },
-  { value: "mer", label: "Mer", fullLabel: "Mercoledì" },
-  { value: "gio", label: "Gio", fullLabel: "Giovedì" },
-  { value: "ven", label: "Ven", fullLabel: "Venerdì" },
-  { value: "sab", label: "Sab", fullLabel: "Sabato" },
-  { value: "dom", label: "Dom", fullLabel: "Domenica" },
+  { value: 'lun', label: 'Lun', fullLabel: 'Lunedì' },
+  { value: 'mar', label: 'Mar', fullLabel: 'Martedì' },
+  { value: 'mer', label: 'Mer', fullLabel: 'Mercoledì' },
+  { value: 'gio', label: 'Gio', fullLabel: 'Giovedì' },
+  { value: 'ven', label: 'Ven', fullLabel: 'Venerdì' },
+  { value: 'sab', label: 'Sab', fullLabel: 'Sabato' },
+  { value: 'dom', label: 'Dom', fullLabel: 'Domenica' },
 ];
 
 export default function NuovoCorsoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get("id");
+  const courseId = searchParams.get('id');
   const isEditMode = !!courseId;
 
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [pricePerMonth, setPricePerMonth] = useState(0);
-  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [], courts: [], start_date: "", end_date: "" }]);
-  const [periodStartTexts, setPeriodStartTexts] = useState<string[]>([""]);
-  const [periodEndTexts, setPeriodEndTexts] = useState<string[]>([""]);
+  const [periods, setPeriods] = useState<SchedulePeriod[]>([
+    { days: [], slots: [], courts: [], start_date: '', end_date: '' },
+  ]);
+  const [periodStartTexts, setPeriodStartTexts] = useState<string[]>(['']);
+  const [periodEndTexts, setPeriodEndTexts] = useState<string[]>(['']);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -100,21 +116,32 @@ export default function NuovoCorsoPage() {
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
-  const [activeDateContext, setActiveDateContext] = useState<{ pidx: number; field: "start" | "end" } | null>(null);
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [activeDateContext, setActiveDateContext] = useState<{
+    pidx: number;
+    field: 'start' | 'end';
+  } | null>(null);
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
 
   useEffect(() => {
     async function loadMaestros() {
       const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, role, metadata")
-        .in("role", ["maestro", "gestore"])
-        .order("full_name");
+        .from('profiles')
+        .select('id, full_name, email, role, metadata')
+        .in('role', ['maestro', 'gestore'])
+        .order('full_name');
       if (data) {
         setMaestros(
           data
             .filter((p) => isBookableCoachProfile(p))
-            .map(({ id, full_name, email }) => ({ id, full_name, email: email || "", role: "maestro" as const }))
+            .map(({ id, full_name, email }) => ({
+              id,
+              full_name,
+              email: email || '',
+              role: 'maestro' as const,
+            })),
         );
       }
     }
@@ -128,10 +155,10 @@ export default function NuovoCorsoPage() {
   useEffect(() => {
     async function loadAthletes() {
       const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone, role")
-        .eq("role", "atleta")
-        .order("full_name");
+        .from('profiles')
+        .select('id, full_name, email, phone, role')
+        .eq('role', 'atleta')
+        .order('full_name');
       if (data) setAthletes(data as Athlete[]);
     }
     loadAthletes();
@@ -141,68 +168,83 @@ export default function NuovoCorsoPage() {
     if (!isEditMode) return;
     async function loadCourse() {
       const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("id", courseId)
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
         .single();
 
       if (error || !data) {
-        setError("Corso non trovato.");
+        setError('Corso non trovato.');
         setLoading(false);
         return;
       }
 
-      setName(data.name ?? "");
-      setDescription(data.description ?? "");
+      setName(data.name ?? '');
+      setDescription(data.description ?? '');
       setPricePerMonth(data.price_per_month ?? 0);
       if (data.schedule_periods && data.schedule_periods.length > 0) {
-        const loaded = data.schedule_periods.map((p: { days: string[]; time: string | null; court?: string | null; courts?: string[] | null; start_date?: string; end_date?: string }) => ({
-          days: p.days ?? [],
-          slots: p.time ? parseTimeToSlots(p.time) : [],
-          courts: p.courts && p.courts.length > 0 ? p.courts : p.court ? [p.court] : [],
-          start_date: p.start_date ?? data.start_date ?? "",
-          end_date: p.end_date ?? data.end_date ?? "",
-        }));
+        const loaded = data.schedule_periods.map(
+          (p: {
+            days: string[];
+            time: string | null;
+            court?: string | null;
+            courts?: string[] | null;
+            start_date?: string;
+            end_date?: string;
+          }) => ({
+            days: p.days ?? [],
+            slots: p.time ? parseTimeToSlots(p.time) : [],
+            courts: p.courts && p.courts.length > 0 ? p.courts : p.court ? [p.court] : [],
+            start_date: p.start_date ?? data.start_date ?? '',
+            end_date: p.end_date ?? data.end_date ?? '',
+          }),
+        );
         setPeriods(loaded);
         setPeriodStartTexts(loaded.map((p: SchedulePeriod) => isoToDisplay(p.start_date)));
         setPeriodEndTexts(loaded.map((p: SchedulePeriod) => isoToDisplay(p.end_date)));
       } else {
         const single: SchedulePeriod = {
           days: data.schedule_days ?? [],
-          slots: parseTimeToSlots(data.schedule_time ?? ""),
+          slots: parseTimeToSlots(data.schedule_time ?? ''),
           courts: data.court_name ? [data.court_name] : [],
-          start_date: data.start_date ?? "",
-          end_date: data.end_date ?? "",
+          start_date: data.start_date ?? '',
+          end_date: data.end_date ?? '',
         };
         setPeriods([single]);
         setPeriodStartTexts([isoToDisplay(single.start_date)]);
         setPeriodEndTexts([isoToDisplay(single.end_date)]);
       }
-      const maestroNames = (data.instructor_name ?? "").split(", ").filter(Boolean);
+      const maestroNames = (data.instructor_name ?? '').split(', ').filter(Boolean);
       setSelectedMaestros(maestroNames.map((n) => ({ id: n, full_name: n })));
       // Load existing enrollments
       const { data: enrollments } = await supabase
-        .from("course_enrollments")
-        .select("user_id, guest_name")
-        .eq("course_id", courseId);
+        .from('course_enrollments')
+        .select('user_id, guest_name')
+        .eq('course_id', courseId);
       if (enrollments && enrollments.length > 0) {
-        const registeredIds = enrollments.filter((e: { user_id: string | null }) => e.user_id).map((e: { user_id: string }) => e.user_id);
-        const guestEnrollments = enrollments.filter((e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name);
+        const registeredIds = enrollments
+          .filter((e: { user_id: string | null }) => e.user_id)
+          .map((e: { user_id: string }) => e.user_id);
+        const guestEnrollments = enrollments.filter(
+          (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name,
+        );
         const athletes: typeof selectedAthletes = [];
         if (registeredIds.length > 0) {
           const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, full_name, email, phone")
-            .in("id", registeredIds);
+            .from('profiles')
+            .select('id, full_name, email, phone')
+            .in('id', registeredIds);
           if (profiles) {
             athletes.push(
-              ...profiles.map((p: { id: string; full_name: string; email: string; phone?: string | null }) => ({
-                userId: p.id,
-                fullName: p.full_name,
-                email: p.email,
-                phone: p.phone ?? undefined,
-                isRegistered: true,
-              }))
+              ...profiles.map(
+                (p: { id: string; full_name: string; email: string; phone?: string | null }) => ({
+                  userId: p.id,
+                  fullName: p.full_name,
+                  email: p.email,
+                  phone: p.phone ?? undefined,
+                  isRegistered: true,
+                }),
+              ),
             );
           }
         }
@@ -216,7 +258,7 @@ export default function NuovoCorsoPage() {
     loadCourse();
   }, [courseId, isEditMode]);
 
-  const WEEK_DAYS_CAL = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
+  const WEEK_DAYS_CAL = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
   const calendarDays = useMemo(() => {
     const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
@@ -231,47 +273,53 @@ export default function NuovoCorsoPage() {
   }, [calendarViewDate]);
 
   function normalizeDate(date: Date): Date {
-    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    return d;
   }
 
   function isSameCalendarDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
   function isoToDisplay(iso: string): string {
-    if (!iso) return "";
-    const parts = iso.split("-");
-    if (parts.length !== 3) return "";
+    if (!iso) return '';
+    const parts = iso.split('-');
+    if (parts.length !== 3) return '';
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
   function displayToIso(text: string): string {
     const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return "";
+    if (!match) return '';
     return `${match[3]}-${match[2]}-${match[1]}`;
   }
 
-  function handlePeriodDateText(pidx: number, field: "start" | "end", value: string) {
-    if (field === "start") {
-      setPeriodStartTexts((prev) => prev.map((t, i) => i === pidx ? value : t));
+  function handlePeriodDateText(pidx: number, field: 'start' | 'end', value: string) {
+    if (field === 'start') {
+      setPeriodStartTexts((prev) => prev.map((t, i) => (i === pidx ? value : t)));
     } else {
-      setPeriodEndTexts((prev) => prev.map((t, i) => i === pidx ? value : t));
+      setPeriodEndTexts((prev) => prev.map((t, i) => (i === pidx ? value : t)));
     }
     const iso = displayToIso(value);
-    const key = field === "start" ? "start_date" : "end_date";
+    const key = field === 'start' ? 'start_date' : 'end_date';
     if (iso) {
-      setPeriods((prev) => prev.map((p, i) => i !== pidx ? p : { ...p, [key]: iso }));
-    } else if (value === "") {
-      setPeriods((prev) => prev.map((p, i) => i !== pidx ? p : { ...p, [key]: "" }));
+      setPeriods((prev) => prev.map((p, i) => (i !== pidx ? p : { ...p, [key]: iso })));
+    } else if (value === '') {
+      setPeriods((prev) => prev.map((p, i) => (i !== pidx ? p : { ...p, [key]: '' })));
     }
   }
 
-  function toggleDatePicker(pidx: number, field: "start" | "end") {
+  function toggleDatePicker(pidx: number, field: 'start' | 'end') {
     if (activeDateContext?.pidx === pidx && activeDateContext?.field === field) {
       setActiveDateContext(null);
       return;
     }
-    const existing = field === "start" ? periods[pidx]?.start_date : periods[pidx]?.end_date;
+    const existing = field === 'start' ? periods[pidx]?.start_date : periods[pidx]?.end_date;
     const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
     setActiveDateContext({ pidx, field });
     setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
@@ -282,123 +330,126 @@ export default function NuovoCorsoPage() {
   }
 
   function dayValueFromDate(date: Date): string {
-    return ["dom", "lun", "mar", "mer", "gio", "ven", "sab"][date.getDay()];
+    return ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'][date.getDay()];
   }
 
   function selectCalendarDay(day: Date) {
     if (!activeDateContext) return;
-    const iso = normalizeDate(day).toISOString().split("T")[0];
+    const iso = normalizeDate(day).toISOString().split('T')[0];
     const display = isoToDisplay(iso);
     const { pidx, field } = activeDateContext;
-    const key = field === "start" ? "start_date" : "end_date";
+    const key = field === 'start' ? 'start_date' : 'end_date';
     const dayValue = dayValueFromDate(day);
-    setPeriods((prev) => prev.map((p, i) => {
-      if (i !== pidx) return p;
-      const days = p.days.includes(dayValue) ? p.days : [...p.days, dayValue];
-      return { ...p, [key]: iso, days };
-    }));
-    if (field === "start") {
-      setPeriodStartTexts((prev) => prev.map((t, i) => i === pidx ? display : t));
+    setPeriods((prev) =>
+      prev.map((p, i) => {
+        if (i !== pidx) return p;
+        const days = p.days.includes(dayValue) ? p.days : [...p.days, dayValue];
+        return { ...p, [key]: iso, days };
+      }),
+    );
+    if (field === 'start') {
+      setPeriodStartTexts((prev) => prev.map((t, i) => (i === pidx ? display : t)));
     } else {
-      setPeriodEndTexts((prev) => prev.map((t, i) => i === pidx ? display : t));
+      setPeriodEndTexts((prev) => prev.map((t, i) => (i === pidx ? display : t)));
     }
     setActiveDateContext(null);
   }
 
   function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  function renderDateCalendarPanel(pidx: number, field: "start" | "end") {
+  function renderDateCalendarPanel(pidx: number, field: 'start' | 'end') {
     const isOpen = activeDateContext?.pidx === pidx && activeDateContext?.field === field;
-    const selectedIso = field === "start" ? periods[pidx]?.start_date : periods[pidx]?.end_date;
+    const selectedIso = field === 'start' ? periods[pidx]?.start_date : periods[pidx]?.end_date;
     const selectedDate = selectedIso ? normalizeDate(new Date(selectedIso)) : null;
     return (
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            key="calendar-panel"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS_CAL.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white"
-                          : isCurrentMonth
-                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
-                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(-1)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                aria-label="Mese precedente"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-sm font-semibold text-gray-900 capitalize">
+                {getCalendarMonthLabel(calendarViewDate)}
+              </p>
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(1)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                aria-label="Mese successivo"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+              {WEEK_DAYS_CAL.map((day) => (
+                <span key={day} className="py-1">
+                  {day}
+                </span>
+              ))}
+            </div>
+            <div className="calendar-grid grid grid-cols-7 gap-1">
+              {calendarDays.map(({ date, isCurrentMonth }) => {
+                const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
+                const isTodayDate = isSameCalendarDay(date, new Date());
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    onClick={() => selectCalendarDay(date)}
+                    className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                      isSelected
+                        ? 'bg-secondary text-white'
+                        : isCurrentMonth
+                        ? 'text-gray-800 border border-gray-200 hover:bg-gray-100'
+                        : 'text-gray-400 border border-gray-100 hover:bg-gray-50'
+                    } ${!isSelected && isTodayDate ? 'ring-1 ring-secondary/40' : ''}`}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   function toggleSlot(pidx: number, time: string) {
-    setPeriods((prev) => prev.map((p, pIdx) => {
-      if (pIdx !== pidx) return p;
-      const slots = p.slots;
-      if (slots.includes(time)) return { ...p, slots: slots.filter((t) => t !== time) };
-      if (slots.length === 0) return { ...p, slots: [time] };
-      const allSlots = [...slots, time].sort((a, b) => {
-        const [hA, mA] = a.split(":").map(Number);
-        const [hB, mB] = b.split(":").map(Number);
-        return hA * 60 + mA - (hB * 60 + mB);
-      });
-      for (let i = 1; i < allSlots.length; i++) {
-        const [hP, mP] = allSlots[i - 1].split(":").map(Number);
-        const [hC, mC] = allSlots[i].split(":").map(Number);
-        if ((hC * 60 + mC) - (hP * 60 + mP) !== 30) return { ...p, slots: [time] };
-      }
-      return { ...p, slots: allSlots };
-    }));
+    setPeriods((prev) =>
+      prev.map((p, pIdx) => {
+        if (pIdx !== pidx) return p;
+        const slots = p.slots;
+        if (slots.includes(time)) return { ...p, slots: slots.filter((t) => t !== time) };
+        if (slots.length === 0) return { ...p, slots: [time] };
+        const allSlots = [...slots, time].sort((a, b) => {
+          const [hA, mA] = a.split(':').map(Number);
+          const [hB, mB] = b.split(':').map(Number);
+          return hA * 60 + mA - (hB * 60 + mB);
+        });
+        for (let i = 1; i < allSlots.length; i++) {
+          const [hP, mP] = allSlots[i - 1].split(':').map(Number);
+          const [hC, mC] = allSlots[i].split(':').map(Number);
+          if (hC * 60 + mC - (hP * 60 + mP) !== 30) return { ...p, slots: [time] };
+        }
+        return { ...p, slots: allSlots };
+      }),
+    );
   }
 
   function handleTimelineMouseDown(e: React.MouseEvent<HTMLDivElement>) {
@@ -406,8 +457,8 @@ export default function NuovoCorsoPage() {
     timelineScrollRef.current = e.currentTarget;
     startX.current = e.pageX - e.currentTarget.offsetLeft;
     scrollLeft.current = e.currentTarget.scrollLeft;
-    e.currentTarget.style.cursor = "grabbing";
-    e.currentTarget.style.userSelect = "none";
+    e.currentTarget.style.cursor = 'grabbing';
+    e.currentTarget.style.userSelect = 'none';
   }
   function handleTimelineMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!isDragging.current || !timelineScrollRef.current) return;
@@ -417,31 +468,40 @@ export default function NuovoCorsoPage() {
   function handleTimelineMouseUp() {
     isDragging.current = false;
     if (timelineScrollRef.current) {
-      timelineScrollRef.current.style.cursor = "grab";
-      timelineScrollRef.current.style.userSelect = "auto";
+      timelineScrollRef.current.style.cursor = 'grab';
+      timelineScrollRef.current.style.userSelect = 'auto';
     }
   }
 
   function toggleDay(pidx: number, day: string) {
-    setPeriods((prev) => prev.map((p, pIdx) => {
-      if (pIdx !== pidx) return p;
-      const days = p.days.includes(day) ? p.days.filter((d) => d !== day) : [...p.days, day];
-      return { ...p, days };
-    }));
+    setPeriods((prev) =>
+      prev.map((p, pIdx) => {
+        if (pIdx !== pidx) return p;
+        const days = p.days.includes(day) ? p.days.filter((d) => d !== day) : [...p.days, day];
+        return { ...p, days };
+      }),
+    );
   }
 
   function toggleCourt(pidx: number, court: string) {
-    setPeriods((prev) => prev.map((p, pIdx) => {
-      if (pIdx !== pidx) return p;
-      const courts = p.courts.includes(court) ? p.courts.filter((c) => c !== court) : [...p.courts, court];
-      return { ...p, courts };
-    }));
+    setPeriods((prev) =>
+      prev.map((p, pIdx) => {
+        if (pIdx !== pidx) return p;
+        const courts = p.courts.includes(court)
+          ? p.courts.filter((c) => c !== court)
+          : [...p.courts, court];
+        return { ...p, courts };
+      }),
+    );
   }
 
   function addPeriod() {
-    setPeriods((prev) => [...prev, { days: [], slots: [], courts: [], start_date: "", end_date: "" }]);
-    setPeriodStartTexts((prev) => [...prev, ""]);
-    setPeriodEndTexts((prev) => [...prev, ""]);
+    setPeriods((prev) => [
+      ...prev,
+      { days: [], slots: [], courts: [], start_date: '', end_date: '' },
+    ]);
+    setPeriodStartTexts((prev) => [...prev, '']);
+    setPeriodEndTexts((prev) => [...prev, '']);
   }
 
   function removePeriod(idx: number) {
@@ -452,13 +512,13 @@ export default function NuovoCorsoPage() {
 
   async function handleSubmit() {
     if (!name.trim()) {
-      setError("Il nome del corso è obbligatorio.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setError('Il nome del corso è obbligatorio.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     setSubmitting(true);
-    setError("");
+    setError('');
 
     try {
       const allDays = [...new Set(periods.flatMap((p) => p.days))];
@@ -470,8 +530,14 @@ export default function NuovoCorsoPage() {
         start_date: p.start_date || null,
         end_date: p.end_date || null,
       }));
-      const allStartDates = periods.map((p) => p.start_date).filter(Boolean).sort();
-      const allEndDates = periods.map((p) => p.end_date).filter(Boolean).sort();
+      const allStartDates = periods
+        .map((p) => p.start_date)
+        .filter(Boolean)
+        .sort();
+      const allEndDates = periods
+        .map((p) => p.end_date)
+        .filter(Boolean)
+        .sort();
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
@@ -479,7 +545,7 @@ export default function NuovoCorsoPage() {
         schedule_days: allDays,
         schedule_time: periodsData[0]?.time ?? null,
         schedule_periods: periodsData,
-        instructor_name: selectedMaestros.map((m) => m.full_name).join(", ") || null,
+        instructor_name: selectedMaestros.map((m) => m.full_name).join(', ') || null,
         court_name: periods[0]?.courts?.[0] || null,
         start_date: allStartDates[0] ?? null,
         end_date: allEndDates[allEndDates.length - 1] ?? null,
@@ -489,23 +555,23 @@ export default function NuovoCorsoPage() {
       // Avviso: prenotazioni gia' presenti negli slot che questo corso occuperebbe.
       const involvedCourts = [
         ...new Set(
-          [payload.court_name, ...periodsData.flatMap((p) => p.courts)].filter(
-            (c): c is string => Boolean(c)
-          )
+          [payload.court_name, ...periodsData.flatMap((p) => p.courts)].filter((c): c is string =>
+            Boolean(c),
+          ),
         ),
       ];
       if (involvedCourts.length > 0) {
-        const rangeStart = payload.start_date || new Date().toISOString().split("T")[0];
+        const rangeStart = payload.start_date || new Date().toISOString().split('T')[0];
         let bookingsQuery = supabase
-          .from("bookings")
-          .select("id, court, start_time, end_time")
-          .in("court", involvedCourts)
-          .neq("status", "cancelled")
-          .neq("status", "rejected")
-          .neq("status", "pending")
-          .gte("start_time", `${rangeStart}T00:00:00.000Z`);
+          .from('bookings')
+          .select('id, court, start_time, end_time')
+          .in('court', involvedCourts)
+          .neq('status', 'cancelled')
+          .neq('status', 'rejected')
+          .neq('status', 'pending')
+          .gte('start_time', `${rangeStart}T00:00:00.000Z`);
         if (payload.end_date) {
-          bookingsQuery = bookingsQuery.lte("start_time", `${payload.end_date}T23:59:59.999Z`);
+          bookingsQuery = bookingsQuery.lte('start_time', `${payload.end_date}T23:59:59.999Z`);
         }
         const { data: existingBookings } = await bookingsQuery;
         const blocked = findBookingsBlockedByCourse(
@@ -517,13 +583,13 @@ export default function NuovoCorsoPage() {
             start_date: payload.start_date,
             end_date: payload.end_date,
           },
-          existingBookings || []
+          existingBookings || [],
         );
         if (blocked.length > 0) {
           const proceed = window.confirm(
             `Attenzione: ci sono ${blocked.length} prenotazione/i gia' presenti negli orari coperti da questo corso. ` +
               `Se salvi, resteranno sovrapposte al corso (non verranno rimosse automaticamente).\n\n` +
-              `Vuoi salvare comunque il corso?`
+              `Vuoi salvare comunque il corso?`,
           );
           if (!proceed) {
             setSubmitting(false);
@@ -535,13 +601,15 @@ export default function NuovoCorsoPage() {
       let err;
       let savedCourseId = courseId;
       if (isEditMode) {
-        ({ error: err } = await supabase.from("courses").update(payload).eq("id", courseId));
+        ({ error: err } = await supabase.from('courses').update(payload).eq('id', courseId));
       } else {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await getSessionUser();
         const { data: inserted, error: insertErr } = await supabase
-          .from("courses")
+          .from('courses')
           .insert([{ ...payload, created_by: user?.id ?? null }])
-          .select("id")
+          .select('id')
           .single();
         err = insertErr;
         if (inserted) savedCourseId = inserted.id;
@@ -549,33 +617,46 @@ export default function NuovoCorsoPage() {
 
       if (err) {
         setError(err.message);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
       // Save enrollments
       if (savedCourseId) {
-        const { error: delErr } = await supabase.from("course_enrollments").delete().eq("course_id", savedCourseId);
-        if (delErr) throw new Error("Errore rimozione iscrizioni precedenti: " + delErr.message);
+        const { error: delErr } = await supabase
+          .from('course_enrollments')
+          .delete()
+          .eq('course_id', savedCourseId);
+        if (delErr) throw new Error('Errore rimozione iscrizioni precedenti: ' + delErr.message);
 
         const registeredAthletes = selectedAthletes.filter((a) => a.isRegistered && a.userId);
         const guestAthletes = selectedAthletes.filter((a) => !a.isRegistered && a.fullName.trim());
         const fee = pricePerMonth > 0 ? pricePerMonth : null;
         const rows = [
-          ...registeredAthletes.map((a) => ({ course_id: savedCourseId, user_id: a.userId, fee, guest_name: null })),
-          ...guestAthletes.map((a) => ({ course_id: savedCourseId, user_id: null, fee, guest_name: a.fullName.trim() })),
+          ...registeredAthletes.map((a) => ({
+            course_id: savedCourseId,
+            user_id: a.userId,
+            fee,
+            guest_name: null,
+          })),
+          ...guestAthletes.map((a) => ({
+            course_id: savedCourseId,
+            user_id: null,
+            fee,
+            guest_name: a.fullName.trim(),
+          })),
         ];
         if (rows.length > 0) {
-          const { error: insErr } = await supabase.from("course_enrollments").insert(rows);
-          if (insErr) throw new Error("Errore salvataggio partecipanti: " + insErr.message);
+          const { error: insErr } = await supabase.from('course_enrollments').insert(rows);
+          if (insErr) throw new Error('Errore salvataggio partecipanti: ' + insErr.message);
         }
       }
 
-      setSuccess(isEditMode ? "Corso aggiornato con successo!" : "Corso creato con successo!");
-      setTimeout(() => router.push("/dashboard/admin/corsi"), 1200);
+      setSuccess(isEditMode ? 'Corso aggiornato con successo!' : 'Corso creato con successo!');
+      setTimeout(() => router.push('/dashboard/admin/corsi'), 1200);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Errore imprevisto. Riprova.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setError(e instanceof Error ? e.message : 'Errore imprevisto. Riprova.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
     }
@@ -583,7 +664,7 @@ export default function NuovoCorsoPage() {
 
   if (loading) {
     return (
-      <AuthGuard allowedRoles={["admin", "gestore"]}>
+      <AuthGuard allowedRoles={['admin', 'gestore']}>
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 animate-spin text-secondary" />
         </div>
@@ -592,19 +673,22 @@ export default function NuovoCorsoPage() {
   }
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={['admin', 'gestore']}>
       <div className="space-y-6 pt-3">
         {/* Breadcrumb + Title */}
         <div>
           <p className="breadcrumb text-secondary/60">
-            <Link href="/dashboard/admin/corsi" className="hover:text-secondary/80 transition-colors">
+            <Link
+              href="/dashboard/admin/corsi"
+              className="hover:text-secondary/80 transition-colors"
+            >
               Corsi
             </Link>
-            {" › "}
-            <span>{isEditMode ? "Modifica Corso" : "Nuovo Corso"}</span>
+            {' › '}
+            <span>{isEditMode ? 'Modifica Corso' : 'Nuovo Corso'}</span>
           </p>
           <h1 className="text-4xl font-bold text-secondary">
-            {isEditMode ? "Modifica Corso" : "Nuovo Corso"}
+            {isEditMode ? 'Modifica Corso' : 'Nuovo Corso'}
           </h1>
         </div>
 
@@ -625,7 +709,9 @@ export default function NuovoCorsoPage() {
         {/* Informazioni generali */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni generali</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni generali
+            </h2>
           </div>
           <div className="divide-y divide-black/10">
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
@@ -644,7 +730,9 @@ export default function NuovoCorsoPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Descrizione
+              </label>
               <div className="flex-1">
                 <textarea
                   rows={3}
@@ -657,14 +745,16 @@ export default function NuovoCorsoPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Quota</label>
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Quota
+              </label>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={pricePerMonth || ""}
+                    value={pricePerMonth || ''}
                     onChange={(e) => setPricePerMonth(parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
                     className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
@@ -686,18 +776,25 @@ export default function NuovoCorsoPage() {
           <div className="p-6">
             <AthletesSelector
               athletes={maestros}
-              selectedAthletes={selectedMaestros.map((m) => ({ userId: m.id, fullName: m.full_name, isRegistered: true }))}
+              selectedAthletes={selectedMaestros.map((m) => ({
+                userId: m.id,
+                fullName: m.full_name,
+                isRegistered: true,
+              }))}
               inlineMode={true}
               keepNeutralSelectedBorder={true}
               keepNeutralInputFocus={true}
               allowGuestParticipants={false}
               hideEmptyMessages={true}
               searchPlaceholder="Cerca maestro"
-              participantToneByIndex={() => "dark"}
+              participantToneByIndex={() => 'dark'}
               maxAthletes={null}
               onAthleteAdd={(athlete) => {
                 if (athlete.userId && !selectedMaestros.some((m) => m.id === athlete.userId)) {
-                  setSelectedMaestros((prev) => [...prev, { id: athlete.userId!, full_name: athlete.fullName }]);
+                  setSelectedMaestros((prev) => [
+                    ...prev,
+                    { id: athlete.userId!, full_name: athlete.fullName },
+                  ]);
                 }
               }}
               onAthleteRemove={(index) => {
@@ -721,7 +818,9 @@ export default function NuovoCorsoPage() {
               keepNeutralInputFocus={true}
               hideEmptyMessages={true}
               onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
-              onAthleteRemove={(index) => setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))}
+              onAthleteRemove={(index) =>
+                setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))
+              }
               maxAthletes={null}
             />
           </div>
@@ -731,7 +830,7 @@ export default function NuovoCorsoPage() {
           <div key={pidx} className="bg-white rounded-lg border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-black/10 bg-gray-50 flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
-                {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
+                {periods.length > 1 ? `Periodo ${pidx + 1}` : 'Periodo'}
               </h2>
               {periods.length > 1 && (
                 <button
@@ -745,149 +844,168 @@ export default function NuovoCorsoPage() {
               )}
             </div>
             <div className="divide-y divide-black/10">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Data inizio
+                </label>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="GG/MM/AAAA"
+                      value={periodStartTexts[pidx] ?? ''}
+                      onChange={(e) => handlePeriodDateText(pidx, 'start', e.target.value)}
+                      maxLength={10}
+                      className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleDatePicker(pidx, 'start')}
+                      className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                      aria-label="Apri calendario"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {renderDateCalendarPanel(pidx, 'start')}
+                </div>
+              </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="GG/MM/AAAA"
-                        value={periodStartTexts[pidx] ?? ""}
-                        onChange={(e) => handlePeriodDateText(pidx, "start", e.target.value)}
-                        maxLength={10}
-                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleDatePicker(pidx, "start")}
-                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
-                        aria-label="Apri calendario"
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                      </button>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Data fine
+                </label>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="GG/MM/AAAA"
+                      value={periodEndTexts[pidx] ?? ''}
+                      onChange={(e) => handlePeriodDateText(pidx, 'end', e.target.value)}
+                      maxLength={10}
+                      className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleDatePicker(pidx, 'end')}
+                      className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                      aria-label="Apri calendario"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {renderDateCalendarPanel(pidx, 'end')}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Giorni settimana
+                </label>
+                <div className="flex-1 flex flex-col sm:flex-row sm:flex-wrap gap-2">
+                  {DAYS.map((day) => (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => toggleDay(pidx, day.value)}
+                      className={`w-full sm:w-auto sm:grow sm:basis-0 px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
+                        period.days.includes(day.value)
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      <span className="sm:hidden">{day.fullLabel}</span>
+                      <span className="hidden sm:inline">{day.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Campo
+                </label>
+                <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2">
+                  {courts.map((court) => (
+                    <button
+                      key={court}
+                      type="button"
+                      onClick={() => toggleCourt(pidx, court)}
+                      className={`w-full px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
+                        period.courts.includes(court)
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {court}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 p-6">
+                <label className="text-sm text-secondary font-medium">Fascia oraria</label>
+                <div
+                  className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                  style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+                  onMouseDown={handleTimelineMouseDown}
+                  onMouseMove={handleTimelineMouseMove}
+                  onMouseUp={handleTimelineMouseUp}
+                  onMouseLeave={handleTimelineMouseUp}
+                >
+                  <div className="min-w-[1280px]">
+                    <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                      {Array.from({ length: 16 }, (_, i) => (
+                        <div
+                          key={i}
+                          className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                        >
+                          {String(7 + i).padStart(2, '0')}:00
+                        </div>
+                      ))}
                     </div>
-                    {renderDateCalendarPanel(pidx, "start")}
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="GG/MM/AAAA"
-                        value={periodEndTexts[pidx] ?? ""}
-                        onChange={(e) => handlePeriodDateText(pidx, "end", e.target.value)}
-                        maxLength={10}
-                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleDatePicker(pidx, "end")}
-                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
-                        aria-label="Apri calendario"
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {renderDateCalendarPanel(pidx, "end")}
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
-                  <div className="flex-1 flex flex-col sm:flex-row sm:flex-wrap gap-2">
-                    {DAYS.map((day) => (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => toggleDay(pidx, day.value)}
-                        className={`w-full sm:w-auto sm:grow sm:basis-0 px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
-                          period.days.includes(day.value)
-                            ? "bg-secondary text-white border-secondary"
-                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                        }`}
-                      >
-                        <span className="sm:hidden">{day.fullLabel}</span>
-                        <span className="hidden sm:inline">{day.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2">
-                    {courts.map((court) => (
-                      <button
-                        key={court}
-                        type="button"
-                        onClick={() => toggleCourt(pidx, court)}
-                        className={`w-full px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
-                          period.courts.includes(court)
-                            ? "bg-secondary text-white border-secondary"
-                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                        }`}
-                      >
-                        {court}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 p-6">
-                  <label className="text-sm text-secondary font-medium">Fascia oraria</label>
-                  <div
-                    className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-                    style={{ overflowX: "scroll", WebkitOverflowScrolling: "touch" }}
-                    onMouseDown={handleTimelineMouseDown}
-                    onMouseMove={handleTimelineMouseMove}
-                    onMouseUp={handleTimelineMouseUp}
-                    onMouseLeave={handleTimelineMouseUp}
-                  >
-                    <div className="min-w-[1280px]">
-                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
-                        {Array.from({ length: 16 }, (_, i) => (
-                          <div key={i} className="p-3 text-center font-bold text-white text-xs flex items-center justify-center">
-                            {String(7 + i).padStart(2, "0")}:00
-                          </div>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg" style={{ minHeight: "70px" }}>
-                        {Array.from({ length: 16 }, (_, hi) => {
-                          const hour = 7 + hi;
-                          const t1 = `${String(hour).padStart(2, "0")}:00`;
-                          const t2 = hour < 22 ? `${String(hour).padStart(2, "0")}:30` : null;
-                          return (
-                            <div key={hi} className="border-r border-gray-200 last:border-r-0 relative flex">
+                    <div
+                      className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg"
+                      style={{ minHeight: '70px' }}
+                    >
+                      {Array.from({ length: 16 }, (_, hi) => {
+                        const hour = 7 + hi;
+                        const t1 = `${String(hour).padStart(2, '0')}:00`;
+                        const t2 = hour < 22 ? `${String(hour).padStart(2, '0')}:30` : null;
+                        return (
+                          <div
+                            key={hi}
+                            className="border-r border-gray-200 last:border-r-0 relative flex"
+                          >
+                            <div
+                              className={`flex-1 transition-colors cursor-pointer ${
+                                period.slots.includes(t1)
+                                  ? 'bg-secondary'
+                                  : 'bg-white hover:bg-secondary/10'
+                              }`}
+                              onClick={() => toggleSlot(pidx, t1)}
+                              title={t1}
+                            >
+                              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300 pointer-events-none" />
+                            </div>
+                            {t2 && (
                               <div
                                 className={`flex-1 transition-colors cursor-pointer ${
-                                  period.slots.includes(t1) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
+                                  period.slots.includes(t2)
+                                    ? 'bg-secondary'
+                                    : 'bg-white hover:bg-secondary/10'
                                 }`}
-                                onClick={() => toggleSlot(pidx, t1)}
-                                title={t1}
-                              >
-                                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300 pointer-events-none" />
-                              </div>
-                              {t2 && (
-                                <div
-                                  className={`flex-1 transition-colors cursor-pointer ${
-                                    period.slots.includes(t2) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
-                                  }`}
-                                  onClick={() => toggleSlot(pidx, t2)}
-                                  title={t2}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                                onClick={() => toggleSlot(pidx, t2)}
+                                title={t2}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
-
+              </div>
             </div>
           </div>
         ))}
@@ -914,7 +1032,7 @@ export default function NuovoCorsoPage() {
                 <span>Salvataggio...</span>
               </>
             ) : (
-              <span>{isEditMode ? "Salva Modifiche" : "Crea Corso"}</span>
+              <span>{isEditMode ? 'Salva Modifiche' : 'Crea Corso'}</span>
             )}
           </button>
         </div>

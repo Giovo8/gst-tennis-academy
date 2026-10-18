@@ -1,11 +1,18 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const WEEK_DAYS_SHORT = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
-const WEEK_DAYS_FULL = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+const WEEK_DAYS_SHORT = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
+const WEEK_DAYS_FULL = [
+  'Lunedì',
+  'Martedì',
+  'Mercoledì',
+  'Giovedì',
+  'Venerdì',
+  'Sabato',
+  'Domenica',
+];
 
 function normalizeDate(date: Date): Date {
   const normalized = new Date(date);
@@ -23,20 +30,23 @@ function isSameCalendarDay(a: Date, b: Date): boolean {
 
 function capitalizeWords(text: string): string {
   return text
-    .split(" ")
+    .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 }
 
 function formatDateHeader(date: Date, short: boolean): string {
-  const formatted = date.toLocaleDateString("it-IT", short
-    ? { weekday: "short", day: "numeric", month: "short", year: "numeric" }
-    : { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const formatted = date.toLocaleDateString(
+    'it-IT',
+    short
+      ? { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }
+      : { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
+  );
   return capitalizeWords(formatted);
 }
 
 function getCalendarMonthLabel(date: Date): string {
-  const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+  const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
@@ -79,7 +89,9 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
       const next = !prev;
       if (next) {
         const normalizedSelected = normalizeDate(selectedDate);
-        setCalendarViewDate(new Date(normalizedSelected.getFullYear(), normalizedSelected.getMonth(), 1));
+        setCalendarViewDate(
+          new Date(normalizedSelected.getFullYear(), normalizedSelected.getMonth(), 1),
+        );
       }
       return next;
     });
@@ -109,14 +121,17 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
         aria-expanded={datePickerOpen}
         onClick={toggleDatePicker}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             toggleDatePicker();
           }
         }}
       >
         <button
-          onClick={(e) => { e.stopPropagation(); changeDate(-1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            changeDate(-1);
+          }}
           className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-white/10 transition-colors hover:bg-white/20 inline-flex items-center justify-center"
         >
           <ChevronLeft className="h-4 w-4 text-white" strokeWidth={3} />
@@ -124,7 +139,10 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
 
         <div className="min-w-0 flex justify-center">
           <div className="relative inline-flex items-center justify-center gap-1.5 rounded-lg px-1.5 sm:px-2 py-1">
-            <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
+            <span
+              className="inline-flex items-center justify-center sm:hidden"
+              style={{ gap: '6px' }}
+            >
               <span className="font-bold text-white text-xl leading-none text-center whitespace-nowrap">
                 {formatDateHeader(selectedDate, true)}
               </span>
@@ -138,92 +156,96 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
         </div>
 
         <button
-          onClick={(e) => { e.stopPropagation(); changeDate(1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            changeDate(1);
+          }}
           className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-white/10 transition-colors hover:bg-white/20 inline-flex items-center justify-center"
         >
           <ChevronRight className="h-4 w-4 text-white" strokeWidth={3} />
         </button>
       </div>
 
-      <AnimatePresence initial={false}>
-        {datePickerOpen && (
-          <motion.div
-            key="date-picker-panel"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="bg-white border border-gray-200 rounded-b-lg px-3 sm:px-4 pb-4 pt-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="appearance-none h-8 w-8 box-border inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-100 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" strokeWidth={3} />
-                </button>
-                <div className="flex-1 mx-2 inline-flex items-center justify-center text-sm font-bold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="appearance-none h-8 w-8 box-border inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-100 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" strokeWidth={3} />
-                </button>
+      {/* Apertura/chiusura animata in CSS (grid-template-rows 0fr -> 1fr) invece di framer-motion */}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-[250ms] ease-in-out ${
+          datePickerOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+        aria-hidden={!datePickerOpen}
+        inert={!datePickerOpen}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="bg-white border border-gray-200 rounded-b-lg px-3 sm:px-4 pb-4 pt-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(-1)}
+                className="appearance-none h-8 w-8 box-border inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-100 transition-colors"
+                aria-label="Mese precedente"
+              >
+                <ChevronLeft className="h-4 w-4" strokeWidth={3} />
+              </button>
+              <div className="flex-1 mx-2 inline-flex items-center justify-center text-sm font-bold text-gray-900 capitalize">
+                {getCalendarMonthLabel(calendarViewDate)}
               </div>
-
-              <div className="calendar-grid mt-3 grid grid-cols-7 gap-1 text-xs font-bold text-gray-500 uppercase">
-                {WEEK_DAYS_SHORT.map((day, index) => (
-                  <div key={day} className="w-full min-w-0 box-border flex items-center justify-center py-1 border border-transparent">
-                    <span className="sm:hidden truncate">{day}</span>
-                    <span className="hidden sm:inline truncate">{WEEK_DAYS_FULL[index]}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="calendar-grid grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, selectedDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white border border-transparent"
-                          : isCurrentMonth
-                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
-                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={handleDatePickerToday}
-                  className="w-full py-2 rounded-lg text-sm font-bold text-white bg-secondary hover:opacity-90 transition-opacity"
-                >
-                  Oggi
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(1)}
+                className="appearance-none h-8 w-8 box-border inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-100 transition-colors"
+                aria-label="Mese successivo"
+              >
+                <ChevronRight className="h-4 w-4" strokeWidth={3} />
+              </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+            <div className="calendar-grid mt-3 grid grid-cols-7 gap-1 text-xs font-bold text-gray-500 uppercase">
+              {WEEK_DAYS_SHORT.map((day, index) => (
+                <div
+                  key={day}
+                  className="w-full min-w-0 box-border flex items-center justify-center py-1 border border-transparent"
+                >
+                  <span className="sm:hidden truncate">{day}</span>
+                  <span className="hidden sm:inline truncate">{WEEK_DAYS_FULL[index]}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="calendar-grid grid grid-cols-7 gap-1">
+              {calendarDays.map(({ date, isCurrentMonth }) => {
+                const isSelected = isSameCalendarDay(date, selectedDate);
+                const isTodayDate = isSameCalendarDay(date, new Date());
+
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    onClick={() => selectCalendarDay(date)}
+                    className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                      isSelected
+                        ? 'bg-secondary text-white border border-transparent'
+                        : isCurrentMonth
+                        ? 'text-gray-800 border border-gray-200 hover:bg-gray-100'
+                        : 'text-gray-400 border border-gray-100 hover:bg-gray-50'
+                    } ${!isSelected && isTodayDate ? 'ring-1 ring-secondary/40' : ''}`}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleDatePickerToday}
+                className="w-full py-2 rounded-lg text-sm font-bold text-white bg-secondary hover:opacity-90 transition-opacity"
+              >
+                Oggi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { toast } from 'sonner';
 import {
   Loader2,
   AlertCircle,
@@ -14,13 +16,13 @@ import {
   Upload,
   Link as LinkIcon,
   X,
-} from "lucide-react";
+} from 'lucide-react';
 
 type UserProfile = {
   id: string;
   full_name: string | null;
   email: string;
-  role: "admin" | "gestore" | "maestro" | "atleta";
+  role: 'admin' | 'gestore' | 'maestro' | 'atleta';
   phone: string | null;
   date_of_birth?: string | null;
   birth_date?: string | null;
@@ -51,16 +53,16 @@ type AthleteProfilePageProps = {
 };
 
 export default function AthleteProfilePage({
-  profileEditPath = "/dashboard/atleta/profile/modifica",
+  profileEditPath = '/dashboard/atleta/profile/modifica',
 }: AthleteProfilePageProps) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [arenaStats, setArenaStats] = useState<ArenaStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [resettingPassword, setResettingPassword] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState('');
 
   useEffect(() => {
     void loadUserProfile();
@@ -70,18 +72,18 @@ export default function AthleteProfilePage({
     try {
       const {
         data: { user: authUser },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
 
       if (!authUser) {
-        setError("Utente non autenticato");
+        setError('Utente non autenticato');
         setLoading(false);
         return;
       }
 
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authUser.id)
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
         .single();
 
       if (profileError) throw profileError;
@@ -89,17 +91,17 @@ export default function AthleteProfilePage({
       setUser(profileData);
 
       const { data: arenaData } = await supabase
-        .from("arena_stats")
-        .select("level")
-        .eq("user_id", authUser.id)
+        .from('arena_stats')
+        .select('level')
+        .eq('user_id', authUser.id)
         .maybeSingle();
 
       if (arenaData) {
         setArenaStats(arenaData);
       }
     } catch (err: unknown) {
-      console.error("Error loading profile:", err);
-      setError(err instanceof Error ? err.message : "Errore nel caricamento del profilo");
+      console.error('Error loading profile:', err);
+      setError(err instanceof Error ? err.message : 'Errore nel caricamento del profilo');
     } finally {
       setLoading(false);
     }
@@ -118,9 +120,9 @@ export default function AthleteProfilePage({
 
       if (resetError) throw resetError;
 
-      toast.success("Email di reset password inviata con successo.");
+      toast.success('Email di reset password inviata con successo.');
     } catch (err: unknown) {
-      console.error("Error resetting password:", err);
+      console.error('Error resetting password:', err);
       toast.error(err instanceof Error ? err.message : "Errore durante l'invio del reset password");
     } finally {
       setResettingPassword(false);
@@ -136,7 +138,7 @@ export default function AthleteProfilePage({
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       toast.warning("Il file deve essere un'immagine");
       return;
     }
@@ -146,14 +148,14 @@ export default function AthleteProfilePage({
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-      uploadFormData.append("targetUserId", user.id);
+      uploadFormData.append('file', file);
+      uploadFormData.append('targetUserId', user.id);
       if (user.avatar_url) {
-        uploadFormData.append("oldImageUrl", user.avatar_url);
+        uploadFormData.append('oldImageUrl', user.avatar_url);
       }
 
-      const uploadResponse = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const uploadResponse = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: uploadFormData,
       });
 
@@ -165,15 +167,15 @@ export default function AthleteProfilePage({
       const publicUrl = uploadPayload.url as string;
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setUser({ ...user, avatar_url: publicUrl });
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      console.error('Error uploading avatar:', error);
       toast.error("Errore durante l'upload dell'immagine");
     } finally {
       setUploadingAvatar(false);
@@ -186,7 +188,7 @@ export default function AthleteProfilePage({
     try {
       new URL(avatarUrl);
     } catch {
-      toast.warning("Inserisci un URL valido");
+      toast.warning('Inserisci un URL valido');
       return;
     }
 
@@ -195,16 +197,16 @@ export default function AthleteProfilePage({
 
     try {
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: avatarUrl })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setUser({ ...user, avatar_url: avatarUrl });
-      setAvatarUrl("");
+      setAvatarUrl('');
     } catch (error) {
-      console.error("Error updating avatar:", error);
+      console.error('Error updating avatar:', error);
       toast.error("Errore durante l'aggiornamento dell'immagine");
     } finally {
       setUploadingAvatar(false);
@@ -219,12 +221,12 @@ export default function AthleteProfilePage({
 
     try {
       const deleteFormData = new FormData();
-      deleteFormData.append("deleteOnly", "true");
-      deleteFormData.append("targetUserId", user.id);
-      deleteFormData.append("oldImageUrl", user.avatar_url);
+      deleteFormData.append('deleteOnly', 'true');
+      deleteFormData.append('targetUserId', user.id);
+      deleteFormData.append('oldImageUrl', user.avatar_url);
 
-      const deleteResponse = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const deleteResponse = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: deleteFormData,
       });
 
@@ -234,16 +236,16 @@ export default function AthleteProfilePage({
       }
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: null })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setUser({ ...user, avatar_url: null });
-      setAvatarUrl("");
+      setAvatarUrl('');
     } catch (error) {
-      console.error("Error removing avatar:", error);
+      console.error('Error removing avatar:', error);
       toast.error("Errore durante la rimozione dell'avatar");
     } finally {
       setUploadingAvatar(false);
@@ -252,28 +254,28 @@ export default function AthleteProfilePage({
 
   const roleLabels = {
     admin: {
-      label: "Admin",
+      label: 'Admin',
       icon: Crown,
-      bgColor: "#023047",
-      borderLeftColor: "#011a24",
+      bgColor: '#023047',
+      borderLeftColor: '#011a24',
     },
     gestore: {
-      label: "Gestore",
+      label: 'Gestore',
       icon: Home,
-      bgColor: "#023047",
-      borderLeftColor: "#011a24",
+      bgColor: '#023047',
+      borderLeftColor: '#011a24',
     },
     maestro: {
-      label: "Maestro",
+      label: 'Maestro',
       icon: Dumbbell,
-      bgColor: "#05384c",
-      borderLeftColor: "#022431",
+      bgColor: '#05384c',
+      borderLeftColor: '#022431',
     },
     atleta: {
-      label: "Atleta",
+      label: 'Atleta',
       icon: User,
-      bgColor: "var(--secondary)",
-      borderLeftColor: "#023047",
+      bgColor: 'var(--secondary)',
+      borderLeftColor: '#023047',
     },
   };
 
@@ -292,7 +294,7 @@ export default function AthleteProfilePage({
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-900">Errore</p>
-            <p className="text-sm text-red-700 mt-1">{error || "Utente non trovato"}</p>
+            <p className="text-sm text-red-700 mt-1">{error || 'Utente non trovato'}</p>
           </div>
         </div>
       </div>
@@ -303,10 +305,9 @@ export default function AthleteProfilePage({
   const RoleIcon = roleInfo.icon;
   const dateOfBirth = user.date_of_birth || user.birth_date;
   const formatOptionalDate = (value?: string | null) =>
-    value ? new Date(value).toLocaleDateString("it-IT") : "-";
-  const sectionCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden h-full";
-  const sectionCardHeaderClassName =
-    "px-6 py-4 border-b border-black/10 bg-gray-50";
+    value ? new Date(value).toLocaleDateString('it-IT') : '-';
+  const sectionCardClassName = 'bg-white rounded-lg border border-black/10 overflow-hidden h-full';
+  const sectionCardHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gray-50';
 
   return (
     <div className="space-y-6 pt-3">
@@ -322,7 +323,7 @@ export default function AthleteProfilePage({
           <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold text-white truncate">
-              {user.full_name || "Nome non impostato"}
+              {user.full_name || 'Nome non impostato'}
             </h2>
           </div>
         </div>
@@ -338,7 +339,7 @@ export default function AthleteProfilePage({
               {user.avatar_url ? (
                 <img
                   src={user.avatar_url}
-                  alt={user.full_name || "Avatar"}
+                  alt={user.full_name || 'Avatar'}
                   className="block w-full h-auto object-cover"
                 />
               ) : (
@@ -352,67 +353,87 @@ export default function AthleteProfilePage({
 
         <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Utente
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Nome Completo</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Nome Completo
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.full_name || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.full_name || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Data di Nascita
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
-                    {dateOfBirth ? new Date(dateOfBirth).toLocaleDateString("it-IT") : "-"}
+                    {dateOfBirth ? new Date(dateOfBirth).toLocaleDateString('it-IT') : '-'}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta di Nascita</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Citta di Nascita
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.birth_city || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.metadata?.birth_city || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Indirizzo
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.address || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.metadata?.address || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta / Provincia / CAP</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Citta / Provincia / CAP
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {[user.metadata?.city, user.metadata?.province, user.metadata?.postal_code]
                       .filter(Boolean)
-                      .join(", ") || "-"}
+                      .join(', ') || '-'}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Codice Fiscale
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold font-mono">{user.metadata?.fiscal_code || "-"}</p>
+                  <p className="text-secondary font-semibold font-mono">
+                    {user.metadata?.fiscal_code || '-'}
+                  </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Telefono
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.phone || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.phone || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Email
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold break-all">{user.email}</p>
                 </div>
@@ -423,41 +444,51 @@ export default function AthleteProfilePage({
 
         <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Account
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Data Registrazione
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
-                    {new Date(user.created_at).toLocaleDateString("it-IT", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
+                    {new Date(user.created_at).toLocaleDateString('it-IT', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
                     })}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  ID Utente
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold break-all">{user.id}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ruolo</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Ruolo
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">{roleInfo.label}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Rank Arena</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Rank Arena
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{arenaStats?.level || "-"}</p>
+                  <p className="text-secondary font-semibold">{arenaStats?.level || '-'}</p>
                 </div>
               </div>
             </div>
@@ -466,12 +497,16 @@ export default function AthleteProfilePage({
 
         <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Corsi
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Certificato Medico
+                </label>
                 <div className="flex-1">
                   {user.metadata?.certificato_medico_url ? (
                     <a
@@ -489,7 +524,9 @@ export default function AthleteProfilePage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Scadenza Certificato
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {formatOptionalDate(user.metadata?.certificato_medico_scadenza)}
@@ -498,21 +535,29 @@ export default function AthleteProfilePage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Tesserato
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.tesserato || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.metadata?.tesserato || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Numero Tessera
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.numero_tessera || "-"}</p>
+                  <p className="text-secondary font-semibold">
+                    {user.metadata?.numero_tessera || '-'}
+                  </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Scadenza Tesseramento
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {formatOptionalDate(user.metadata?.tesserato_scadenza)}
@@ -554,7 +599,7 @@ export default function AthleteProfilePage({
           disabled={resettingPassword}
           className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {resettingPassword ? "Invio..." : "Reset Password"}
+          {resettingPassword ? 'Invio...' : 'Reset Password'}
         </button>
       </div>
 
@@ -574,10 +619,12 @@ export default function AthleteProfilePage({
 
             <div className="space-y-4 p-6">
               <div>
-                <label className="mb-2 block text-sm font-bold text-gray-700">Carica un&apos;immagine</label>
+                <label className="mb-2 block text-sm font-bold text-gray-700">
+                  Carica un&apos;immagine
+                </label>
                 <button
                   type="button"
-                  onClick={() => document.getElementById("avatar-upload")?.click()}
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold text-white transition-all hover:bg-secondary/90"
                 >
                   <Upload className="h-5 w-5" />
@@ -603,7 +650,9 @@ export default function AthleteProfilePage({
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-gray-700">Inserisci URL immagine</label>
+                <label className="mb-2 block text-sm font-bold text-gray-700">
+                  Inserisci URL immagine
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="url"
@@ -611,7 +660,7 @@ export default function AthleteProfilePage({
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
                     className="flex-1 rounded-lg border border-black/10 bg-white px-4 py-3 text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
-                    onKeyDown={(e) => e.key === "Enter" && handleAvatarUrl()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
                   />
                   <button
                     type="button"
@@ -622,7 +671,9 @@ export default function AthleteProfilePage({
                     <LinkIcon className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-gray-500">Incolla l&apos;URL di un&apos;immagine gia caricata online</p>
+                <p className="mt-2 text-xs text-gray-500">
+                  Incolla l&apos;URL di un&apos;immagine gia caricata online
+                </p>
               </div>
 
               {user.avatar_url && (

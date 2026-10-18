@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
 
 /**
  * API per avviare un torneo
- * 
+ *
  * Questo endpoint gestisce l'avvio del torneo in base al tipo:
  * - eliminazione_diretta: crea il bracket
  * - girone_eliminazione: assegna i partecipanti ai gironi
@@ -12,139 +12,132 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 
 async function getUserProfile(req: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-    
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
     if (!token) {
       return { user: null, profile: null };
     }
-    
+
     const { data: userData, error } = await supabaseServer.auth.getUser(token);
-    
+
     if (error || !userData?.user) {
       return { user: null, profile: null };
     }
-    
+
     const { data: profile } = await supabaseServer
-      .from("profiles")
-      .select("id, role, full_name")
-      .eq("id", userData.user.id)
+      .from('profiles')
+      .select('id, role, full_name')
+      .eq('id', userData.user.id)
       .single();
-    
+
     return { user: userData.user, profile };
-  } catch (error) {
+  } catch {
     return { user: null, profile: null };
   }
 }
 
 export async function POST(
   req: Request,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
     const { profile } = await getUserProfile(req);
-    
-    if (!profile || !["gestore", "admin"].includes(String(profile.role).toLowerCase())) {
-      return NextResponse.json(
-        { error: "Non hai i permessi per avviare tornei" },
-        { status: 403 }
-      );
+
+    if (!profile || !['gestore', 'admin'].includes(String(profile.role).toLowerCase())) {
+      return NextResponse.json({ error: 'Non hai i permessi per avviare tornei' }, { status: 403 });
     }
-    
+
     // Await params if it's a Promise (Next.js 15+)
     const params = context.params instanceof Promise ? await context.params : context.params;
     const tournamentId = params.id;
-    
+
     // Carica il torneo
     const { data: tournament, error: tournamentError } = await supabaseServer
-      .from("tournaments")
-      .select("*")
-      .eq("id", tournamentId)
+      .from('tournaments')
+      .select('*')
+      .eq('id', tournamentId)
       .single();
-    
+
     if (tournamentError || !tournament) {
-      return NextResponse.json(
-        { error: "Torneo non trovato" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Torneo non trovato' }, { status: 404 });
     }
-    
+
     // Verifica che il torneo sia in fase iscrizioni
     if (tournament.current_phase !== 'iscrizioni') {
       return NextResponse.json(
         { error: `Il torneo è già in fase: ${tournament.current_phase}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     // Conta i partecipanti
     const { count: participantsCount, error: countError } = await supabaseServer
-      .from("tournament_participants")
-      .select("*", { count: "exact", head: true })
-      .eq("tournament_id", tournamentId);
-    
+      .from('tournament_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId);
+
     if (countError) {
-      return NextResponse.json(
-        { error: "Errore nel conteggio partecipanti" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Errore nel conteggio partecipanti' }, { status: 500 });
     }
-    
+
     // Verifica numero minimo partecipanti
     const minParticipants = tournament.tournament_type === 'eliminazione_diretta' ? 2 : 3;
     if (!participantsCount || participantsCount < minParticipants) {
       return NextResponse.json(
-        { error: `Numero minimo di partecipanti non raggiunto (minimo: ${minParticipants}, attuali: ${participantsCount})` },
-        { status: 400 }
+        {
+          error: `Numero minimo di partecipanti non raggiunto (minimo: ${minParticipants}, attuali: ${participantsCount})`,
+        },
+        { status: 400 },
       );
     }
-    
+
     // Gestione in base al tipo di torneo
     if (tournament.tournament_type === 'eliminazione_diretta') {
       // Assegna seed ai partecipanti se non li hanno già
       const { data: participants } = await supabaseServer
-        .from("tournament_participants")
-        .select("id, seed")
-        .eq("tournament_id", tournamentId)
-        .order("created_at", { ascending: true });
-      
+        .from('tournament_participants')
+        .select('id, seed')
+        .eq('tournament_id', tournamentId)
+        .order('created_at', { ascending: true });
+
       if (participants) {
         // Assegna seed solo a chi non ce l'ha già
         let seedCounter = 1;
         for (const participant of participants) {
           if (!participant.seed) {
             await supabaseServer
-              .from("tournament_participants")
+              .from('tournament_participants')
               .update({ seed: seedCounter })
-              .eq("id", participant.id);
+              .eq('id', participant.id);
             seedCounter++;
           }
         }
       }
-      
+
       // Aggiorna fase a eliminazione
       const { error: updateError } = await supabaseServer
-        .from("tournaments")
-        .update({ 
+        .from('tournaments')
+        .update({
           current_phase: 'eliminazione',
-          status: 'In Corso'
+          status: 'In Corso',
         })
-        .eq("id", tournamentId);
-      
+        .eq('id', tournamentId);
+
       if (updateError) {
         return NextResponse.json(
           { error: "Errore nell'aggiornamento del torneo" },
-          { status: 500 }
+          { status: 500 },
         );
       }
-      
+
       // Genera automaticamente il bracket
       try {
         const generateRes = await fetch(`${req.url.split('/start')[0]}/generate-bracket`, {
           method: 'POST',
-          headers: req.headers
+          headers: req.headers,
         });
-        
+
         if (!generateRes.ok) {
           const errorData = await generateRes.json();
           console.error('Error auto-generating bracket:', errorData);
@@ -152,49 +145,45 @@ export async function POST(
       } catch (genError) {
         console.error('Error calling generate-bracket:', genError);
       }
-      
+
       return NextResponse.json({
-        message: "Torneo avviato! Bracket generato automaticamente.",
+        message: 'Torneo avviato! Bracket generato automaticamente.',
         tournament_type: 'eliminazione_diretta',
-        bracket_auto_generated: true
+        bracket_auto_generated: true,
       });
     }
-    
+
     if (tournament.tournament_type === 'girone_eliminazione') {
       // Verifica che num_groups sia configurato
       const numGroups = tournament.num_groups || 2;
-      
+
       // PASSO 1: Crea i gironi
-      const { error: createGroupsError } = await supabaseServer.rpc(
-        'create_tournament_groups',
-        { 
-          p_tournament_id: tournamentId,
-          p_num_groups: numGroups
-        }
-      );
-      
+      const { error: createGroupsError } = await supabaseServer.rpc('create_tournament_groups', {
+        p_tournament_id: tournamentId,
+        p_num_groups: numGroups,
+      });
+
       if (createGroupsError) {
-        console.error("Error creating groups:", createGroupsError);
+        console.error('Error creating groups:', createGroupsError);
         return NextResponse.json(
-          { error: "Errore nella creazione dei gironi: " + createGroupsError.message },
-          { status: 500 }
+          { error: 'Errore nella creazione dei gironi: ' + createGroupsError.message },
+          { status: 500 },
         );
       }
-      
+
       // PASSO 2: Assegna partecipanti ai gironi
-      const { error: assignError } = await supabaseServer.rpc(
-        'assign_participants_to_groups',
-        { p_tournament_id: tournamentId }
-      );
-      
+      const { error: assignError } = await supabaseServer.rpc('assign_participants_to_groups', {
+        p_tournament_id: tournamentId,
+      });
+
       if (assignError) {
-        console.error("Error assigning participants to groups:", assignError);
+        console.error('Error assigning participants to groups:', assignError);
         return NextResponse.json(
           { error: "Errore nell'assegnazione ai gironi: " + assignError.message },
-          { status: 500 }
+          { status: 500 },
         );
       }
-      
+
       // PASSO 3: Genera i match per ogni girone (round-robin)
       // Carica i gironi appena creati
       const { data: groups, error: groupsError } = await supabaseServer
@@ -202,41 +191,38 @@ export async function POST(
         .select('id, group_name')
         .eq('tournament_id', tournamentId)
         .order('group_order');
-      
+
       if (groupsError || !groups) {
         console.error('Error loading groups:', groupsError);
-        return NextResponse.json(
-          { error: 'Errore nel caricamento dei gironi' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Errore nel caricamento dei gironi' }, { status: 500 });
       }
-      
+
       // Carica i partecipanti con i gironi assegnati
       const { data: participants, error: participantsError } = await supabaseServer
         .from('tournament_participants')
         .select('id, group_id')
         .eq('tournament_id', tournamentId);
-      
+
       if (participantsError) {
         console.error('Error loading participants:', participantsError);
         return NextResponse.json(
           { error: 'Errore nel caricamento dei partecipanti' },
-          { status: 500 }
+          { status: 500 },
         );
       }
-      
+
       // Genera match round-robin per ogni girone
       const allMatches: any[] = [];
       let totalMatches = 0;
-      
+
       for (const group of groups) {
         const groupParticipants = participants?.filter((p: any) => p.group_id === group.id) || [];
-        
+
         // Generate all possible match pairings (round-robin)
         for (let i = 0; i < groupParticipants.length; i++) {
           for (let j = i + 1; j < groupParticipants.length; j++) {
             totalMatches++;
-            
+
             allMatches.push({
               tournament_id: tournamentId,
               phase: 'gironi',
@@ -246,83 +232,79 @@ export async function POST(
               player1_id: groupParticipants[i].id,
               player2_id: groupParticipants[j].id,
               status: 'programmata',
-              scheduled_at: null
+              scheduled_at: null,
             });
           }
         }
       }
-      
+
       // Insert all matches at once
       if (allMatches.length > 0) {
         const { error: matchError } = await supabaseServer
           .from('tournament_matches')
           .insert(allMatches);
-        
+
         if (matchError) {
           return NextResponse.json(
             { error: `Errore nella creazione delle partite: ${matchError.message}` },
-            { status: 500 }
+            { status: 500 },
           );
         }
       }
-      
+
       // PASSO 4: Aggiorna fase a gironi
       const { error: updateError } = await supabaseServer
-        .from("tournaments")
-        .update({ 
+        .from('tournaments')
+        .update({
           current_phase: 'gironi',
-          status: 'In Corso'
+          status: 'In Corso',
         })
-        .eq("id", tournamentId);
-      
+        .eq('id', tournamentId);
+
       if (updateError) {
         return NextResponse.json(
           { error: "Errore nell'aggiornamento del torneo" },
-          { status: 500 }
+          { status: 500 },
         );
       }
-      
+
       return NextResponse.json({
         message: `Fase a gironi avviata! Creati ${allMatches.length} match per ${groups.length} gironi.`,
         tournament_type: 'girone_eliminazione',
-        matches_created: allMatches.length
+        matches_created: allMatches.length,
       });
     }
-    
+
     if (tournament.tournament_type === 'campionato') {
       // Aggiorna fase a campionato e status a In Corso
       const { error: updateError } = await supabaseServer
-        .from("tournaments")
-        .update({ 
+        .from('tournaments')
+        .update({
           current_phase: 'campionato',
-          status: 'In Corso'
+          status: 'In Corso',
         })
-        .eq("id", tournamentId);
-      
+        .eq('id', tournamentId);
+
       if (updateError) {
         return NextResponse.json(
           { error: "Errore nell'aggiornamento del torneo" },
-          { status: 500 }
+          { status: 500 },
         );
       }
-      
+
       return NextResponse.json({
-        message: "Campionato avviato! Ora puoi programmare le giornate.",
+        message: 'Campionato avviato! Ora puoi programmare le giornate.',
         tournament_type: 'campionato',
-        next_step: 'schedule_round_robin_matches'
+        next_step: 'schedule_round_robin_matches',
       });
     }
-    
+
+    return NextResponse.json({ error: 'Tipo di torneo non supportato' }, { status: 400 });
+  } catch (error) {
+    console.error('Error in POST /api/tournaments/[id]/start:', error);
     return NextResponse.json(
-      { error: "Tipo di torneo non supportato" },
-      { status: 400 }
-    );
-    
-  } catch (error: any) {
-    console.error("Error in POST /api/tournaments/[id]/start:", error);
-    return NextResponse.json(
-      { error: error.message || "Errore interno del server" },
-      { status: 500 }
+      { error: error.message || 'Errore interno del server' },
+      { status: 500 },
     );
   }
 }

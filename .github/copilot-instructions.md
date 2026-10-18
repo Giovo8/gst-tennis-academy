@@ -4,10 +4,10 @@ Gestionale per accademia di tennis: Next.js 16 (App Router, Turbopack), React 19
 
 ## Struttura
 
-- `src/app/` — pagine App Router; dashboard per ruolo in `dashboard/{atleta,maestro,admin}/`; 89 API route handler in `src/app/api/`
-- `src/components/` — UI per area (admin, arena, auth, bookings, chat, dashboard, news, tournaments, ui…)
+- `src/app/` — pagine App Router; dashboard per ruolo in `dashboard/{atleta,maestro,admin}/`; 60 API route handler in `src/app/api/`
+- `src/components/` — UI per area (admin, auth, bookings, dashboard, landing, maestro, news, tournaments, ui…)
 - `src/lib/` — logica condivisa: `auth/` (verifyAuth), `supabase/` (client browser/server), `email/`, `security/`, `validation/` (Zod), `logger/`
-- `supabase/migrations/` — 67 migrazioni SQL versionate (001–067)
+- `supabase/migrations/` — migrazioni SQL 001–089, applicate dallo SQL Editor (prossima: 090); setup da zero in `docs/DATABASE.md`
 - `docs/` — documentazione dettagliata; `README.md` per setup e deploy
 
 ## Regole fondamentali
@@ -22,10 +22,10 @@ Gestionale per accademia di tennis: Next.js 16 (App Router, Turbopack), React 19
 ## Convenzioni di stile
 
 - Import con alias `@/*` → `src/*`
-- Tailwind v4; componenti base in `src/components/ui/`; icone `lucide-react`; toast `sonner`; animazioni `framer-motion`
+- Tailwind v4; componenti base in `src/components/ui/`; icone `lucide-react`; toast `sonner`; animazioni in CSS (niente framer-motion)
 - Palette per ruolo: blu = atleta, viola = maestro, arancione = admin
 - Valori DB in italiano (es. `news.stato`: `bozza | pubblicata | scartata`) — non tradurli in inglese
-- Formattazione: Prettier (pre-commit automatico via Husky + lint-staged)
+- Formattazione: Prettier (hook pre-commit Husky + lint-staged, attivo dopo `npm install`)
 
 ## Non toccare senza conferma
 
@@ -35,4 +35,4 @@ Gestionale per accademia di tennis: Next.js 16 (App Router, Turbopack), React 19
 
 ## Comandi
 
-`npm run dev` · `npm run build` · `npm run lint` · `npm run format` · `npm test` · `supabase db push`
+`npm run dev` · `npm run build` · `npm run lint` · `npm run format` · `npm test`

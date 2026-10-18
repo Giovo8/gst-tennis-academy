@@ -1,13 +1,6 @@
-import { supabase } from "@/lib/supabase/client";
-import { DEFAULT_COURTS } from "./constants";
+import { supabase } from '@/lib/supabase/client';
+import { DEFAULT_COURTS } from './constants';
 import logger from '@/lib/logger/secure-logger';
-
-export type Court = {
-  id: string;
-  court_name: string;
-  display_order: number;
-  is_active: boolean;
-};
 
 /**
  * Load active courts from database
@@ -16,13 +9,13 @@ export type Court = {
 export async function getCourts(): Promise<string[]> {
   try {
     const { data, error } = await supabase
-      .from("courts_settings")
-      .select("court_name, display_order, is_active")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true });
+      .from('courts_settings')
+      .select('court_name, display_order, is_active')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
 
     if (error) {
-      logger.error("Error loading courts:", error);
+      logger.error('Error loading courts:', error);
       // Fallback to default courts if database query fails
       return DEFAULT_COURTS;
     }
@@ -34,31 +27,8 @@ export async function getCourts(): Promise<string[]> {
 
     return data.map((court) => court.court_name);
   } catch (error) {
-    logger.error("Error in getCourts:", error);
+    logger.error('Error in getCourts:', error);
     // Fallback to default courts on exception
     return DEFAULT_COURTS;
-  }
-}
-
-/**
- * Load active courts with full details
- */
-export async function getCourtsWithDetails(): Promise<Court[]> {
-  try {
-    const { data, error } = await supabase
-      .from("courts_settings")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true });
-
-    if (error) {
-      logger.error("Error loading courts:", error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    logger.error("Error in getCourtsWithDetails:", error);
-    return [];
   }
 }

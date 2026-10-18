@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import { toast } from "sonner";
-import { Loader2, AlertCircle, User, Crown, Dumbbell, Home } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { Loader2, AlertCircle, User, Crown, Dumbbell, Home } from 'lucide-react';
 
 type UserProfile = {
   id: string;
   full_name: string | null;
   email: string;
-  role: "admin" | "gestore" | "maestro" | "atleta";
+  role: 'admin' | 'gestore' | 'maestro' | 'atleta';
   phone: string | null;
   date_of_birth: string | null;
   bio: string | null;
@@ -44,21 +44,17 @@ type UserProfilePageProps = {
   basePath?: string;
 };
 
-export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserProfilePageProps) {
+export default function UserProfilePage({ basePath = '/dashboard/admin' }: UserProfilePageProps) {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
-  
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [arenaStats, setArenaStats] = useState<ArenaStats | null>(null);
-  const [prenotazioniCampo, setPrenotazioniCampo] = useState(0);
-  const [lezioniPrivate, setLezioniPrivate] = useState(0);
-  const [videoLab, setVideoLab] = useState(0);
-  const [torneiCompletati, setTorneiCompletati] = useState(0);
   const [deletingUser, setDeletingUser] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (userId) {
@@ -70,21 +66,21 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
     try {
       // Carica profilo utente
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
         .single();
 
       if (profileError) throw profileError;
-      
+
       setUser(profileData);
-      document.title = `${profileData.full_name || "Utente"} | GST Tennis Academy`;
+      document.title = `${profileData.full_name || 'Utente'} | GST Tennis Academy`;
 
       // Carica statistiche Arena
       const { data: arenaData } = await supabase
-        .from("arena_stats")
-        .select("*")
-        .eq("user_id", userId)
+        .from('arena_stats')
+        .select('*')
+        .eq('user_id', userId)
         .single();
 
       if (arenaData) {
@@ -93,62 +89,60 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
 
       // Carica conteggio Prenotazioni Campo
       const { count: campoCount } = await supabase
-        .from("bookings")
-        .select("id", { count: "exact" })
-        .eq("user_id", userId)
-        .eq("type", "campo");
+        .from('bookings')
+        .select('id', { count: 'exact' })
+        .eq('user_id', userId)
+        .eq('type', 'campo');
 
       if (campoCount !== null) {
-        setPrenotazioniCampo(campoCount);
       }
 
       // Carica conteggio Lezioni Private
       const { count: lezioniCount } = await supabase
-        .from("bookings")
-        .select("id", { count: "exact" })
-        .eq("user_id", userId)
-        .eq("type", "lezione_privata");
+        .from('bookings')
+        .select('id', { count: 'exact' })
+        .eq('user_id', userId)
+        .eq('type', 'lezione_privata');
 
       if (lezioniCount !== null) {
-        setLezioniPrivate(lezioniCount);
       }
 
       // Video Lab - placeholder (table non ancora presente)
-      setVideoLab(0);
 
       // Carica conteggio Tornei Completati
       const { count: tournamentsCount } = await supabase
-        .from("tournament_participants")
-        .select("tournament_id", { count: "exact" })
-        .eq("user_id", userId);
+        .from('tournament_participants')
+        .select('tournament_id', { count: 'exact' })
+        .eq('user_id', userId);
 
       if (tournamentsCount !== null) {
         // Filtriamo solo i tornei con status = 'Concluso'
         const { data: completedTournaments } = await supabase
-          .from("tournament_participants")
-          .select("tournament_id, tournaments(status)")
-          .eq("user_id", userId);
+          .from('tournament_participants')
+          .select('tournament_id, tournaments(status)')
+          .eq('user_id', userId);
 
         if (completedTournaments) {
-          const completed = completedTournaments.filter(
-            (t: any) => t.tournaments?.status === "Concluso"
-          ).length;
-          setTorneiCompletati(completed);
         }
       }
-    } catch (error: any) {
-      console.error("Error loading user:", error);
-      setError(error.message || "Errore nel caricamento del profilo");
+    } catch (error) {
+      console.error('Error loading user:', error);
+      setError(error.message || 'Errore nel caricamento del profilo');
     } finally {
       setLoading(false);
     }
   }
 
   const roleLabels = {
-    admin:   { label: "Admin",   icon: Crown,       bgColor: "#023047",          borderLeftColor: "#011a24" },
-    gestore: { label: "Gestore", icon: Home,         bgColor: "#023047",          borderLeftColor: "#011a24" },
-    maestro: { label: "Maestro", icon: Dumbbell,      bgColor: "#05384c",         borderLeftColor: "#022431" },
-    atleta:  { label: "Atleta",  icon: User,         bgColor: "var(--secondary)", borderLeftColor: "#023047" },
+    admin: { label: 'Admin', icon: Crown, bgColor: '#023047', borderLeftColor: '#011a24' },
+    gestore: { label: 'Gestore', icon: Home, bgColor: '#023047', borderLeftColor: '#011a24' },
+    maestro: { label: 'Maestro', icon: Dumbbell, bgColor: '#05384c', borderLeftColor: '#022431' },
+    atleta: {
+      label: 'Atleta',
+      icon: User,
+      bgColor: 'var(--secondary)',
+      borderLeftColor: '#023047',
+    },
   };
 
   if (loading) {
@@ -166,7 +160,7 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-900">Errore</p>
-            <p className="text-sm text-red-700 mt-1">{error || "Utente non trovato"}</p>
+            <p className="text-sm text-red-700 mt-1">{error || 'Utente non trovato'}</p>
           </div>
         </div>
       </div>
@@ -177,10 +171,9 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
   const RoleIcon = roleInfo.icon;
   const dateOfBirth = user.date_of_birth;
   const formatOptionalDate = (value?: string | null) =>
-    value ? new Date(value).toLocaleDateString("it-IT") : "-";
-  const sectionCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden h-full";
-  const sectionCardHeaderClassName =
-    "px-6 py-4 border-b border-black/10 bg-gray-50";
+    value ? new Date(value).toLocaleDateString('it-IT') : '-';
+  const sectionCardClassName = 'bg-white rounded-lg border border-black/10 overflow-hidden h-full';
+  const sectionCardHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gray-50';
 
   return (
     <div className="space-y-6 pt-3">
@@ -196,7 +189,7 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
           <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold text-white truncate">
-              {user.full_name || "Nome non impostato"}
+              {user.full_name || 'Nome non impostato'}
             </h2>
           </div>
         </div>
@@ -212,7 +205,7 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
               {user.avatar_url ? (
                 <img
                   src={user.avatar_url}
-                  alt={user.full_name || "Avatar"}
+                  alt={user.full_name || 'Avatar'}
                   className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
                 />
               ) : (
@@ -226,65 +219,85 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
 
         <div className={`${sectionCardClassName} lg:col-start-1 lg:row-start-1`}>
           <div className={sectionCardHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Utente
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Nome Completo</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Nome Completo
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.full_name || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.full_name || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Data di Nascita
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">{formatOptionalDate(dateOfBirth)}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta di Nascita</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Citta di Nascita
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.birth_city || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.metadata?.birth_city || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Indirizzo
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.address || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.metadata?.address || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta / Provincia / CAP</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Citta / Provincia / CAP
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {[user.metadata?.city, user.metadata?.province, user.metadata?.postal_code]
                       .filter(Boolean)
-                      .join(", ") || "-"}
+                      .join(', ') || '-'}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Codice Fiscale
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold font-mono">{user.metadata?.fiscal_code || "-"}</p>
+                  <p className="text-secondary font-semibold font-mono">
+                    {user.metadata?.fiscal_code || '-'}
+                  </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Telefono
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.phone || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.phone || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Email
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold break-all">{user.email}</p>
                 </div>
@@ -295,41 +308,51 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
 
         <div className={`${sectionCardClassName} lg:col-start-1 lg:row-start-2`}>
           <div className={sectionCardHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Account
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Data Registrazione
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
-                    {new Date(user.created_at).toLocaleDateString("it-IT", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
+                    {new Date(user.created_at).toLocaleDateString('it-IT', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
                     })}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  ID Utente
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold break-all">{user.id}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ruolo</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Ruolo
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">{roleInfo.label}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Rank Arena</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Rank Arena
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{arenaStats?.level || "-"}</p>
+                  <p className="text-secondary font-semibold">{arenaStats?.level || '-'}</p>
                 </div>
               </div>
             </div>
@@ -338,12 +361,16 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
 
         <div className={`${sectionCardClassName} lg:col-start-2 lg:row-start-2`}>
           <div className={sectionCardHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Informazioni Corsi
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Certificato Medico
+                </label>
                 <div className="flex-1">
                   {user.metadata?.certificato_medico_url ? (
                     <a
@@ -361,7 +388,9 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Scadenza Certificato
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {formatOptionalDate(user.metadata?.certificato_medico_scadenza)}
@@ -370,21 +399,29 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Tesserato
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.tesserato || "-"}</p>
+                  <p className="text-secondary font-semibold">{user.metadata?.tesserato || '-'}</p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Numero Tessera
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary font-semibold">{user.metadata?.numero_tessera || "-"}</p>
+                  <p className="text-secondary font-semibold">
+                    {user.metadata?.numero_tessera || '-'}
+                  </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Scadenza Tesseramento
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {formatOptionalDate(user.metadata?.tesserato_scadenza)}
@@ -417,7 +454,12 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
         </Link>
         <button
           onClick={async () => {
-            if (!confirm(`Sei sicuro di voler resettare la password di ${user.full_name || user.email}?`)) return;
+            if (
+              !confirm(
+                `Sei sicuro di voler resettare la password di ${user.full_name || user.email}?`,
+              )
+            )
+              return;
             setResettingPassword(true);
             try {
               const {
@@ -425,23 +467,24 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
               } = await supabase.auth.getSession();
 
               if (!session?.access_token) {
-                throw new Error("Sessione non valida");
+                throw new Error('Sessione non valida');
               }
 
-              const response = await fetch("/api/admin/users/reset-password", {
-                method: "POST",
+              const response = await fetch('/api/admin/users/reset-password', {
+                method: 'POST',
                 headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({ email: user.email }),
               });
 
               const data = await response.json();
-              if (!response.ok) throw new Error(data.error || "Impossibile inviare l'email di reset.");
-              toast.success("Email di reset password inviata con successo.");
-            } catch (err: any) {
-              toast.error("Errore: " + (err.message || "Impossibile inviare l'email di reset."));
+              if (!response.ok)
+                throw new Error(data.error || "Impossibile inviare l'email di reset.");
+              toast.success('Email di reset password inviata con successo.');
+            } catch (err) {
+              toast.error('Errore: ' + (err.message || "Impossibile inviare l'email di reset."));
             } finally {
               setResettingPassword(false);
             }
@@ -454,14 +497,21 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
         </button>
         <button
           onClick={async () => {
-            if (!confirm(`Sei sicuro di voler eliminare il profilo di ${user.full_name || user.email}? Questa azione è irreversibile.`)) return;
+            if (
+              !confirm(
+                `Sei sicuro di voler eliminare il profilo di ${
+                  user.full_name || user.email
+                }? Questa azione è irreversibile.`,
+              )
+            )
+              return;
             setDeletingUser(true);
             try {
-              const { error } = await supabase.from("profiles").delete().eq("id", userId);
+              const { error } = await supabase.from('profiles').delete().eq('id', userId);
               if (error) throw error;
               router.push(`${basePath}/users`);
-            } catch (err: any) {
-              toast.error("Errore: " + (err.message || "Impossibile eliminare l'utente."));
+            } catch (err) {
+              toast.error('Errore: ' + (err.message || "Impossibile eliminare l'utente."));
               setDeletingUser(false);
             }
           }}

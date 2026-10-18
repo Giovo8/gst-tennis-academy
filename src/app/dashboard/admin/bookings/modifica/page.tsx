@@ -1,22 +1,26 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
-import { supabase } from "@/lib/supabase/client";
-import { getCourts } from "@/lib/courts/getCourts";
-import { DEFAULT_COURTS } from "@/lib/courts/constants";
-import ParticipantsCard from "@/components/bookings/ParticipantsCard";
-import CoachCard from "@/components/bookings/CoachCard";
-import DateNavigator from "@/components/bookings/DateNavigator";
-import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
-import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
-import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
-import TournamentMatchCard from "@/components/bookings/TournamentMatchCard";
-import { useBookableTournaments } from "@/lib/hooks/useBookableTournaments";
-import { TOURNAMENT_BOOKING_TYPE, type BookableTournamentMatch } from "@/lib/bookings/tournamentBookings";
+import { supabase } from '@/lib/supabase/client';
+import { getCourts } from '@/lib/courts/getCourts';
+import { DEFAULT_COURTS } from '@/lib/courts/constants';
+import ParticipantsCard from '@/components/bookings/ParticipantsCard';
+import CoachCard from '@/components/bookings/CoachCard';
+import DateNavigator from '@/components/bookings/DateNavigator';
+import { isBookableCoachProfile, type UserRole } from '@/lib/roles';
+import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
+import { MATCH_FORMATS, type MatchFormat } from '@/lib/bookings/bookingTypes';
+import TournamentMatchCard from '@/components/bookings/TournamentMatchCard';
+import { useBookableTournaments } from '@/lib/hooks/useBookableTournaments';
+import {
+  TOURNAMENT_BOOKING_TYPE,
+  TOURNAMENT_BOOKING_BACKGROUND,
+  type BookableTournamentMatch,
+} from '@/lib/bookings/tournamentBookings';
 
 interface Booking {
   id: string;
@@ -75,11 +79,15 @@ interface ExistingBooking {
 }
 
 const BOOKING_TYPES = [
-  { value: "campo", label: "Campo", shortLabel: "Campo" },
-  { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata" },
+  { value: 'campo', label: 'Campo', shortLabel: 'Campo' },
+  { value: 'lezione_privata', label: 'Lezione Privata', shortLabel: 'Privata' },
 ];
 
-const TOURNAMENT_BOOKING_OPTION = { value: TOURNAMENT_BOOKING_TYPE, label: "Torneo", shortLabel: "Torneo" };
+const TOURNAMENT_BOOKING_OPTION = {
+  value: TOURNAMENT_BOOKING_TYPE,
+  label: 'Torneo',
+  shortLabel: 'Torneo',
+};
 
 interface AthleteProfile {
   id: string;
@@ -101,45 +109,52 @@ type AdminEditBookingPageProps = {
   basePath?: string;
 };
 
-export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: AdminEditBookingPageProps) {
+export default function AdminEditBookingPage({
+  basePath = '/dashboard/admin',
+}: AdminEditBookingPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const bookingId = searchParams.get("id");
-  const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50";
+  const bookingId = searchParams.get('id');
+  const bookingCardClassName = 'bg-white border border-black/10 rounded-lg overflow-hidden';
+  const bookingCardHeaderClassName = 'px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50';
 
   const [booking, setBooking] = useState<Booking | null>(null);
-  const [selectedCourt, setSelectedCourt] = useState("");
+  const [selectedCourt, setSelectedCourt] = useState('');
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
-  const [bookingType, setBookingType] = useState<string>("campo");
+  const [bookingType, setBookingType] = useState<string>('campo');
   const [coaches, setCoaches] = useState<{ id: string; full_name: string; email?: string }[]>([]);
   const [selectedCoaches, setSelectedCoaches] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [existingBookings, setExistingBookings] = useState<ExistingBooking[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
+  const [matchFormat, setMatchFormat] = useState<MatchFormat>('singolo');
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
-  const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
+  const [previousGuests, setPreviousGuests] = useState<
+    { fullName: string; email?: string; phone?: string }[]
+  >([]);
 
   // Torneo: admin/gestore vedono tutti i tornei in corso. La partita attuale arriva preselezionata
   // e, se non si sceglie altro, resta invariata (anche se il torneo non è più tra quelli in corso).
   const { tournaments } = useBookableTournaments();
   const [initialTournamentId, setInitialTournamentId] = useState<string | null>(null);
   const [selectedTournamentMatchId, setSelectedTournamentMatchId] = useState<string | null>(null);
-  const [selectedTournamentMatch, setSelectedTournamentMatch] = useState<BookableTournamentMatch | null>(null);
+  const [selectedTournamentMatch, setSelectedTournamentMatch] =
+    useState<BookableTournamentMatch | null>(null);
   const isTournamentBooking = bookingType === TOURNAMENT_BOOKING_TYPE;
   const wasTournamentBooking = booking?.type === TOURNAMENT_BOOKING_TYPE;
   const bookingTypes =
-    tournaments.length > 0 || wasTournamentBooking ? [...BOOKING_TYPES, TOURNAMENT_BOOKING_OPTION] : BOOKING_TYPES;
+    tournaments.length > 0 || wasTournamentBooking
+      ? [...BOOKING_TYPES, TOURNAMENT_BOOKING_OPTION]
+      : BOOKING_TYPES;
   const keepsOriginalTournamentMatch =
     !selectedTournamentMatch &&
     Boolean(booking?.tournament_match_id) &&
@@ -151,17 +166,12 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
     setSelectedTournamentMatchId(match?.id ?? null);
   };
 
-  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
-
-  const getPrimaryParticipant = (bookingItem: ExistingBooking | null) =>
-    bookingItem?.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
-
-  const getBookingDisplayName = (bookingItem: ExistingBooking) =>
-    getPrimaryParticipant(bookingItem)?.full_name || bookingItem.user_profile?.full_name || "Sconosciuto";
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } =
+    useDragScroll();
 
   useEffect(() => {
     if (!bookingId) {
-      setError("Prenotazione non trovata");
+      setError('Prenotazione non trovata');
       setLoading(false);
       return;
     }
@@ -171,23 +181,27 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
       setError(null);
 
       const { data, error } = await supabase
-        .from("bookings")
-        .select("id, user_id, court, start_time, end_time, notes, type, coach_id, tournament_match_id")
-        .eq("id", bookingId)
+        .from('bookings')
+        .select(
+          'id, user_id, court, start_time, end_time, notes, type, coach_id, tournament_match_id',
+        )
+        .eq('id', bookingId)
         .single();
 
       if (error) {
-        setError("Errore nel caricamento della prenotazione");
+        setError('Errore nel caricamento della prenotazione');
       } else if (data) {
-        let userProfile: { full_name: string | null; email: string | null; phone?: string | null } | undefined;
+        let userProfile:
+          | { full_name: string | null; email: string | null; phone?: string | null }
+          | undefined;
         let participantsData = null;
 
         // Carica i dati dell'atleta associato alla prenotazione
         if (data.user_id) {
           const { data: profileData } = await supabase
-            .from("profiles")
-            .select("full_name, email, phone")
-            .eq("id", data.user_id)
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', data.user_id)
             .single();
 
           if (profileData) {
@@ -200,26 +214,30 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         }
 
         const participantsQuery = await supabase
-          .from("booking_participants")
-          .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-          .eq("booking_id", bookingId)
-          .order("order_index", { ascending: true });
+          .from('booking_participants')
+          .select('id, booking_id, full_name, email, phone, is_registered, user_id, order_index')
+          .eq('booking_id', bookingId)
+          .order('order_index', { ascending: true });
         participantsData = participantsQuery.data;
 
         // Prenotazione torneo: torneo della partita, per aprire il riquadro sulla partita attuale
         if (data.tournament_match_id) {
           const { data: matchData } = await supabase
-            .from("tournament_matches")
-            .select("tournament_id")
-            .eq("id", data.tournament_match_id)
+            .from('tournament_matches')
+            .select('tournament_id')
+            .eq('id', data.tournament_match_id)
             .maybeSingle();
           setInitialTournamentId(matchData?.tournament_id ?? null);
           setSelectedTournamentMatchId(data.tournament_match_id);
         }
 
-        setBooking({ ...data, user_profile: userProfile, participants: participantsData || [] } as Booking);
+        setBooking({
+          ...data,
+          user_profile: userProfile,
+          participants: participantsData || [],
+        } as Booking);
         setSelectedCourt(data.court);
-        setBookingType(data.type || "campo");
+        setBookingType(data.type || 'campo');
         setSelectedCoaches(data.coach_id ? [data.coach_id] : []);
         setSelectedDate(new Date(data.start_time));
 
@@ -229,24 +247,24 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         const initialSlots: string[] = [];
         const current = new Date(existingStart);
         while (current < existingEnd) {
-          const hours = current.getHours().toString().padStart(2, "0");
-          const minutes = current.getMinutes().toString().padStart(2, "0");
+          const hours = current.getHours().toString().padStart(2, '0');
+          const minutes = current.getMinutes().toString().padStart(2, '0');
           initialSlots.push(`${hours}:${minutes}`);
           current.setMinutes(current.getMinutes() + 30);
         }
         setSelectedSlots(initialSlots);
 
-        setNotes(data.notes || "");
+        setNotes(data.notes || '');
 
         const participantsForEdit: SelectedAthlete[] = (participantsData || []).map((p: any) => ({
           userId: p.user_id || undefined,
-          fullName: p.full_name || "",
+          fullName: p.full_name || '',
           email: p.email || undefined,
           phone: p.phone || undefined,
           isRegistered: p.is_registered || false,
         }));
         setSelectedAthletes(participantsForEdit);
-        setMatchFormat((participantsData?.length || 0) > 2 ? "doppio" : "singolo");
+        setMatchFormat((participantsData?.length || 0) > 2 ? 'doppio' : 'singolo');
       }
 
       setLoading(false);
@@ -266,8 +284,16 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         }
 
         const [coachRes, athleteRes] = await Promise.all([
-          supabase.from("profiles").select("id, full_name, email, role, metadata").in("role", ["maestro", "gestore"]).order("full_name"),
-          supabase.from("profiles").select("id, full_name, email, phone, role").eq("role", "atleta").order("full_name"),
+          supabase
+            .from('profiles')
+            .select('id, full_name, email, role, metadata')
+            .in('role', ['maestro', 'gestore'])
+            .order('full_name'),
+          supabase
+            .from('profiles')
+            .select('id, full_name, email, phone, role')
+            .eq('role', 'atleta')
+            .order('full_name'),
         ]);
         if (coachRes.data) {
           const eligibleCoaches = coachRes.data
@@ -279,21 +305,28 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
 
         const { data: guestsData } = await supabase
-          .from("booking_participants")
-          .select("full_name, email, phone")
-          .eq("is_registered", false)
-          .order("full_name");
+          .from('booking_participants')
+          .select('full_name, email, phone')
+          .eq('is_registered', false)
+          .order('full_name');
 
         if (guestsData) {
           const seen = new Set<string>();
-          const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce((acc: { fullName: string; email?: string; phone?: string }[], g) => {
-            const key = g.full_name.trim().toLowerCase();
-            if (!seen.has(key)) {
-              seen.add(key);
-              acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
-            }
-            return acc;
-          }, []);
+          const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce(
+            (acc: { fullName: string; email?: string; phone?: string }[], g) => {
+              const key = g.full_name.trim().toLowerCase();
+              if (!seen.has(key)) {
+                seen.add(key);
+                acc.push({
+                  fullName: g.full_name.trim(),
+                  email: g.email ?? undefined,
+                  phone: g.phone ?? undefined,
+                });
+              }
+              return acc;
+            },
+            [],
+          );
           setPreviousGuests(deduped);
         }
       } finally {
@@ -312,17 +345,17 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
       setLoadingSlots(true);
 
       try {
-        const dateStr = selectedDate.toISOString().split("T")[0];
+        const dateStr = selectedDate.toISOString().split('T')[0];
 
         // Get existing bookings for this court and date
         const { data: bookingsData } = await supabase
-          .from("bookings")
-          .select("id, start_time, end_time, status, type, user_id, coach_id")
-          .eq("court", selectedCourt)
-          .neq("status", "cancelled")
-          .neq("status", "rejected")
-          .lt("start_time", `${dateStr}T23:59:59.999Z`)
-          .gt("end_time", `${dateStr}T00:00:00.000Z`);
+          .from('bookings')
+          .select('id, start_time, end_time, status, type, user_id, coach_id')
+          .eq('court', selectedCourt)
+          .neq('status', 'cancelled')
+          .neq('status', 'rejected')
+          .lt('start_time', `${dateStr}T23:59:59.999Z`)
+          .gt('end_time', `${dateStr}T00:00:00.000Z`);
 
         // Get court blocks for this court and date
         const startOfDay = new Date(selectedDate);
@@ -331,27 +364,29 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         endOfDay.setHours(23, 59, 59, 999);
 
         const { data: blocksData } = await supabase
-          .from("court_blocks")
-          .select("id, start_time, end_time, reason")
-          .eq("court_id", selectedCourt)
-          .eq("is_disabled", false)
-          .lt("start_time", `${dateStr}T23:59:59.999Z`)
-          .gt("end_time", `${dateStr}T00:00:00.000Z`);
+          .from('court_blocks')
+          .select('id, start_time, end_time, reason')
+          .eq('court_id', selectedCourt)
+          .eq('is_disabled', false)
+          .lt('start_time', `${dateStr}T23:59:59.999Z`)
+          .gt('end_time', `${dateStr}T00:00:00.000Z`);
 
         // Fetch profiles for bookings
-        const userIds = [...new Set([
-          ...(bookingsData?.map(b => b.user_id) || []),
-          ...(bookingsData?.map(b => b.coach_id).filter(Boolean) || [])
-        ])];
+        const userIds = [
+          ...new Set([
+            ...(bookingsData?.map((b) => b.user_id) || []),
+            ...(bookingsData?.map((b) => b.coach_id).filter(Boolean) || []),
+          ]),
+        ];
 
         const profilesMap = new Map();
         if (userIds.length > 0) {
           const { data: profilesData } = await supabase
-            .from("profiles")
-            .select("id, full_name, email")
-            .in("id", userIds);
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
 
-          profilesData?.forEach(profile => {
+          profilesData?.forEach((profile) => {
             profilesMap.set(profile.id, profile);
           });
         }
@@ -361,27 +396,27 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
         if (bookingIds.length > 0) {
           const participantsQuery = await supabase
-            .from("booking_participants")
-            .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-            .in("booking_id", bookingIds)
-            .order("booking_id", { ascending: true })
-            .order("order_index", { ascending: true });
+            .from('booking_participants')
+            .select('id, booking_id, full_name, email, phone, is_registered, user_id, order_index')
+            .in('booking_id', bookingIds)
+            .order('booking_id', { ascending: true })
+            .order('order_index', { ascending: true });
 
           bookingParticipantsData = participantsQuery.data;
 
-          if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+          if (participantsQuery.error?.message?.toLowerCase().includes('phone')) {
             const fallbackParticipantsQuery = await supabase
-              .from("booking_participants")
-              .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
-              .in("booking_id", bookingIds)
-              .order("booking_id", { ascending: true })
-              .order("order_index", { ascending: true });
+              .from('booking_participants')
+              .select('id, booking_id, full_name, email, is_registered, user_id, order_index')
+              .in('booking_id', bookingIds)
+              .order('booking_id', { ascending: true })
+              .order('order_index', { ascending: true });
 
             bookingParticipantsData = fallbackParticipantsQuery.data;
           }
         }
 
-        const participantsMap = new Map<string, ExistingBooking["participants"]>();
+        const participantsMap = new Map<string, ExistingBooking['participants']>();
         (bookingParticipantsData || []).forEach((participant: any) => {
           const existing = participantsMap.get(participant.booking_id) || [];
           existing.push(participant);
@@ -389,31 +424,33 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         });
 
         // Enrich bookings with profiles
-        const enrichedBookings = bookingsData?.map((b: any) => ({
-          id: b.id,
-          start_time: b.start_time,
-          end_time: b.end_time,
-          type: b.type,
-          status: b.status,
-          user_id: b.user_id,
-          coach_id: b.coach_id,
-          user_profile: b.user_id ? profilesMap.get(b.user_id) : undefined,
-          coach_profile: b.coach_id ? profilesMap.get(b.coach_id) : undefined,
-          participants: participantsMap.get(b.id) || [],
-        })) || [];
+        const enrichedBookings =
+          bookingsData?.map((b: any) => ({
+            id: b.id,
+            start_time: b.start_time,
+            end_time: b.end_time,
+            type: b.type,
+            status: b.status,
+            user_id: b.user_id,
+            coach_id: b.coach_id,
+            user_profile: b.user_id ? profilesMap.get(b.user_id) : undefined,
+            coach_profile: b.coach_id ? profilesMap.get(b.coach_id) : undefined,
+            participants: participantsMap.get(b.id) || [],
+          })) || [];
 
         // Add court blocks as fake bookings for visualization
-        const blocksAsBookings = blocksData?.map((block: any) => ({
-          id: block.id,
-          start_time: block.start_time,
-          end_time: block.end_time,
-          type: "blocco",
-          status: "blocked",
-          user_profile: null,
-          coach_profile: null,
-          reason: block.reason,
-          isBlock: true
-        })) || [];
+        const blocksAsBookings =
+          blocksData?.map((block: any) => ({
+            id: block.id,
+            start_time: block.start_time,
+            end_time: block.end_time,
+            type: 'blocco',
+            status: 'blocked',
+            user_profile: null,
+            coach_profile: null,
+            reason: block.reason,
+            isBlock: true,
+          })) || [];
 
         const allBookings: ExistingBooking[] = [...enrichedBookings, ...blocksAsBookings];
 
@@ -431,8 +468,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
           const current = new Date(start);
           while (current < end) {
-            const hours = current.getHours().toString().padStart(2, "0");
-            const minutes = current.getMinutes().toString().padStart(2, "0");
+            const hours = current.getHours().toString().padStart(2, '0');
+            const minutes = current.getMinutes().toString().padStart(2, '0');
             occupiedSlots.add(`${hours}:${minutes}`);
             current.setMinutes(current.getMinutes() + 30);
           }
@@ -447,7 +484,9 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           for (const minute of [0, 30]) {
             if (hour === 22 && minute === 30) break;
 
-            const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+            const time = `${hour.toString().padStart(2, '0')}:${minute
+              .toString()
+              .padStart(2, '0')}`;
 
             // Slot disponibile se non è già occupato
             let available = !occupiedSlots.has(time);
@@ -477,7 +516,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   // Verifica disponibilità slot
   const isSlotAvailable = (time: string): boolean => {
     if (!selectedCourt) return true;
-    const slot = slots.find(s => s.time === time);
+    const slot = slots.find((s) => s.time === time);
     // Gli slot selezionati sono sempre disponibili
     if (selectedSlots.includes(time)) return true;
     return slot ? slot.available : false;
@@ -499,15 +538,15 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
       }
 
       const allSlots = [...prev, time].sort((a, b) => {
-        const [hA, mA] = a.split(":").map(Number);
-        const [hB, mB] = b.split(":").map(Number);
+        const [hA, mA] = a.split(':').map(Number);
+        const [hB, mB] = b.split(':').map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
       });
 
       // verifica se sono consecutivi (ogni slot è 30 minuti)
       for (let i = 1; i < allSlots.length; i++) {
-        const [hPrev, mPrev] = allSlots[i - 1].split(":").map(Number);
-        const [hCurr, mCurr] = allSlots[i].split(":").map(Number);
+        const [hPrev, mPrev] = allSlots[i - 1].split(':').map(Number);
+        const [hCurr, mCurr] = allSlots[i].split(':').map(Number);
         const prevMinutes = hPrev * 60 + mPrev;
         const currMinutes = hCurr * 60 + mCurr;
         if (currMinutes - prevMinutes !== 30) {
@@ -520,14 +559,22 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   };
 
   const maxAthletesAllowed =
-    bookingType === "lezione_privata" ? 1
-    : bookingType === "campo" && matchFormat === "singolo" ? 2 : 4;
+    bookingType === 'lezione_privata'
+      ? 1
+      : bookingType === 'campo' && matchFormat === 'singolo'
+      ? 2
+      : 4;
 
-  const canSave = !!selectedDate && !!selectedCourt && selectedSlots.length > 0 &&
+  const canSave =
+    !!selectedDate &&
+    !!selectedCourt &&
+    selectedSlots.length > 0 &&
     (isTournamentBooking
       ? hasTournamentMatch
       : selectedAthletes.length > 0 &&
-        ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoaches.length > 0)));
+        (bookingType === 'campo' ||
+          ((bookingType === 'lezione_privata' || bookingType === 'lezione_gruppo') &&
+            selectedCoaches.length > 0)));
 
   useEffect(() => {
     setSelectedAthletes((prev) => {
@@ -540,8 +587,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
   const handleMatchFormatChange = (format: MatchFormat) => {
     setMatchFormat(format);
-    if (format === "singolo" && selectedAthletes.length > 2) {
-      setSelectedAthletes(prev => prev.slice(0, 2));
+    if (format === 'singolo' && selectedAthletes.length > 2) {
+      setSelectedAthletes((prev) => prev.slice(0, 2));
     }
   };
 
@@ -553,30 +600,33 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
     try {
       if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
-        throw new Error("Seleziona giorno, campo e almeno uno slot orario");
+        throw new Error('Seleziona giorno, campo e almeno uno slot orario');
       }
 
       if (isTournamentBooking && !hasTournamentMatch) {
-        throw new Error("Seleziona la partita del torneo da giocare");
+        throw new Error('Seleziona la partita del torneo da giocare');
       }
 
       if (!isTournamentBooking && selectedAthletes.length === 0) {
-        throw new Error("Seleziona almeno un atleta/partecipante");
+        throw new Error('Seleziona almeno un atleta/partecipante');
       }
 
       if (!isTournamentBooking && selectedAthletes.length > maxAthletesAllowed) {
         throw new Error(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       }
 
-      if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoaches.length === 0) {
-        throw new Error("Seleziona almeno un maestro per le lezioni");
+      if (
+        (bookingType === 'lezione_privata' || bookingType === 'lezione_gruppo') &&
+        selectedCoaches.length === 0
+      ) {
+        throw new Error('Seleziona almeno un maestro per le lezioni');
       }
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+        throw new Error('Sessione non valida. Effettua nuovamente il login.');
       }
 
       // Torneo: con una nuova partita i partecipanti diventano i suoi due giocatori;
@@ -592,19 +642,22 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           : null
         : selectedAthletes;
 
-      const registeredAthlete = participantsToSave?.find((athlete) => athlete.isRegistered && athlete.userId);
-      const bookingUserId = registeredAthlete?.userId ?? booking?.user_id ?? sessionData?.session?.user?.id;
+      const registeredAthlete = participantsToSave?.find(
+        (athlete) => athlete.isRegistered && athlete.userId,
+      );
+      const bookingUserId =
+        registeredAthlete?.userId ?? booking?.user_id ?? sessionData?.session?.user?.id;
 
       if (!bookingUserId) {
         throw new Error("Impossibile determinare l'utente della prenotazione");
       }
 
       const orderedSlots = [...selectedSlots].sort((a, b) => {
-        const [hA, mA] = a.split(":").map(Number);
-        const [hB, mB] = b.split(":").map(Number);
+        const [hA, mA] = a.split(':').map(Number);
+        const [hB, mB] = b.split(':').map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
       });
-      const [hours, minutes] = orderedSlots[0].split(":").map(Number);
+      const [hours, minutes] = orderedSlots[0].split(':').map(Number);
       const startDate = new Date(selectedDate);
       startDate.setHours(hours, minutes, 0, 0);
 
@@ -613,17 +666,17 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
       endDate.setMinutes(startDate.getMinutes() + durationMinutes);
 
       const bookingResponse = await fetch(`/api/bookings?id=${encodeURIComponent(bookingId)}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           user_id: bookingUserId,
           court: selectedCourt,
-          type: bookingType || "campo",
+          type: bookingType || 'campo',
           coach_id:
-            bookingType === "lezione_privata" || bookingType === "lezione_gruppo"
+            bookingType === 'lezione_privata' || bookingType === 'lezione_gruppo'
               ? selectedCoaches[0] || null
               : null,
           tournament_match_id: isTournamentBooking
@@ -642,9 +695,9 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
       if (participantsToSave) {
         const { error: deleteParticipantsError } = await supabase
-          .from("booking_participants")
+          .from('booking_participants')
           .delete()
-          .eq("booking_id", bookingId);
+          .eq('booking_id', bookingId);
 
         if (deleteParticipantsError) throw deleteParticipantsError;
       }
@@ -661,10 +714,10 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         }));
 
         let { error: insertParticipantsError } = await supabase
-          .from("booking_participants")
+          .from('booking_participants')
           .insert(participantsPayload);
 
-        if (insertParticipantsError?.message?.toLowerCase().includes("phone")) {
+        if (insertParticipantsError?.message?.toLowerCase().includes('phone')) {
           const fallbackPayload = participantsToSave.map((athlete, index) => ({
             booking_id: bookingId,
             user_id: athlete.userId || null,
@@ -675,7 +728,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           }));
 
           const { error: fallbackInsertError } = await supabase
-            .from("booking_participants")
+            .from('booking_participants')
             .insert(fallbackPayload);
 
           insertParticipantsError = fallbackInsertError || null;
@@ -684,16 +737,14 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         if (insertParticipantsError) throw insertParticipantsError;
       }
 
-      setSuccess("Prenotazione aggiornata con successo!");
+      setSuccess('Prenotazione aggiornata con successo!');
       setTimeout(() => {
         router.push(`${basePath}/bookings`);
       }, 1200);
     } catch (err) {
       console.error(err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Errore durante l'aggiornamento della prenotazione"
+        err instanceof Error ? err.message : "Errore durante l'aggiornamento della prenotazione",
       );
     } finally {
       setSaving(false);
@@ -758,7 +809,9 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             {/* Card Dettagli prenotazione */}
             <div className={bookingCardClassName}>
               <div className={bookingCardHeaderClassName}>
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                  Dettagli prenotazione
+                </h2>
               </div>
               {courtsLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
@@ -766,83 +819,93 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   <p className="text-secondary font-semibold">Caricamento...</p>
                 </div>
               ) : (
-              <div className="space-y-6 p-4 sm:p-6">
-                {/* Tipo prenotazione */}
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
-                  <div className={`flex-1 flex flex-col sm:grid ${bookingTypes.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-2 sm:gap-3`}>
-                    {bookingTypes.map((type) => (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => {
-                          setBookingType(type.value);
-                        }}
-                        className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
-                          bookingType === type.value
-                            ? 'bg-[#023047] text-white border-[#023047]'
-                            : 'bg-secondary text-white border-secondary hover:opacity-90'
-                        }`}
-                      >
-                        <span className="sm:hidden">{type.shortLabel}</span>
-                        <span className="hidden sm:inline">{type.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Modalità campo */}
-                {bookingType === "campo" && (
+                <div className="space-y-6 p-4 sm:p-6">
+                  {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
-                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
-                      {MATCH_FORMATS.map((formatOption) => (
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                      Tipo prenotazione
+                    </label>
+                    <div
+                      className={`flex-1 flex flex-col sm:grid ${
+                        bookingTypes.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+                      } gap-2 sm:gap-3`}
+                    >
+                      {bookingTypes.map((type) => (
                         <button
-                          key={formatOption.value}
+                          key={type.value}
                           type="button"
-                          onClick={() => handleMatchFormatChange(formatOption.value)}
+                          onClick={() => {
+                            setBookingType(type.value);
+                          }}
                           className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
-                            matchFormat === formatOption.value
-                              ? "bg-[#023047] text-white border-[#023047]"
-                              : "bg-secondary text-white border-secondary hover:opacity-90"
+                            bookingType === type.value
+                              ? 'bg-[#023047] text-white border-[#023047]'
+                              : 'bg-secondary text-white border-secondary hover:opacity-90'
                           }`}
                         >
-                          {formatOption.label}
+                          <span className="sm:hidden">{type.shortLabel}</span>
+                          <span className="hidden sm:inline">{type.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
-                )}
 
-                {/* Campo */}
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
-                    {courts.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCourt(c);
-                          setSelectedSlots([]);
-                        }}
-                        className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
-                          selectedCourt === c
-                            ? 'bg-[#023047] text-white border-[#023047]'
-                            : 'bg-secondary text-white border-secondary hover:opacity-90'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
+                  {/* Modalità campo */}
+                  {bookingType === 'campo' && (
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                        Modalità
+                      </label>
+                      <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
+                        {MATCH_FORMATS.map((formatOption) => (
+                          <button
+                            key={formatOption.value}
+                            type="button"
+                            onClick={() => handleMatchFormatChange(formatOption.value)}
+                            className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
+                              matchFormat === formatOption.value
+                                ? 'bg-[#023047] text-white border-[#023047]'
+                                : 'bg-secondary text-white border-secondary hover:opacity-90'
+                            }`}
+                          >
+                            {formatOption.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Campo */}
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                      Campo
+                    </label>
+                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
+                      {courts.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCourt(c);
+                            setSelectedSlots([]);
+                          }}
+                          className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
+                            selectedCourt === c
+                              ? 'bg-[#023047] text-white border-[#023047]'
+                              : 'bg-secondary text-white border-secondary hover:opacity-90'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
               )}
             </div>
 
             {/* Card Maestro - solo per lezione privata/gruppo */}
-            {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
+            {(bookingType === 'lezione_privata' || bookingType === 'lezione_gruppo') && (
               <CoachCard
                 coaches={coaches}
                 selectedCoaches={selectedCoaches}
@@ -875,8 +938,12 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
             {/* Card Orari disponibili */}
             <div className={bookingCardClassName}>
-              <div className={`${bookingCardHeaderClassName} flex items-center justify-between gap-4`}>
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
+              <div
+                className={`${bookingCardHeaderClassName} flex items-center justify-between gap-4`}
+              >
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                  Orari disponibili
+                </h2>
               </div>
               <div className="p-4 sm:p-6">
                 {loadingSlots ? (
@@ -911,38 +978,79 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                       </div>
 
                       {/* Griglia slot selezionabili */}
-                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                      <div
+                        className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative"
+                        style={{ minHeight: '70px' }}
+                      >
                         {/* Prenotazioni esistenti */}
-                        {existingBookings.filter((b) => b.status !== "cancelled").map((b) => {
-                          if (b.id === bookingId && !b.isBlock) return null;
-                          const start = new Date(b.start_time);
-                          const end = new Date(b.end_time);
-                          const startSlot = (start.getHours() - 7) * 2 + (start.getMinutes() === 30 ? 1 : 0);
-                          const endSlot = (end.getHours() - 7) * 2 + (end.getMinutes() === 30 ? 1 : 0);
-                          const duration = endSlot - startSlot;
-                          const getStyle = () => {
-                            if (b.isBlock) return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
-                            if (b.status === "cancelled") return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
-                            switch (b.type) {
-                              case "lezione_privata": case "lezione_gruppo":
-                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
-                              case "campo":
-                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
-                              case "arena":
-                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
-                              default:
-                                return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
-                            }
-                          };
-                          return (
-                            <div
-                              key={b.id}
-                              onClick={() => router.push(b.isBlock ? `${basePath}/courts/${b.id}` : `${basePath}/bookings/${b.id}`)}
-                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ ...getStyle(), left: `${(startSlot / 32) * 100}%`, width: `calc(${(duration / 32) * 100}% - 4px)`, top: '4px', bottom: '4px', marginLeft: '2px' }}
-                            />
-                          );
-                        })}
+                        {existingBookings
+                          .filter((b) => b.status !== 'cancelled')
+                          .map((b) => {
+                            if (b.id === bookingId && !b.isBlock) return null;
+                            const start = new Date(b.start_time);
+                            const end = new Date(b.end_time);
+                            const startSlot =
+                              (start.getHours() - 7) * 2 + (start.getMinutes() === 30 ? 1 : 0);
+                            const endSlot =
+                              (end.getHours() - 7) * 2 + (end.getMinutes() === 30 ? 1 : 0);
+                            const duration = endSlot - startSlot;
+                            const getStyle = () => {
+                              if (b.isBlock)
+                                return {
+                                  background: 'linear-gradient(to bottom right, #dc2626, #ea580c)',
+                                };
+                              if (b.status === 'cancelled')
+                                return {
+                                  background: 'linear-gradient(to bottom right, #6b7280, #4b5563)',
+                                };
+                              switch (b.type) {
+                                case 'lezione_privata':
+                                case 'lezione_gruppo':
+                                  return {
+                                    background:
+                                      'linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))',
+                                  };
+                                case 'campo':
+                                  return {
+                                    background:
+                                      'linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))',
+                                  };
+                                case 'arena':
+                                  return {
+                                    background:
+                                      'linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))',
+                                  };
+                                case TOURNAMENT_BOOKING_TYPE:
+                                  return { background: TOURNAMENT_BOOKING_BACKGROUND };
+                                default:
+                                  return {
+                                    background:
+                                      'linear-gradient(to bottom right, var(--secondary-light), var(--secondary))',
+                                  };
+                              }
+                            };
+                            return (
+                              <div
+                                key={b.id}
+                                onClick={() =>
+                                  router.push(
+                                    b.isBlock
+                                      ? `${basePath}/courts/${b.id}`
+                                      : `${basePath}/bookings/${b.id}`,
+                                  )
+                                }
+                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                                style={{
+                                  ...getStyle(),
+                                  left: `${(startSlot / 32) * 100}%`,
+                                  width: `calc(${(duration / 32) * 100}% - 4px)`,
+                                  top: '4px',
+                                  bottom: '4px',
+                                  marginLeft: '2px',
+                                }}
+                              />
+                            );
+                          })}
 
                         {/* Slot cliccabili */}
                         {Array.from({ length: 16 }, (_, hourIndex) => {
@@ -959,12 +1067,20 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                               <div
                                 key={hour}
                                 className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
-                                  isSelected1 ? 'bg-secondary hover:bg-secondary/90'
-                                  : available1 ? 'bg-white hover:bg-emerald-50/40'
-                                  : 'bg-gray-100 cursor-not-allowed'
+                                  isSelected1
+                                    ? 'bg-secondary hover:bg-secondary/90'
+                                    : available1
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
                                 }`}
                                 onClick={() => toggleSlotSelection(time1, available1)}
-                                title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                                title={`${time1} - ${
+                                  available1
+                                    ? isSelected1
+                                      ? 'Selezionato'
+                                      : 'Disponibile'
+                                    : 'Occupato'
+                                }`}
                               >
                                 <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                               </div>
@@ -972,24 +1088,43 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                           }
 
                           return (
-                            <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                            <div
+                              key={hour}
+                              className="border-r border-gray-200 last:border-r-0 relative flex"
+                            >
                               <div
                                 className={`flex-1 relative transition-colors cursor-pointer ${
-                                  isSelected1 ? 'bg-secondary hover:bg-secondary/90'
-                                  : available1 ? 'bg-white hover:bg-emerald-50/40'
-                                  : 'bg-gray-100 cursor-not-allowed'
+                                  isSelected1
+                                    ? 'bg-secondary hover:bg-secondary/90'
+                                    : available1
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
                                 }`}
                                 onClick={() => toggleSlotSelection(time1, available1)}
-                                title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                                title={`${time1} - ${
+                                  available1
+                                    ? isSelected1
+                                      ? 'Selezionato'
+                                      : 'Disponibile'
+                                    : 'Occupato'
+                                }`}
                               />
                               <div
                                 className={`flex-1 relative transition-colors cursor-pointer ${
-                                  isSelected2 ? 'bg-secondary hover:bg-secondary/90'
-                                  : available2 ? 'bg-white hover:bg-emerald-50/40'
-                                  : 'bg-gray-100 cursor-not-allowed'
+                                  isSelected2
+                                    ? 'bg-secondary hover:bg-secondary/90'
+                                    : available2
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
                                 }`}
                                 onClick={() => toggleSlotSelection(time2, available2)}
-                                title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                                title={`${time2} - ${
+                                  available2
+                                    ? isSelected2
+                                      ? 'Selezionato'
+                                      : 'Disponibile'
+                                    : 'Occupato'
+                                }`}
                               />
                               <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                             </div>

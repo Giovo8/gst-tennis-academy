@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
 import {
   Swords,
   Trophy,
-  Plus,
   SlidersHorizontal,
   Loader2,
   Search,
@@ -19,7 +19,7 @@ import {
   Check,
   X,
   RefreshCw,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Modal,
   ModalBody,
@@ -27,13 +27,20 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from "@/components/ui";
+} from '@/components/ui';
 
 interface Challenge {
   id: string;
   challenger_id: string;
   opponent_id: string;
-  status: "pending" | "accepted" | "declined" | "completed" | "cancelled" | "counter_proposal" | "awaiting_score";
+  status:
+    | 'pending'
+    | 'accepted'
+    | 'declined'
+    | 'completed'
+    | 'cancelled'
+    | 'counter_proposal'
+    | 'awaiting_score';
   scheduled_date?: string;
   match_type?: string;
   challenge_type?: string;
@@ -81,12 +88,12 @@ interface LeaderboardEntry {
 }
 
 export default function AthleteArenaPage() {
-  const DEFAULT_STATUS_FILTER = "active";
+  const DEFAULT_STATUS_FILTER = 'active';
   const router = useRouter();
   const pathname = usePathname();
-  const dashboardBase = pathname.split("/arena")[0];
+  const dashboardBase = pathname.split('/arena')[0];
 
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState('');
   const [stats, setStats] = useState<PlayerStats>({
     ranking: 0,
     totalMatches: 0,
@@ -101,36 +108,44 @@ export default function AthleteArenaPage() {
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<string>(DEFAULT_STATUS_FILTER);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [selectedLeaderboardEntry, setSelectedLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
+  const [selectedLeaderboardEntry, setSelectedLeaderboardEntry] = useState<LeaderboardEntry | null>(
+    null,
+  );
 
-  const matchesStatusFilter = (status: Challenge["status"]) => {
-    if (statusFilter === "all") return true;
-    if (statusFilter === "active") {
-      return status === "pending" || status === "accepted" || status === "counter_proposal" || status === "awaiting_score";
+  const matchesStatusFilter = (status: Challenge['status']) => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'active') {
+      return (
+        status === 'pending' ||
+        status === 'accepted' ||
+        status === 'counter_proposal' ||
+        status === 'awaiting_score'
+      );
     }
-    if (statusFilter === "inactive") return status === "declined" || status === "cancelled";
-    if (statusFilter === "pending") return status === "pending" || status === "counter_proposal";
-    if (statusFilter === "awaiting_score") return status === "awaiting_score";
+    if (statusFilter === 'inactive') return status === 'declined' || status === 'cancelled';
+    if (statusFilter === 'pending') return status === 'pending' || status === 'counter_proposal';
+    if (statusFilter === 'awaiting_score') return status === 'awaiting_score';
     return status === statusFilter;
   };
 
   const getChallengeSortTimestamp = (challenge: Challenge) => {
-    const referenceDate = challenge.booking?.start_time || challenge.scheduled_date || challenge.created_at;
+    const referenceDate =
+      challenge.booking?.start_time || challenge.scheduled_date || challenge.created_at;
     return new Date(referenceDate).getTime();
   };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      pending: "Da Confermare",
-      accepted: "Confermata",
-      declined: "Rifiutata",
-      completed: "Completata",
-      cancelled: "Annullata",
-      counter_proposal: "Controproposta",
-      awaiting_score: "Attesa Punteggio",
+      pending: 'Da Confermare',
+      accepted: 'Confermata',
+      declined: 'Rifiutata',
+      completed: 'Completata',
+      cancelled: 'Annullata',
+      counter_proposal: 'Controproposta',
+      awaiting_score: 'Attesa Punteggio',
     };
     return labels[status] || status;
   };
@@ -141,15 +156,13 @@ export default function AthleteArenaPage() {
     return challenges
       .filter((challenge) => {
         const q = search.trim().toLowerCase();
-        const challengerName = challenge.challenger?.full_name?.toLowerCase() || "";
-        const opponentName = challenge.opponent?.full_name?.toLowerCase() || "";
+        const challengerName = challenge.challenger?.full_name?.toLowerCase() || '';
+        const opponentName = challenge.opponent?.full_name?.toLowerCase() || '';
         const matchesSearch = !q || challengerName.includes(q) || opponentName.includes(q);
         return matchesSearch && matchesStatusFilter(challenge.status);
       })
       .sort((left, right) => getChallengeSortTimestamp(left) - getChallengeSortTimestamp(right));
   }, [challenges, search, statusFilter]);
-
-
 
   useEffect(() => {
     loadArenaData();
@@ -160,7 +173,7 @@ export default function AthleteArenaPage() {
       setLoading(true);
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
 
       if (!user) {
         setLoading(false);
@@ -168,11 +181,7 @@ export default function AthleteArenaPage() {
       }
 
       setUserId(user.id);
-      await Promise.all([
-        loadUserStats(user.id),
-        loadChallenges(user.id),
-        loadLeaderboard(),
-      ]);
+      await Promise.all([loadUserStats(user.id), loadChallenges(user.id), loadLeaderboard()]);
     } finally {
       setLoading(false);
     }
@@ -196,7 +205,7 @@ export default function AthleteArenaPage() {
         points: userStats.points || 0,
       });
     } catch (error) {
-      console.error("Error loading athlete arena stats:", error);
+      console.error('Error loading athlete arena stats:', error);
     }
   }
 
@@ -208,20 +217,20 @@ export default function AthleteArenaPage() {
       const data = await response.json();
       setChallenges(data.challenges || []);
     } catch (error) {
-      console.error("Error loading athlete challenges:", error);
+      console.error('Error loading athlete challenges:', error);
     }
   }
 
   async function loadLeaderboard() {
     setLoadingLeaderboard(true);
     try {
-      const response = await fetch("/api/arena/stats");
+      const response = await fetch('/api/arena/stats');
       if (!response.ok) return;
 
       const data = await response.json();
       const mapped = (data.leaderboard || []).map((entry: any, index: number) => ({
         userId: entry.user_id,
-        name: entry.profile?.full_name || "N/A",
+        name: entry.profile?.full_name || 'N/A',
         avatar: entry.profile?.avatar_url,
         ranking: index + 1,
         points: entry.points || 0,
@@ -229,24 +238,28 @@ export default function AthleteArenaPage() {
         losses: entry.losses || 0,
         setsWon: entry.sets_won || 0,
         totalMatches: (entry.wins || 0) + (entry.losses || 0),
-        winRate: entry.wins > 0 || entry.losses > 0
-          ? (entry.wins / ((entry.wins || 0) + (entry.losses || 0))) * 100
-          : 0,
+        winRate:
+          entry.wins > 0 || entry.losses > 0
+            ? (entry.wins / ((entry.wins || 0) + (entry.losses || 0))) * 100
+            : 0,
       }));
 
       setLeaderboard(mapped);
     } catch (error) {
-      console.error("Error loading athlete leaderboard:", error);
+      console.error('Error loading athlete leaderboard:', error);
     } finally {
       setLoadingLeaderboard(false);
     }
   }
 
-  async function handleUpdateChallengeStatus(challengeId: string, status: "accepted" | "declined" | "cancelled") {
+  async function handleUpdateChallengeStatus(
+    challengeId: string,
+    status: 'accepted' | 'declined' | 'cancelled',
+  ) {
     try {
-      const response = await fetch("/api/arena/challenges", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/arena/challenges', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           challenge_id: challengeId,
           status,
@@ -258,7 +271,7 @@ export default function AthleteArenaPage() {
         await loadArenaData();
       }
     } catch (error) {
-      console.error("Error updating athlete challenge:", error);
+      console.error('Error updating athlete challenge:', error);
     }
   }
 
@@ -279,8 +292,8 @@ export default function AthleteArenaPage() {
         onClick={() => setIsFilterModalOpen(true)}
         className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
           hasActiveFilters
-            ? "border-secondary bg-secondary text-white hover:opacity-90"
-            : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+            ? 'border-secondary bg-secondary text-white hover:opacity-90'
+            : 'border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50'
         }`}
         aria-label="Apri filtri Arena"
         title="Filtri"
@@ -327,9 +340,9 @@ export default function AthleteArenaPage() {
       <div
         className="rounded-xl border p-6 border-l-4"
         style={{
-          background: "#033d56",
-          borderColor: "#033d56",
-          borderLeftColor: "#033d56",
+          background: '#033d56',
+          borderColor: '#033d56',
+          borderLeftColor: '#033d56',
         }}
       >
         <div className="flex items-center gap-2 text-white">
@@ -337,7 +350,7 @@ export default function AthleteArenaPage() {
         </div>
       </div>
 
-      {renderSearchWithFilter("Cerca per nome giocatore...")}
+      {renderSearchWithFilter('Cerca per nome giocatore...')}
 
       {filteredChallenges.length === 0 ? (
         <div className="text-center py-20 rounded-lg bg-white">
@@ -350,49 +363,52 @@ export default function AthleteArenaPage() {
           {filteredChallenges.map((challenge) => {
             const start = challenge.booking ? new Date(challenge.booking.start_time) : null;
             const dateLabel = start
-              ? start.toLocaleDateString("it-IT", { day: "2-digit", month: "short" })
-              : "Data da definire";
+              ? start.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })
+              : 'Data da definire';
             const timeLabel = start
-              ? start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
-              : "--:--";
-            const courtLabel = challenge.booking?.court || "Campo da definire";
+              ? start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+              : '--:--';
+            const courtLabel = challenge.booking?.court || 'Campo da definire';
 
             const isChallenger = challenge.challenger_id === userId;
             const otherPlayer = isChallenger ? challenge.opponent : challenge.challenger;
 
-            const typeColor = challenge.challenge_type === "ranked" ? "var(--secondary)" : "#023047";
-            const isPending = challenge.status === "pending";
-            const isDeclined = challenge.status === "declined" || challenge.status === "cancelled";
-            const isConfirmed = challenge.status === "accepted";
-            const cardBg = isDeclined ? "#9ca3af" : isPending ? "#ffffff" : typeColor;
+            const typeColor =
+              challenge.challenge_type === 'ranked' ? 'var(--secondary)' : '#023047';
+            const isPending = challenge.status === 'pending';
+            const isDeclined = challenge.status === 'declined' || challenge.status === 'cancelled';
+            const isConfirmed = challenge.status === 'accepted';
+            const cardBg = isDeclined ? '#9ca3af' : isPending ? '#ffffff' : typeColor;
             const iconBadgeBg = isPending
               ? typeColor
               : isConfirmed || isDeclined
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(255, 255, 255, 0.15)";
-            const primaryTextColor = isPending ? "var(--secondary)" : "#ffffff";
-            const iconColor = isPending ? "#ffffff" : primaryTextColor;
-            const secondaryTextColor = isPending ? "rgba(3, 72, 99, 0.75)" : "rgba(255, 255, 255, 0.7)";
+              ? 'rgba(255, 255, 255, 0.1)'
+              : 'rgba(255, 255, 255, 0.15)';
+            const primaryTextColor = isPending ? 'var(--secondary)' : '#ffffff';
+            const iconColor = isPending ? '#ffffff' : primaryTextColor;
+            const secondaryTextColor = isPending
+              ? 'rgba(3, 72, 99, 0.75)'
+              : 'rgba(255, 255, 255, 0.7)';
 
             const canAccept =
-              (challenge.status === "pending" && !isChallenger) ||
-              (challenge.status === "counter_proposal" && isChallenger);
+              (challenge.status === 'pending' && !isChallenger) ||
+              (challenge.status === 'counter_proposal' && isChallenger);
             const canDecline = canAccept;
             const canCancel =
-              challenge.status !== "cancelled" &&
-              challenge.status !== "declined" &&
-              challenge.status !== "completed";
+              challenge.status !== 'cancelled' &&
+              challenge.status !== 'declined' &&
+              challenge.status !== 'completed';
 
             const menuButtonClassName = isPending
-              ? "inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-black/5 text-secondary/60 hover:text-secondary transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]"
-              : "inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]";
+              ? 'inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-black/5 text-secondary/60 hover:text-secondary transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]'
+              : 'inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]';
 
             return (
               <div
                 key={challenge.id}
                 onClick={() => router.push(`${dashboardBase}/arena/challenge/${challenge.id}`)}
                 className={`rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity ${
-                  isPending ? "border border-black/10" : ""
+                  isPending ? 'border border-black/10' : ''
                 }`}
                 style={{ background: cardBg }}
               >
@@ -401,7 +417,7 @@ export default function AthleteArenaPage() {
                     className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
                     style={{ background: iconBadgeBg }}
                   >
-                    {challenge.challenge_type === "ranked" ? (
+                    {challenge.challenge_type === 'ranked' ? (
                       <Target className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
                     ) : (
                       <Handshake className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
@@ -409,8 +425,11 @@ export default function AthleteArenaPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate" style={{ color: primaryTextColor }}>
-                      {otherPlayer?.full_name || "Giocatore"}
+                    <p
+                      className="font-semibold text-sm truncate"
+                      style={{ color: primaryTextColor }}
+                    >
+                      {otherPlayer?.full_name || 'Giocatore'}
                     </p>
                     <p className="text-xs mt-0.5 truncate" style={{ color: secondaryTextColor }}>
                       {dateLabel} · {timeLabel} · {courtLabel} · {getStatusLabel(challenge.status)}
@@ -460,7 +479,7 @@ export default function AthleteArenaPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleUpdateChallengeStatus(challenge.id, "accepted");
+                                handleUpdateChallengeStatus(challenge.id, 'accepted');
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                             >
@@ -475,7 +494,7 @@ export default function AthleteArenaPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleUpdateChallengeStatus(challenge.id, "declined");
+                                handleUpdateChallengeStatus(challenge.id, 'declined');
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                             >
@@ -490,7 +509,7 @@ export default function AthleteArenaPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleUpdateChallengeStatus(challenge.id, "cancelled");
+                                handleUpdateChallengeStatus(challenge.id, 'cancelled');
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                             >
@@ -531,10 +550,10 @@ export default function AthleteArenaPage() {
                 const displayPosition = entry.ranking;
                 const isCurrentUser = entry.userId === userId;
 
-                let rankBg = "var(--secondary)";
-                if (displayPosition === 1) rankBg = "var(--secondary-hover)";
-                else if (displayPosition === 2) rankBg = "#033247";
-                else if (displayPosition === 3) rankBg = "#033d56";
+                let rankBg = 'var(--secondary)';
+                if (displayPosition === 1) rankBg = 'var(--secondary-hover)';
+                else if (displayPosition === 2) rankBg = '#033247';
+                else if (displayPosition === 3) rankBg = '#033d56';
 
                 return (
                   <li key={`${entry.userId}-${index}`}>
@@ -548,17 +567,23 @@ export default function AthleteArenaPage() {
                         style={{ background: rankBg }}
                       >
                         <div className="flex items-center justify-center bg-white/10 rounded-lg w-10 h-10 flex-shrink-0">
-                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{displayPosition}</span>
+                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                            {displayPosition}
+                          </span>
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-white text-sm truncate">
-                            {entry.name || "N/A"}
-                            {isCurrentUser && <span className="ml-1 text-xs text-white/80">(Tu)</span>}
+                            {entry.name || 'N/A'}
+                            {isCurrentUser && (
+                              <span className="ml-1 text-xs text-white/80">(Tu)</span>
+                            )}
                           </p>
                         </div>
 
-                        <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">{entry.points ?? 0}</span>
+                        <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">
+                          {entry.points ?? 0}
+                        </span>
                       </div>
                     </button>
                   </li>
@@ -571,16 +596,31 @@ export default function AthleteArenaPage() {
 
       {/* Leaderboard Player Modal */}
       {selectedLeaderboardEntry && (
-        <Modal open={!!selectedLeaderboardEntry} onOpenChange={(open) => { if (!open) setSelectedLeaderboardEntry(null); }}>
-            <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
-              <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+        <Modal
+          open={!!selectedLeaderboardEntry}
+          onOpenChange={(open) => {
+            if (!open) setSelectedLeaderboardEntry(null);
+          }}
+        >
+          <ModalContent
+            size="sm"
+            showBuiltinClose={false}
+            className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
+          >
+            <ModalHeader
+              withCloseButton
+              closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+              className="px-4 py-3 bg-secondary border-b border-secondary"
+            >
               <ModalTitle className="text-white text-base sm:text-lg">
                 {selectedLeaderboardEntry.name}
-                {selectedLeaderboardEntry.userId === userId && <span className="ml-1 text-sm text-white/70">(Tu)</span>}
+                {selectedLeaderboardEntry.userId === userId && (
+                  <span className="ml-1 text-sm text-white/70">(Tu)</span>
+                )}
               </ModalTitle>
             </ModalHeader>
-            <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
-              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+            <ModalBody className="px-0 py-0 bg-white">
+              <div className="text-sm bg-white divide-y divide-gray-200">
                 <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Posizione</span>
                   <span className="text-xs text-gray-600">{selectedLeaderboardEntry.ranking}</span>
@@ -591,7 +631,9 @@ export default function AthleteArenaPage() {
                 </div>
                 <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Partite</span>
-                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.totalMatches}</span>
+                  <span className="text-xs text-gray-600">
+                    {selectedLeaderboardEntry.totalMatches}
+                  </span>
                 </div>
                 <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Vittorie</span>
@@ -615,7 +657,9 @@ export default function AthleteArenaPage() {
                           style={{ width: `${Math.round(selectedLeaderboardEntry.winRate)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-600 tabular-nums w-8 text-right">{Math.round(selectedLeaderboardEntry.winRate)}%</span>
+                      <span className="text-xs text-gray-600 tabular-nums w-8 text-right">
+                        {Math.round(selectedLeaderboardEntry.winRate)}%
+                      </span>
                     </div>
                   </div>
                 )}
@@ -629,15 +673,22 @@ export default function AthleteArenaPage() {
         <ModalContent
           size="md"
           showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
         >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="text-white text-lg">Filtra Arena</ModalTitle>
           </ModalHeader>
 
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+          <ModalBody className="px-4 py-4 bg-white space-y-4">
             <div className="space-y-1">
-              <label htmlFor="arena-status-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="arena-status-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Stato sfida
               </label>
               <select
@@ -659,7 +710,7 @@ export default function AthleteArenaPage() {
             </div>
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
             <button
               type="button"
               onClick={() => {

@@ -1,19 +1,13 @@
-﻿"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import {
-  Users,
-  CalendarClock,
-  Bell,
-  UserPlus,
-  GraduationCap,
-  Shield,
-} from "lucide-react";
-import BookingsTimeline from "@/components/admin/BookingsTimeline";
-import { useTimelineData } from "@/components/admin/hooks/useTimelineData";
-import WeatherCard from "@/components/dashboard/WeatherCard";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { CalendarClock, Bell, UserPlus, GraduationCap, Shield } from 'lucide-react';
+import BookingsTimeline from '@/components/admin/BookingsTimeline';
+import { useTimelineData } from '@/components/admin/hooks/useTimelineData';
+import WeatherCard from '@/components/dashboard/WeatherCard';
 
 interface TimelineBooking {
   id: string;
@@ -42,7 +36,6 @@ interface TimelineBooking {
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
-  const [userName, setUserName] = useState("");
   const [today] = useState(() => {
     const d = new Date();
     d.setHours(12, 0, 0, 0);
@@ -55,20 +48,24 @@ export default function AdminDashboard() {
     fetchOccupied: false,
   });
 
-
   useEffect(() => {
     void loadDashboardData();
 
+    // Debounce: una creazione multipla (es. 20 slot) genera 20 eventi, che
+    // diventano un solo ricaricamento invece di 20 in fila.
+    let reloadTimer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase
-      .channel("admin-dashboard-bookings")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "bookings" },
-        () => { void loadDashboardData(); }
-      )
+      .channel('admin-dashboard-bookings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        if (reloadTimer) clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => {
+          void loadDashboardData();
+        }, 500);
+      })
       .subscribe();
 
     return () => {
+      if (reloadTimer) clearTimeout(reloadTimer);
       void supabase.removeChannel(channel);
     };
   }, []);
@@ -76,25 +73,17 @@ export default function AdminDashboard() {
   async function loadDashboardData() {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await getSessionUser();
     if (!user) {
       setLoading(false);
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) setUserName(profile.full_name || "Admin");
-
     try {
       const { data: allBookingsData } = await supabase
-        .from("bookings")
-        .select("*")
-        .order("start_time", { ascending: false })
+        .from('bookings')
+        .select('*')
+        .order('start_time', { ascending: false })
         .limit(500);
 
       if (allBookingsData && allBookingsData.length > 0) {
@@ -106,31 +95,28 @@ export default function AdminDashboard() {
         ];
 
         const allBookingIds = allBookingsData.map((b) => b.id);
-        let timelineParticipantsData: TimelineBooking["participants"] | null = null;
+        let timelineParticipantsData: TimelineBooking['participants'] | null = null;
 
         // Round 2: profili utenti e partecipanti in parallelo
         const [{ data: allProfiles }, participantsQuery] = await Promise.all([
+          supabase.from('profiles').select('id, full_name, email, phone').in('id', allUserIds),
           supabase
-            .from("profiles")
-            .select("id, full_name, email, phone")
-            .in("id", allUserIds),
-          supabase
-            .from("booking_participants")
-            .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-            .in("booking_id", allBookingIds)
-            .order("booking_id", { ascending: true })
-            .order("order_index", { ascending: true }),
+            .from('booking_participants')
+            .select('id, booking_id, full_name, email, phone, is_registered, user_id, order_index')
+            .in('booking_id', allBookingIds)
+            .order('booking_id', { ascending: true })
+            .order('order_index', { ascending: true }),
         ]);
 
         const allProfilesMap = new Map(allProfiles?.map((p) => [p.id, p]) || []);
 
-        if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+        if (participantsQuery.error?.message?.toLowerCase().includes('phone')) {
           const fallbackQuery = await supabase
-            .from("booking_participants")
-            .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
-            .in("booking_id", allBookingIds)
-            .order("booking_id", { ascending: true })
-            .order("order_index", { ascending: true });
+            .from('booking_participants')
+            .select('id, booking_id, full_name, email, is_registered, user_id, order_index')
+            .in('booking_id', allBookingIds)
+            .order('booking_id', { ascending: true })
+            .order('order_index', { ascending: true });
           if (!fallbackQuery.error) timelineParticipantsData = fallbackQuery.data || [];
         } else if (!participantsQuery.error) {
           timelineParticipantsData = participantsQuery.data || [];
@@ -139,32 +125,30 @@ export default function AdminDashboard() {
         const enrichedTimelineBookings = allBookingsData.map((booking) => ({
           ...booking,
           user_profile: allProfilesMap.get(booking.user_id) || null,
-          coach_profile: booking.coach_id
-            ? allProfilesMap.get(booking.coach_id) || null
-            : null,
-          participants:
-            timelineParticipantsData?.filter((p) => p.booking_id === booking.id) || [],
+          coach_profile: booking.coach_id ? allProfilesMap.get(booking.coach_id) || null : null,
+          participants: timelineParticipantsData?.filter((p) => p.booking_id === booking.id) || [],
         }));
 
         setTimelineBookings(enrichedTimelineBookings);
       }
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      console.error('Error loading dashboard data:', error);
     }
 
     setLoading(false);
   }
 
   const now = new Date();
-  const todayBookingsCount = timelineBookings.filter((b) => {
-    if (b.status === "cancelled" || b.status === "cancellation_requested") return false;
-    const start = new Date(b.start_time);
-    return (
-      start.getFullYear() === now.getFullYear() &&
-      start.getMonth() === now.getMonth() &&
-      start.getDate() === now.getDate()
-    );
-  }).length + todayCourseEntries.length;
+  const todayBookingsCount =
+    timelineBookings.filter((b) => {
+      if (b.status === 'cancelled' || b.status === 'cancellation_requested') return false;
+      const start = new Date(b.start_time);
+      return (
+        start.getFullYear() === now.getFullYear() &&
+        start.getMonth() === now.getMonth() &&
+        start.getDate() === now.getDate()
+      );
+    }).length + todayCourseEntries.length;
 
   if (loading) {
     return (
@@ -187,7 +171,10 @@ export default function AdminDashboard() {
 
       <WeatherCard />
 
-      <Link href="/dashboard/admin/bookings?filter=today" className="block bg-secondary rounded-lg text-white overflow-hidden hover:opacity-90 transition-opacity">
+      <Link
+        href="/dashboard/admin/bookings?filter=today"
+        className="block bg-secondary rounded-lg text-white overflow-hidden hover:opacity-90 transition-opacity"
+      >
         <div className="flex items-center justify-between gap-4 pl-3 pr-4 sm:pr-5 py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
@@ -200,30 +187,49 @@ export default function AdminDashboard() {
       </Link>
 
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} showEntryModal={false} scrollToCurrentTime={true} enableDragEdit={true} onBookingsChanged={loadDashboardData} />
+        <BookingsTimeline
+          bookings={timelineBookings}
+          loading={loading}
+          showEntryModal={false}
+          scrollToCurrentTime={true}
+          enableDragEdit={true}
+          onBookingsChanged={loadDashboardData}
+        />
       </div>
 
       {/* AZIONI RAPIDE */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <Link href="/dashboard/admin/notifications" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/admin/notifications"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <Bell className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-medium text-white">Centro Notifiche</span>
         </Link>
-        <Link href="/dashboard/admin/users/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/admin/users/new"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <UserPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-medium text-white">Crea Utente</span>
         </Link>
-        <Link href="/dashboard/admin/corsi/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/admin/corsi/new"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <GraduationCap className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-medium text-white">Crea Corso</span>
         </Link>
-        <Link href="/dashboard/admin/courts/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
+        <Link
+          href="/dashboard/admin/courts/new"
+          className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all"
+        >
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
             <Shield className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
@@ -233,4 +239,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

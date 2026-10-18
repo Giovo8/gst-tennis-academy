@@ -17,7 +17,7 @@
 
 import logger from '@/lib/logger/secure-logger';
 
-export type SecurityEventType =
+type SecurityEventType =
   /** Chiamata a route protetta senza header Authorization. */
   | 'auth.token_mancante'
   /** Token Bearer presente ma rifiutato da Supabase. */
@@ -43,7 +43,7 @@ const SEVERITA_DEFAULT: Record<SecurityEventType, Severita> = {
   'rate_limit.superato': 'warning',
 };
 
-export interface SecurityEventParams {
+interface SecurityEventParams {
   tipo: SecurityEventType;
   /** Da cui si ricavano path, metodo, IP e user agent. */
   request?: Request;

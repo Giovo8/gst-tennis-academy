@@ -10,7 +10,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -18,8 +19,6 @@
     "@supabase/supabase-js": "^2.88.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "framer-motion": "^12.40.0",
-    "isomorphic-dompurify": "^2.18.0",
     "lucide-react": "^0.562.0",
     "next": "^16.2.6",
     "react": "19.2.3",
@@ -55,11 +54,5 @@
       "prettier --write",
       "git add"
     ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npx lint-staged"
-    }
-  },
-  "prepare": "husky install"
+  }
 }

@@ -11,8 +11,6 @@ export const USER_ROLES = {
   ATLETA: 'atleta',
 } as const;
 
-export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
-
 // ==================== BOOKING STATUS ====================
 export const BOOKING_STATUS = {
   PENDING: 'pending',
@@ -21,8 +19,6 @@ export const BOOKING_STATUS = {
   REJECTED: 'rejected',
   CANCELLATION_REQUESTED: 'cancellation_requested',
 } as const;
-
-export type BookingStatus = typeof BOOKING_STATUS[keyof typeof BOOKING_STATUS];
 
 // ==================== TOURNAMENT STATUS ====================
 export const TOURNAMENT_STATUS = {
@@ -34,32 +30,19 @@ export const TOURNAMENT_STATUS = {
   CANCELLED: 'Annullato',
 } as const;
 
-export type TournamentStatus = typeof TOURNAMENT_STATUS[keyof typeof TOURNAMENT_STATUS];
-
 // ==================== COMPETITION TYPES ====================
 export const COMPETITION_TYPE = {
   TORNEO: 'torneo',
   CAMPIONATO: 'campionato',
 } as const;
 
-export type CompetitionType = typeof COMPETITION_TYPE[keyof typeof COMPETITION_TYPE];
+export type CompetitionType = (typeof COMPETITION_TYPE)[keyof typeof COMPETITION_TYPE];
 
 // ==================== COMPETITION FORMATS ====================
 export const COMPETITION_FORMAT = {
   ELIMINAZIONE_DIRETTA: 'eliminazione_diretta',
   ROUND_ROBIN: 'round_robin',
   GIRONE_ELIMINAZIONE: 'girone_eliminazione',
-} as const;
-
-export type CompetitionFormat = typeof COMPETITION_FORMAT[keyof typeof COMPETITION_FORMAT];
-
-// ==================== TIME CONSTANTS ====================
-export const TIME_CONSTANTS = {
-  ONE_HOUR_MS: 60 * 60 * 1000,
-  TWENTY_FOUR_HOURS_MS: 24 * 60 * 60 * 1000,
-  ONE_DAY_MS: 24 * 60 * 60 * 1000,
-  ONE_WEEK_MS: 7 * 24 * 60 * 60 * 1000,
-  BOOKING_ADVANCE_HOURS: 24,
 } as const;
 
 // ==================== VALIDATION RULES ====================
@@ -71,27 +54,8 @@ export const VALIDATION_RULES = {
   EMAIL_MAX_LENGTH: 255,
   PHONE_MIN_LENGTH: 10,
   PHONE_MAX_LENGTH: 15,
-  SEARCH_MIN_CHARS: 2,
-  SEARCH_MAX_RESULTS: 50,
   MAX_FILE_SIZE_MB: 5,
 } as const;
-
-// ==================== PAGINATION ====================
-export const PAGINATION = {
-  DEFAULT_PAGE_SIZE: 20,
-  MAX_PAGE_SIZE: 100,
-  MIN_PAGE_SIZE: 10,
-} as const;
-
-// ==================== MATCH STATUSES ====================
-export const MATCH_STATUS = {
-  SCHEDULED: 'scheduled',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-} as const;
-
-export type MatchStatus = typeof MATCH_STATUS[keyof typeof MATCH_STATUS];
 
 // ==================== HTTP STATUS CODES ====================
 export const HTTP_STATUS = {
@@ -132,28 +96,3 @@ export const TOURNAMENT_CONFIG = {
   MIN_GROUP_SIZE: 3,
   MAX_GROUP_SIZE: 8,
 } as const;
-
-// ==================== NEWS CATEGORIES ====================
-export const NEWS_CATEGORIES = {
-  GENERAL: 'generale',
-  TOURNAMENT: 'torneo',
-  TRAINING: 'allenamento',
-  EVENT: 'evento',
-  ANNOUNCEMENT: 'comunicato',
-} as const;
-
-export type NewsCategory = typeof NEWS_CATEGORIES[keyof typeof NEWS_CATEGORIES];
-
-// ==================== NOTIFICATION TYPES ====================
-export const NOTIFICATION_TYPE = {
-  INFO: 'info',
-  SUCCESS: 'success',
-  WARNING: 'warning',
-  ERROR: 'error',
-  BOOKING: 'booking',
-  TOURNAMENT: 'tournament',
-  MESSAGE: 'message',
-  SYSTEM: 'system',
-} as const;
-
-export type NotificationType = typeof NOTIFICATION_TYPE[keyof typeof NOTIFICATION_TYPE];

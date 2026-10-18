@@ -11,17 +11,10 @@ Guida al deploy di GST Tennis Academy su **Vercel** con database **Supabase**.
 
 ## 1. Preparazione del database Supabase
 
-1. Applicare le **67 migrazioni** in ordine (dettagli in [DATABASE.md](DATABASE.md)):
-
-   ```bash
-   supabase link --project-ref <project-id>
-   supabase db push
-   ```
-
-   In alternativa, eseguire i file `supabase/migrations/*.sql` in ordine (001→067) dallo SQL Editor.
-
-2. Creare il bucket `avatars` con `supabase/scripts/utilities/CREATE_AVATARS_BUCKET.sql` (i bucket `certificates` e `chat-attachments` sono creati dalle migrazioni 053 e 018).
+1. **Nuovo progetto**: eseguire dallo SQL Editor schema base, migrazioni e script nell'ordine descritto in [DATABASE.md → Setup da zero](DATABASE.md#setup-da-zero). Il bucket `avatars` è incluso in quella sequenza; `certificates` è creato dalla migrazione 053.
+2. **Progetto esistente**: applicare solo le migrazioni con numero maggiore dell'ultima già eseguita. Le migrazioni 087 e 088 sono distruttive (la 089 no): fare prima un backup e leggere le istruzioni nell'intestazione dei file.
 3. Per il modulo notizie AI: abilitare le estensioni `pg_cron` e `pg_net` dal dashboard Supabase (Database → Extensions), se non già attive dalla migrazione 063.
+4. Aggiungere alla publication realtime le tabelle elencate in [DATABASE.md → Realtime](DATABASE.md#realtime).
 
 ## 2. Edge Function `genera-news`
 
@@ -39,23 +32,21 @@ Flusso: le schedulazioni sono salvate nella tabella `ai_news_cron` (gestite da `
 
 Le variabili sono le stesse di `.env.example` (root del repo), che è la fonte di verità: tutte quelle elencate sono effettivamente lette dal codice.
 
-| Variabile | Obbligatoria | Uso |
-|---|---|---|
-| `NODE_ENV` | — | Impostata automaticamente da Vercel (`production`) |
-| `NEXT_PUBLIC_APP_URL` | Sì | URL pubblico dell'app (link nelle email, metadati SEO) |
-| `NEXT_PUBLIC_SITE_URL` | Sì | Whitelist CSRF `Origin` nel middleware |
-| `NEXT_PUBLIC_SUPABASE_URL` | Sì | URL progetto Supabase (esposta al client) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sì | Chiave anon (esposta al client) |
-| `SUPABASE_URL` | Sì | URL progetto, lato server |
-| `SUPABASE_SERVICE_ROLE_KEY` | Sì | **Solo server** (`src/lib/supabase/serverClient.ts`): bypassa la RLS. Mai con prefisso `NEXT_PUBLIC_` |
-| `RESEND_API_KEY` | No | Email transazionali; se assente l'invio è saltato senza errori |
-| `EMAIL_FROM` | No | Mittente email, es. `GST Tennis Academy <noreply@dominio.com>` |
-| `GEMINI_API_KEY` | No | Notizie AI; se assente la generazione usa solo il parsing RSS |
-| `INSTAGRAM_OEMBED_TOKEN` | No | Token Facebook App (`APP_ID\|APP_SECRET`) per l'oEmbed Instagram |
-| `FACEBOOK_APP_ACCESS_TOKEN` | No | Fallback del token oEmbed |
-| `INSTAGRAM_POST_URLS` | No | URL dei post Instagram da mostrare, separati da virgola |
-| `ENABLE_RATE_LIMITING` | No | Abilita il rate limiting in-memory (default consigliato: `true`) |
-| `LOG_LEVEL` | No | `debug` / `info` / `warn` / `error` (default `info`) |
+| Variabile                       | Obbligatoria | Uso                                                                                                               |
+| ------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                      | —            | Impostata automaticamente da Vercel (`production`)                                                                |
+| `NEXT_PUBLIC_APP_URL`           | Sì           | URL pubblico dell'app (link nelle email, metadati SEO)                                                            |
+| `NEXT_PUBLIC_SITE_URL`          | Sì           | Whitelist CSRF `Origin` nel middleware                                                                            |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Sì           | URL progetto Supabase (esposta al client)                                                                         |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sì           | Chiave anon (esposta al client)                                                                                   |
+| `SUPABASE_URL`                  | No           | URL progetto lato server (default: `NEXT_PUBLIC_SUPABASE_URL`)                                                    |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Sì           | **Solo server** (`src/lib/supabase/serverClient.ts`): bypassa la RLS. Mai con prefisso `NEXT_PUBLIC_`             |
+| `RESEND_API_KEY`                | No           | Email transazionali; se assente l'invio è saltato senza errori                                                    |
+| `EMAIL_FROM`                    | No           | Mittente email, es. `GST Tennis Academy <noreply@dominio.com>`                                                    |
+| `GEMINI_API_KEY`                | No           | Notizie AI; se assente la generazione usa solo il parsing RSS. Va impostata anche nei secrets della Edge Function |
+| `GEMINI_MODEL`                  | No           | Modello Gemini da usare (default nel codice)                                                                      |
+| `ENABLE_RATE_LIMITING`          | No           | Abilita il rate limiting in-memory (default consigliato: `true`)                                                  |
+| `LOG_LEVEL`                     | No           | `debug` / `info` / `warn` / `error` (default `info`)                                                              |
 
 Configurarle in Vercel → Project → Settings → Environment Variables (ambienti Production/Preview/Development a seconda delle esigenze).
 
@@ -63,7 +54,7 @@ Configurarle in Vercel → Project → Settings → Environment Variables (ambie
 
 1. Importare il repository (framework rilevato: **Next.js**).
 2. Build command standard: `next build` (nessuna personalizzazione; `npm install` come install command di default).
-3. Configurare le variabili d'ambiente (sopra) **prima** del primo deploy: il client Supabase server-side fallisce all'avvio se `SUPABASE_URL` o `SUPABASE_SERVICE_ROLE_KEY` mancano.
+3. Configurare le variabili d'ambiente (sopra) **prima** del primo deploy: il client Supabase server-side fallisce all'avvio se mancano l'URL Supabase o `SUPABASE_SERVICE_ROLE_KEY`.
 4. Deploy. Le API route girano come serverless functions; il middleware (CSRF + sessione) gira su edge/Node secondo il default di Next.js.
 
 ### Dopo il deploy
@@ -93,5 +84,5 @@ Gli invii Resend sono tracciati nella tabella `email_logs`; se `RESEND_API_KEY` 
 
 ### Job database
 
-- `reset_weekly_credits()` va schedulata (es. `pg_cron` o job Supabase) ogni lunedì per il ripristino dei crediti abbonamento.
-- `cleanup_old_typing_indicators()` può essere schedulata periodicamente per la pulizia della chat.
+- `purge_security_events()` è schedulata dalla migrazione 082 (job pg_cron `purge-security-events`, ogni notte alle 03:30) per la retention a 90 giorni di `security_events`.
+- I job delle notizie AI sono creati e aggiornati da `ai_news_sync_cron_job()` quando si salva una schedulazione in dashboard.

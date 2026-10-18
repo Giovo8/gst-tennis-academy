@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
+import { useRef, useState } from 'react';
 
-export type DragMode = "move" | "resize";
+type DragMode = 'move' | 'resize';
 
-export type DragGhost = {
+type DragGhost = {
   court: string;
   startSlot: number;
   duration: number;
   invalid: boolean;
 };
 
-export type DragState = {
+type DragState = {
   bookingId: string;
   mode: DragMode;
   ghost: DragGhost | null;
@@ -42,10 +42,10 @@ const DRAG_THRESHOLD = 5; // px prima di considerare l'interazione un drag (non 
  */
 function readSlotAtPoint(x: number, y: number): SlotTarget | null {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
-  const cell = el?.closest<HTMLElement>("[data-slot-cell]") ?? null;
+  const cell = el?.closest<HTMLElement>('[data-slot-cell]') ?? null;
   if (!cell) return null;
-  const court = cell.getAttribute("data-court");
-  const idx = cell.getAttribute("data-slot-index");
+  const court = cell.getAttribute('data-court');
+  const idx = cell.getAttribute('data-slot-index');
   if (court == null || idx == null) return null;
   const slotIndex = Number.parseInt(idx, 10);
   if (Number.isNaN(slotIndex)) return null;
@@ -69,7 +69,12 @@ type UseBookingDragParams = {
  * - Snap alla griglia da 30 minuti (mezzi slot) letta dal DOM.
  * - Non chiama {@link onCommit} se la destinazione è invalida o invariata.
  */
-export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit }: UseBookingDragParams) {
+export function useBookingDrag({
+  enabled,
+  halfSlotsPerDay,
+  isRangeFree,
+  onCommit,
+}: UseBookingDragParams) {
   const [dragState, setDragState] = useState<DragState>(null);
   const didDragRef = useRef(false);
 
@@ -92,7 +97,9 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
 
     // Dimensioni del blocco e offset del punto afferrato (in px), per rendere
     // l'anteprima a grandezza piena che segue il cursore.
-    const blockEl = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-booking-block]") ?? (e.currentTarget as HTMLElement);
+    const blockEl =
+      (e.currentTarget as HTMLElement).closest<HTMLElement>('[data-booking-block]') ??
+      (e.currentTarget as HTMLElement);
     const rect = blockEl.getBoundingClientRect();
     const preview = {
       width: rect.width,
@@ -105,7 +112,7 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
     // così durante il move il punto afferrato resta sotto il cursore.
     const grab = readSlotAtPoint(startX, startY);
     const grabOffset =
-      mode === "move" && grab && grab.court === court
+      mode === 'move' && grab && grab.court === court
         ? Math.max(0, Math.min(duration - 1, grab.slotIndex - startSlot))
         : 0;
 
@@ -114,7 +121,7 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
 
     // Disabilita la selezione del testo per tutta la durata del drag.
     const prevUserSelect = document.body.style.userSelect;
-    document.body.style.userSelect = "none";
+    document.body.style.userSelect = 'none';
 
     const clampStart = (slot: number) => Math.max(0, Math.min(halfSlotsPerDay - duration, slot));
 
@@ -129,11 +136,16 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
 
     function computeGhost(x: number, y: number): DragGhost {
       const target = readSlotAtPoint(x, y);
-      if (mode === "move") {
+      if (mode === 'move') {
         if (!target) return lastGhost;
         const c = target.court;
         const s = clampStart(target.slotIndex - grabOffset);
-        lastGhost = { court: c, startSlot: s, duration, invalid: !isRangeFree(c, s, duration, bookingId) };
+        lastGhost = {
+          court: c,
+          startSlot: s,
+          duration,
+          invalid: !isRangeFree(c, s, duration, bookingId),
+        };
         return lastGhost;
       }
       // resize del bordo finale: campo e inizio fissi, cambia la durata
@@ -143,7 +155,12 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
       } else {
         return lastGhost;
       }
-      lastGhost = { court, startSlot, duration: d, invalid: !isRangeFree(court, startSlot, d, bookingId) };
+      lastGhost = {
+        court,
+        startSlot,
+        duration: d,
+        invalid: !isRangeFree(court, startSlot, d, bookingId),
+      };
       return lastGhost;
     }
 
@@ -162,7 +179,10 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
 
     function onMove(ev: PointerEvent) {
       if (!started) {
-        if (Math.abs(ev.clientX - startX) < DRAG_THRESHOLD && Math.abs(ev.clientY - startY) < DRAG_THRESHOLD) {
+        if (
+          Math.abs(ev.clientX - startX) < DRAG_THRESHOLD &&
+          Math.abs(ev.clientY - startY) < DRAG_THRESHOLD
+        ) {
           return;
         }
         started = true;
@@ -179,9 +199,9 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
         rafId = null;
       }
       pending = null;
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
       document.body.style.userSelect = prevUserSelect;
       setDragState(null);
     }
@@ -191,17 +211,22 @@ export function useBookingDrag({ enabled, halfSlotsPerDay, isRangeFree, onCommit
       const ghost = wasDragging ? computeGhost(ev.clientX, ev.clientY) : null;
       cleanup();
       if (!wasDragging || !ghost || ghost.invalid) return;
-      if (ghost.court === court && ghost.startSlot === startSlot && ghost.duration === duration) return;
-      onCommit(bookingId, { court: ghost.court, startSlot: ghost.startSlot, duration: ghost.duration });
+      if (ghost.court === court && ghost.startSlot === startSlot && ghost.duration === duration)
+        return;
+      onCommit(bookingId, {
+        court: ghost.court,
+        startSlot: ghost.startSlot,
+        duration: ghost.duration,
+      });
     }
 
     function onCancel() {
       cleanup();
     }
 
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onCancel);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
   }
 
   return { dragState, startDrag, consumeClickSuppression };

@@ -11,8 +11,8 @@ Pagine: `dashboard/{atleta,maestro}/(main)/bookings`, `dashboard/admin/bookings`
 - **Tipi di prenotazione**: campo, lezione (privata o di gruppo). L'enum `booking_type` e i template email distinguono `campo`, `lezione`, `lezione_privata`, `lezione_gruppo`.
 - **Multi-partecipante (max 4)**: tabella `booking_participants` (migrazione `032`), con CHECK su `order_index < 4` e trigger `check_booking_participants_limit()`. I partecipanti possono essere atleti registrati o ospiti (`participant_type`). Selezione in UI via `src/components/bookings/AthletesSelector.tsx`.
 - **Anti-sovrapposizione a livello DB**: constraint `bookings_no_overlap` (migrazione `047`, `EXCLUDE USING gist` su campo + `tstzrange(start_time, end_time)` con `btree_gist`), che ignora gli stati `cancelled`, `rejected`, `cancellation_requested`.
-- **Flusso di conferma**: le lezioni richiedono conferma del maestro e/o del gestore (`/api/bookings/[id]/confirm` e `reject`); il gestore può creare prenotazioni per conto degli atleti.
-- **Crediti settimanali**: tabella `subscription_credits` con funzioni `consume_group_credit()` e `reset_weekly_credits()` (reset il lunedì). Definite in `supabase/schema.sql`; la logica è a livello database, senza chiamate dirette dal codice applicativo in `src/`.
+- **Flusso di conferma**: le lezioni richiedono conferma del maestro e/o del gestore (`/api/bookings/confirm` e `/api/bookings/reject`); il gestore può creare prenotazioni per conto degli atleti.
+- **Partite di torneo**: tipo `torneo` (migrazioni 084–086) per prenotare il campo di una partita; atleti e maestri vedono solo i propri tornei e partite (`/api/bookings/tournament-matches`, `src/lib/bookings/tournamentBookings*.ts`). Le partite prenotate compaiono nella sezione "In programma" del torneo.
 - **Creazione**: `POST /api/bookings` applica rate limiting, validazione Zod (`createBookingSchema`), sanitizzazione input, restrizioni sugli orari prenotabili e logging attività.
 - **Email**: notifiche automatiche a gestori, maestro e atleta su creazione/eliminazione (vedi [EMAIL.md](EMAIL.md)).
 - **Blocchi campo**: tabella `court_blocks` gestita da admin/gestore (`/dashboard/admin/courts`).
@@ -36,7 +36,7 @@ Pagine: `dashboard/admin/video-lessons`, `dashboard/{atleta,maestro}/(main)/vide
 
 Pagine: `/tornei` (pubblica), `dashboard/admin/tornei` (gestione), sezioni tornei nelle dashboard atleta/maestro. Tabelle: `tournaments` (con `rounds_data`/`groups_data` JSONB), `tournament_participants`, `tournament_matches`, `tournament_groups`.
 
-- **Tre formati** (`competition_type` in `src/lib/types/tournament.ts` e `src/lib/constants/app.ts`): eliminazione diretta (`knockout` / `eliminazione_diretta`), girone all'italiana (`round_robin`), gironi + eliminazione (`groups_then_knockout` / `girone_eliminazione`).
+- **Tre formati** (`competition_type` in `src/lib/constants/app.ts`): eliminazione diretta (`knockout` / `eliminazione_diretta`), girone all'italiana (`round_robin`), gironi + eliminazione (`groups_then_knockout` / `girone_eliminazione`).
 - **Bracket generati automaticamente** con seed e avanzamento del vincitore (`next_match_id`).
 - **Punteggi tennis**: set per set, formato best-of-1/3/5, superficie del campo.
 - Stati del torneo: `draft → open → in_progress → completed`; visibilità `public`/`private`; deadline di iscrizione.
@@ -48,11 +48,10 @@ Sistema competitivo a punti con livelli Bronzo→Diamante, streak e classifica. 
 
 ## Chat
 
-Pagine: `/chat` (+ vista admin `dashboard/admin/chat`). Tabelle: `conversations`, `internal_messages`, `chat_groups`, `chat_group_members`, `message_reads`, `typing_indicators`, `user_presence`.
+Pagine: `dashboard/{atleta,maestro}/(main)/mail` e `dashboard/admin/chat`. Tabelle: `internal_messages` (messaggi diretti), `chat_groups`, `chat_group_members`.
 
 - Conversazioni dirette 1:1 e gruppi.
-- Indicatori di digitazione e presenza online (`src/lib/chat/presence.ts`, tabelle `typing_indicators` e `user_presence`, pulizia periodica via `cleanup_old_typing_indicators()`).
-- Ricevute di lettura (`message_reads`) e allegati.
+- Messaggi letti/non letti con contatore nella sidebar.
 - Aggiornamenti in tempo reale via Supabase Realtime.
 - L'Arena usa la chat per notificare creazione e cambi di stato delle sfide (messaggi in `internal_messages`).
 
@@ -72,7 +71,7 @@ Tabella `notifications`, API `/api/notifications`, campanella in dashboard con R
 
 ## Codici invito
 
-Pagina: `dashboard/admin/invite-codes`. Tabelle: `invite_codes`, `invite_code_uses`. API: `/api/invite-codes` (+ `[id]`, `validate`).
+Pagina: `dashboard/admin/invite-codes`. Tabelle: `invite_codes`, `invite_code_uses`. API: `/api/invite-codes/validate` (registrazione) e `/api/invite-codes/[id]/uses`; la gestione dei codici avviene direttamente su Supabase.
 
 - Admin/gestore genera codici con ruolo predefinito e limiti d'uso; alla registrazione il codice viene validato e il profilo configurato di conseguenza.
 
@@ -98,9 +97,9 @@ Modulo `src/lib/activity/`: `logActivity()` (client) e `logActivityServer()` (se
 
 API: `/api/weather` (rate limited). Interroga **Open-Meteo** (forecast 7 giorni, coordinate della struttura, timezone Europe/Rome) per il widget meteo in dashboard (`useWeather`).
 
-## Feed Instagram
+## Live tennis
 
-API: `/api/social/instagram`. Usa l'endpoint oEmbed di Meta con `INSTAGRAM_OEMBED_TOKEN` (post configurati in `INSTAGRAM_POST_URLS`); in assenza di token ricade su scraping HTML (fragile). Timeout 5s. Alimenta la sezione social della homepage.
+Sezione nella landing (`LiveScoresSection`) e pagina pubblica di dettaglio partita `/live/[id]`. API: `/api/live-tennis` (rate limited), che legge lo scoreboard ESPN di ATP e WTA per il giorno richiesto (ora italiana) con cache di 30 secondi. Normalizzazione in `src/lib/live-tennis/espn.ts`.
 
 ## Email transazionali
 
@@ -108,4 +107,4 @@ Invio via Resend con logging in `email_logs`: prenotazioni create/eliminate e no
 
 ## Contenuti homepage
 
-Tabelle `hero_content`, `hero_images`, `homepage_sections`, `promo_banner_settings`, `services`, `events` + `event_registrations`: sezioni della landing configurabili da admin.
+La landing (`src/components/landing/`) legge staff, news e tornei dal database; il resto dei contenuti è nel codice. Le vecchie tabelle di contenuti configurabili (`hero_*`, `homepage_sections`, `promo_banner_settings`) non sono più usate e vengono rimosse dalla migrazione 087.

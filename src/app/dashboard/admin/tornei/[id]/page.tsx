@@ -1,13 +1,16 @@
-"use client";
+'use client';
 
-import { Suspense, useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Loader2, Trash2, PlayCircle, Trophy, Target, Users as UsersIcon, RotateCw, Eye } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
-import TournamentTabBar, { type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
-import ManualEnrollment from "@/components/tournaments/ManualEnrollment";
+import { Suspense, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { Loader2, Trophy, Target, Users as UsersIcon, Eye } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import TournamentManagerWrapper from '@/components/tournaments/TournamentManagerWrapper';
+import TournamentTabBar, { type TournamentTabKey } from '@/components/tournaments/TournamentTabBar';
+import ManualEnrollment from '@/components/tournaments/ManualEnrollment';
+import TournamentScheduleSection, {
+  useScheduledTournamentMatches,
+} from '@/components/tournaments/TournamentScheduleSection';
 import { toast } from 'sonner';
 
 function AdminTournamentDetailInner() {
@@ -20,7 +23,7 @@ function AdminTournamentDetailInner() {
   const [regeneratingCalendar, setRegeneratingCalendar] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [managerTab, setManagerTab] = useState<TournamentTabKey>("overview");
+  const [managerTab, setManagerTab] = useState<TournamentTabKey>('overview');
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<{
@@ -34,8 +37,8 @@ function AdminTournamentDetailInner() {
 
   // Load tournament data
   useEffect(() => {
-    if (!id || typeof id !== "string") return;
-    
+    if (!id || typeof id !== 'string') return;
+
     async function loadTournamentData() {
       setLoading(true);
       try {
@@ -45,7 +48,7 @@ function AdminTournamentDetailInner() {
           setTournament(json.tournament);
         }
       } catch (error) {
-        console.error("Error loading tournament:", error);
+        console.error('Error loading tournament:', error);
       } finally {
         setLoading(false);
       }
@@ -57,27 +60,50 @@ function AdminTournamentDetailInner() {
   // Iscritti con account, per la vista "come atleta" (sempre disponibile, anche a torneo in corso)
   const [athletes, setAthletes] = useState<{ user_id: string; name: string }[]>([]);
   useEffect(() => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== 'string') return;
     fetch(`/api/tournament_participants?tournament_id=${id}`)
       .then((r) => r.json())
       .then((json) => {
         const list = (json.participants || [])
           .filter((p: any) => p.user_id)
-          .map((p: any) => ({ user_id: p.user_id as string, name: (p.profiles?.full_name || "Atleta") as string }))
+          .map((p: any) => ({
+            user_id: p.user_id as string,
+            name: (p.profiles?.full_name || 'Atleta') as string,
+          }))
           .sort((a: any, b: any) => a.name.localeCompare(b.name));
         setAthletes(list);
       })
       .catch(() => setAthletes([]));
   }, [id, reloadKey]);
 
+  // Partite con prenotazione campo in arrivo: tab "In programma" (prima tab, selezionata all'apertura)
+  const isStarted = Boolean(
+    meta && meta.participantsCount > 0 && meta.currentPhase !== 'iscrizioni',
+  );
+  const scheduledMatches = useScheduledTournamentMatches(
+    typeof id === 'string' ? id : null,
+    isStarted,
+    reloadKey,
+  );
+  const hasScheduledMatches = isStarted && scheduledMatches.length > 0;
+  const [scheduleAutoSelected, setScheduleAutoSelected] = useState(false);
+  useEffect(() => {
+    if (hasScheduledMatches && !scheduleAutoSelected) {
+      setManagerTab('schedule');
+      setScheduleAutoSelected(true);
+    } else if (!hasScheduledMatches && managerTab === 'schedule') {
+      setManagerTab('overview'); // il manager riporta poi alla prima tab valida della fase
+    }
+  }, [hasScheduledMatches, scheduleAutoSelected, managerTab]);
+
   const isCampionato = tournament?.tournament_type === 'campionato';
 
-  const hasValidId = id && typeof id === "string";
+  const hasValidId = id && typeof id === 'string';
 
   const handleDeleteTournament = async () => {
     if (
       !confirm(
-        "⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo torneo?\n\nQuesta azione è irreversibile e cancellerà tutte le partite, i partecipanti e le statistiche."
+        '⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo torneo?\n\nQuesta azione è irreversibile e cancellerà tutte le partite, i partecipanti e le statistiche.',
       )
     ) {
       return;
@@ -92,7 +118,7 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       const res = await fetch(`/api/tournaments?id=${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: token
           ? {
               Authorization: `Bearer ${token}`,
@@ -101,13 +127,13 @@ function AdminTournamentDetailInner() {
       });
 
       if (res.ok) {
-        router.push("/dashboard/admin/tornei");
+        router.push('/dashboard/admin/tornei');
       } else {
         const data = await res.json().catch(() => null);
         toast.error(data?.error || "Errore nell'eliminazione del torneo");
       }
     } catch (error) {
-      console.error("Error deleting tournament", error);
+      console.error('Error deleting tournament', error);
       toast.error("Errore nell'eliminazione del torneo");
     } finally {
       setDeleting(false);
@@ -115,17 +141,17 @@ function AdminTournamentDetailInner() {
   };
 
   const handleStartTournament = async () => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== 'string') return;
 
     if (!meta || meta.participantsCount < 2) {
-      toast.warning("Per avviare il torneo servono almeno 2 partecipanti.");
+      toast.warning('Per avviare il torneo servono almeno 2 partecipanti.');
       return;
     }
 
     if (
       !confirm(
-        "Sei sicuro di voler avviare il torneo?" +
-          "\n\nDopo l'avvio non sarà più possibile modificare le iscrizioni."
+        'Sei sicuro di voler avviare il torneo?' +
+          "\n\nDopo l'avvio non sarà più possibile modificare le iscrizioni.",
       )
     ) {
       return;
@@ -140,28 +166,28 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       const res = await fetch(`/api/tournaments/${id}/start`, {
-        method: "POST",
+        method: 'POST',
         headers: token
           ? {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             }
           : {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
       });
 
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || "Torneo avviato con successo");
+        toast.success(data?.message || 'Torneo avviato con successo');
         // Ricarica completamente il manager per riflettere la nuova fase
         setReloadKey((prev) => prev + 1);
       } else {
         toast.error(data?.error || "Errore nell'avvio del torneo");
       }
     } catch (error) {
-      console.error("Error starting tournament", error);
+      console.error('Error starting tournament', error);
       toast.error("Errore nell'avvio del torneo");
     } finally {
       setStarting(false);
@@ -169,11 +195,11 @@ function AdminTournamentDetailInner() {
   };
 
   const handleAdvanceToKnockout = async () => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== 'string') return;
 
     if (
       !confirm(
-        "Sei sicuro di voler far avanzare le prime squadre di ogni girone alla fase eliminatoria?"
+        'Sei sicuro di voler far avanzare le prime squadre di ogni girone alla fase eliminatoria?',
       )
     ) {
       return;
@@ -188,12 +214,12 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error("Sessione non valida");
+        toast.error('Sessione non valida');
         return;
       }
 
       const res = await fetch(`/api/tournaments/${id}/advance-from-groups`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -202,13 +228,13 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || "Partecipanti avanzati alla fase eliminatoria!");
+        toast.success(data?.message || 'Partecipanti avanzati alla fase eliminatoria!');
         setReloadKey((prev) => prev + 1);
       } else {
         toast.error(data?.error || "Errore nell'avanzamento alla fase eliminatoria");
       }
     } catch (error) {
-      console.error("Error advancing to knockout", error);
+      console.error('Error advancing to knockout', error);
       toast.error("Errore nell'avanzamento alla fase eliminatoria");
     } finally {
       setAdvancing(false);
@@ -216,9 +242,13 @@ function AdminTournamentDetailInner() {
   };
 
   const handleCompleteTournament = async () => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== 'string') return;
 
-    if (!confirm('Sei sicuro di voler concludere il torneo?\n\nQuesta azione segnerà il torneo come completato.')) {
+    if (
+      !confirm(
+        'Sei sicuro di voler concludere il torneo?\n\nQuesta azione segnerà il torneo come completato.',
+      )
+    ) {
       return;
     }
 
@@ -238,8 +268,8 @@ function AdminTournamentDetailInner() {
       const res = await fetch(`/api/tournaments/${id}/complete`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       const data = await res.json();
@@ -259,11 +289,11 @@ function AdminTournamentDetailInner() {
   };
 
   const handleRegenerateBracket = async () => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== 'string') return;
 
     if (
       !confirm(
-        "Sei sicuro di voler rigenerare il bracket? Questa operazione eliminerà tutti i match e i risultati esistenti."
+        'Sei sicuro di voler rigenerare il bracket? Questa operazione eliminerà tutti i match e i risultati esistenti.',
       )
     ) {
       return;
@@ -278,13 +308,13 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error("Sessione non valida");
+        toast.error('Sessione non valida');
         return;
       }
 
       // Chiama direttamente generate-bracket che elimina e rigenera automaticamente
       const res = await fetch(`/api/tournaments/${id}/generate-bracket`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -293,25 +323,25 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || "Bracket rigenerato con successo!");
+        toast.success(data?.message || 'Bracket rigenerato con successo!');
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data?.error || "Errore nella rigenerazione del bracket");
+        toast.error(data?.error || 'Errore nella rigenerazione del bracket');
       }
     } catch (error) {
-      console.error("Error regenerating bracket", error);
-      toast.error("Errore nella rigenerazione del bracket");
+      console.error('Error regenerating bracket', error);
+      toast.error('Errore nella rigenerazione del bracket');
     } finally {
       setRegeneratingBracket(false);
     }
   };
 
   const handleRegenerateCalendar = async () => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== 'string') return;
 
     if (
       !confirm(
-        "Sei sicuro di voler rigenerare il calendario? Questa operazione eliminerà tutti i match e i risultati esistenti."
+        'Sei sicuro di voler rigenerare il calendario? Questa operazione eliminerà tutti i match e i risultati esistenti.',
       )
     ) {
       return;
@@ -326,13 +356,13 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error("Sessione non valida");
+        toast.error('Sessione non valida');
         return;
       }
 
       // Prima elimina i match esistenti
       const deleteRes = await fetch(`/api/tournaments/${id}/delete-matches`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -346,7 +376,7 @@ function AdminTournamentDetailInner() {
 
       // Poi genera il nuovo calendario
       const res = await fetch(`/api/tournaments/${id}/generate-championship`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -355,14 +385,14 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || "Calendario rigenerato con successo!");
+        toast.success(data?.message || 'Calendario rigenerato con successo!');
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data?.error || "Errore nella rigenerazione del calendario");
+        toast.error(data?.error || 'Errore nella rigenerazione del calendario');
       }
     } catch (error) {
-      console.error("Error regenerating calendar", error);
-      toast.error("Errore nella rigenerazione del calendario");
+      console.error('Error regenerating calendar', error);
+      toast.error('Errore nella rigenerazione del calendario');
     } finally {
       setRegeneratingCalendar(false);
     }
@@ -384,29 +414,19 @@ function AdminTournamentDetailInner() {
   const TournamentIcon = getTournamentIcon();
 
   // Determina colore bordo in base allo stato (allineato alla palette di dashboard/admin/bookings)
-  function getStatusBorderColor() {
-    if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") {
-      return "border-gray-400";
-    } else if (tournament?.status === "In Corso" || tournament?.status === "In corso") {
-      return "border-[#023b52]";
-    } else if (tournament?.status === "Aperto") {
-      // Navy se posti esauriti, secondary altrimenti
-      if (meta && meta.participantsCount >= (tournament?.max_participants || 0)) {
-        return "border-[#023047]";
-      }
-      return "border-secondary";
-    } else {
-      return "border-secondary";
-    }
-  }
 
   return (
     <div className="space-y-6 pt-3">
       {/* Breadcrumb + Titolo */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/admin/tornei" className="hover:text-secondary/80 transition-colors">Gestione Competizioni</Link>
-          {" › "}
+          <Link
+            href="/dashboard/admin/tornei"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Gestione Competizioni
+          </Link>
+          {' › '}
           <span>Dettagli Torneo</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">Dettagli Torneo</h1>
@@ -425,33 +445,64 @@ function AdminTournamentDetailInner() {
         </div>
       )}
 
-
-
       {/* Header card torneo */}
       {hasValidId && !loading && tournament && (
         <div
           className="rounded-xl border-t border-r border-b p-6 border-l-4"
           style={{
             backgroundColor: (() => {
-              if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#9ca3af";
-              if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#023b52";
-              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#023047";
-              if (tournament?.status === "Aperto") return "var(--secondary)";
-              return "var(--secondary)";
+              if (
+                tournament?.status === 'Chiuso' ||
+                tournament?.status === 'Completato' ||
+                tournament?.status === 'Concluso'
+              )
+                return '#9ca3af';
+              if (tournament?.status === 'In Corso' || tournament?.status === 'In corso')
+                return '#023b52';
+              if (
+                tournament?.status === 'Aperto' &&
+                meta &&
+                meta.participantsCount >= (tournament?.max_participants || 0)
+              )
+                return '#023047';
+              if (tournament?.status === 'Aperto') return 'var(--secondary)';
+              return 'var(--secondary)';
             })(),
             borderColor: (() => {
-              if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#9ca3af";
-              if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#023b52";
-              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#023047";
-              if (tournament?.status === "Aperto") return "var(--secondary)";
-              return "var(--secondary)";
+              if (
+                tournament?.status === 'Chiuso' ||
+                tournament?.status === 'Completato' ||
+                tournament?.status === 'Concluso'
+              )
+                return '#9ca3af';
+              if (tournament?.status === 'In Corso' || tournament?.status === 'In corso')
+                return '#023b52';
+              if (
+                tournament?.status === 'Aperto' &&
+                meta &&
+                meta.participantsCount >= (tournament?.max_participants || 0)
+              )
+                return '#023047';
+              if (tournament?.status === 'Aperto') return 'var(--secondary)';
+              return 'var(--secondary)';
             })(),
             borderLeftColor: (() => {
-              if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280";
-              if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#012b3b";
-              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#011f33";
-              if (tournament?.status === "Aperto") return "#023047";
-              return "#023047";
+              if (
+                tournament?.status === 'Chiuso' ||
+                tournament?.status === 'Completato' ||
+                tournament?.status === 'Concluso'
+              )
+                return '#6b7280';
+              if (tournament?.status === 'In Corso' || tournament?.status === 'In corso')
+                return '#012b3b';
+              if (
+                tournament?.status === 'Aperto' &&
+                meta &&
+                meta.participantsCount >= (tournament?.max_participants || 0)
+              )
+                return '#011f33';
+              if (tournament?.status === 'Aperto') return '#023047';
+              return '#023047';
             })(),
           }}
         >
@@ -468,93 +519,116 @@ function AdminTournamentDetailInner() {
       {hasValidId && !loading && tournament && (
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Dettagli competizione
+            </h2>
           </div>
           <div className="px-6 py-6">
-
-          <div className="space-y-6">
-            {/* Descrizione */}
-            {tournament.description && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
-                <div className="flex-1">
-                  <p className="text-secondary/70">{tournament.description}</p>
+            <div className="space-y-6">
+              {/* Descrizione */}
+              {tournament.description && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Descrizione
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{tournament.description}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Data Inizio */}
-            {tournament.start_date && (
+              {/* Data Inizio */}
+              {tournament.start_date && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Data inizio
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary font-semibold">
+                      {new Date(tournament.start_date).toLocaleDateString('it-IT', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tipo */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Tipo competizione
+                </label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
-                    {new Date(tournament.start_date).toLocaleDateString("it-IT", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {isCampionato
+                      ? 'Campionato'
+                      : tournament.tournament_type === 'girone_eliminazione' ||
+                        tournament.competition_type === 'girone_eliminazione'
+                      ? 'Girone + Eliminazione'
+                      : 'Eliminazione Diretta'}
                   </p>
                 </div>
               </div>
-            )}
 
-            {/* Tipo */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {isCampionato ? 'Campionato' :
-                   (tournament.tournament_type === 'girone_eliminazione' || tournament.competition_type === 'girone_eliminazione') ? 'Girone + Eliminazione' :
-                   'Eliminazione Diretta'}
-                </p>
-              </div>
-            </div>
-
-            {/* Partecipanti */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {meta?.participantsCount ?? 0} / {tournament.max_participants}
-                </p>
-              </div>
-            </div>
-
-            {/* Categoria */}
-            {tournament.category && (
+              {/* Partecipanti */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Partecipanti
+                </label>
                 <div className="flex-1">
-                  <p className="text-secondary/70">{tournament.category}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Formato Partita */}
-            {tournament.match_format && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
-                <div className="flex-1">
-                  <p className="text-secondary/70">
-                    {tournament.match_format === 'best_of_3' ? 'Al meglio di 3 set' :
-                     tournament.match_format === 'best_of_5' ? 'Al meglio di 5 set' :
-                     tournament.match_format === 'best_of_1' ? '1 set unico' :
-                     tournament.match_format}
+                  <p className="text-secondary font-semibold">
+                    {meta?.participantsCount ?? 0} / {tournament.max_participants}
                   </p>
                 </div>
               </div>
-            )}
 
-            {/* Stato */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
+              {/* Categoria */}
+              {tournament.category && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Categoria
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{tournament.category}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Formato Partita */}
+              {tournament.match_format && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Formato partita
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">
+                      {tournament.match_format === 'best_of_3'
+                        ? 'Al meglio di 3 set'
+                        : tournament.match_format === 'best_of_5'
+                        ? 'Al meglio di 5 set'
+                        : tournament.match_format === 'best_of_1'
+                        ? '1 set unico'
+                        : tournament.match_format}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Stato */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Stato
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {tournament.status || 'In preparazione'}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
       )}
@@ -566,14 +640,19 @@ function AdminTournamentDetailInner() {
           <select
             defaultValue=""
             onChange={(e) => {
-              if (e.target.value) window.location.assign(`/dashboard/atleta/tornei/${id}?viewAs=${e.target.value}`);
+              if (e.target.value)
+                window.location.assign(`/dashboard/atleta/tornei/${id}?viewAs=${e.target.value}`);
             }}
             className="h-11 flex-1 min-w-0 rounded-lg border border-black/10 bg-white px-3 text-sm text-secondary"
             aria-label="Vedi il torneo come atleta"
           >
-            <option value="" disabled>Vedi il torneo come atleta…</option>
+            <option value="" disabled>
+              Vedi il torneo come atleta…
+            </option>
             {athletes.map((a) => (
-              <option key={a.user_id} value={a.user_id}>{a.name}</option>
+              <option key={a.user_id} value={a.user_id}>
+                {a.name}
+              </option>
             ))}
           </select>
         </div>
@@ -586,9 +665,17 @@ function AdminTournamentDetailInner() {
             tournamentType: meta.tournamentType,
             currentPhase: meta.currentPhase,
             participantsCount: meta.participantsCount,
+            hasScheduledMatches,
           }}
           activeTab={managerTab}
           onChange={setManagerTab}
+        />
+      )}
+
+      {hasValidId && hasScheduledMatches && managerTab === 'schedule' && (
+        <TournamentScheduleSection
+          matches={scheduledMatches}
+          bookingBasePath="/dashboard/admin/bookings"
         />
       )}
 
@@ -608,7 +695,7 @@ function AdminTournamentDetailInner() {
       {/* Pulsanti azioni */}
       {hasValidId && !loading && (
         <div className="flex flex-col sm:flex-row gap-3">
-          {meta && meta.currentPhase === "iscrizioni" && (
+          {meta && meta.currentPhase === 'iscrizioni' && (
             <>
               <ManualEnrollment
                 tournamentId={id}
@@ -627,58 +714,63 @@ function AdminTournamentDetailInner() {
             </>
           )}
 
-          {meta && meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "gironi" && (
-            <button
-              onClick={handleAdvanceToKnockout}
-              disabled={advancing}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {advancing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-              Avanza Fase Eliminatoria
-            </button>
-          )}
+          {meta &&
+            meta.tournamentType === 'girone_eliminazione' &&
+            meta.currentPhase === 'gironi' && (
+              <button
+                onClick={handleAdvanceToKnockout}
+                disabled={advancing}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {advancing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                Avanza Fase Eliminatoria
+              </button>
+            )}
 
-          {meta && (meta.tournamentType === "eliminazione_diretta" ||
-            (meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "eliminazione")) && (
-            <button
-              onClick={handleRegenerateBracket}
-              disabled={regeneratingBracket}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {regeneratingBracket ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-              Rigenera Bracket
-            </button>
-          )}
+          {meta &&
+            (meta.tournamentType === 'eliminazione_diretta' ||
+              (meta.tournamentType === 'girone_eliminazione' &&
+                meta.currentPhase === 'eliminazione')) && (
+              <button
+                onClick={handleRegenerateBracket}
+                disabled={regeneratingBracket}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {regeneratingBracket ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                Rigenera Bracket
+              </button>
+            )}
 
-          {meta && meta.tournamentType === "campionato" &&
-            (meta.currentPhase === "campionato" || meta.currentPhase === "completato") &&
-            meta.status !== "Concluso" && (
-            <button
-              onClick={handleRegenerateCalendar}
-              disabled={regeneratingCalendar}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {regeneratingCalendar ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-              Rigenera Calendario
-            </button>
-          )}
+          {meta &&
+            meta.tournamentType === 'campionato' &&
+            (meta.currentPhase === 'campionato' || meta.currentPhase === 'completato') &&
+            meta.status !== 'Concluso' && (
+              <button
+                onClick={handleRegenerateCalendar}
+                disabled={regeneratingCalendar}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {regeneratingCalendar ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                Rigenera Calendario
+              </button>
+            )}
 
-          {meta && (
-            (meta.tournamentType === "eliminazione_diretta" ||
-              (meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "eliminazione") ||
-              (meta.tournamentType === "campionato" &&
-                (meta.currentPhase === "campionato" || meta.currentPhase === "completato") &&
-                meta.status !== "Concluso"))
-          ) && (
-            <button
-              onClick={handleCompleteTournament}
-              disabled={completing}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {completing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-              Concludi
-            </button>
-          )}
+          {meta &&
+            (meta.tournamentType === 'eliminazione_diretta' ||
+              (meta.tournamentType === 'girone_eliminazione' &&
+                meta.currentPhase === 'eliminazione') ||
+              (meta.tournamentType === 'campionato' &&
+                (meta.currentPhase === 'campionato' || meta.currentPhase === 'completato') &&
+                meta.status !== 'Concluso')) && (
+              <button
+                onClick={handleCompleteTournament}
+                disabled={completing}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {completing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                Concludi
+              </button>
+            )}
 
           <button
             onClick={handleDeleteTournament}

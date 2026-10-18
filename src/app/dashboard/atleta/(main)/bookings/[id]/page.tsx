@@ -1,14 +1,25 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
-import { createNotification } from "@/lib/notifications/createNotification";
-import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
+import { useEffect, useState } from 'react';
+import { useRouter, useParams, usePathname, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import Link from 'next/link';
+import { createNotification } from '@/lib/notifications/createNotification';
+import { resolveCourseCourtsForDate } from '@/lib/bookings/courseConflicts';
+import {
+  TOURNAMENT_BOOKING_TYPE,
+  TOURNAMENT_BOOKING_BACKGROUND,
+} from '@/lib/bookings/tournamentBookings';
+import {
+  useBookingTournament,
+  TournamentBookingSection,
+} from '@/components/bookings/TournamentBookingInfo';
 import {
   Calendar,
   CalendarClock,
+  Trophy,
   Clock,
   CheckCircle2,
   XCircle,
@@ -20,7 +31,7 @@ import {
   GraduationCap,
   ThumbsUp,
   ThumbsDown,
-} from "lucide-react";
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 type CourseData = {
@@ -28,7 +39,9 @@ type CourseData = {
   name: string;
   description: string | null;
   instructor_name: string | null;
-  schedule_periods: { days: string[]; time: string | null; court?: string | null; courts?: string[] | null }[] | null;
+  schedule_periods:
+    | { days: string[]; time: string | null; court?: string | null; courts?: string[] | null }[]
+    | null;
   court_name: string | null;
   schedule_time: string | null;
   lesson_overrides: Record<string, string> | null;
@@ -44,19 +57,25 @@ type CourseEnrollment = {
 };
 
 const COURSE_DAY_CODE: Record<number, string> = {
-  0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab",
+  0: 'dom',
+  1: 'lun',
+  2: 'mar',
+  3: 'mer',
+  4: 'gio',
+  5: 'ven',
+  6: 'sab',
 };
 
 function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
-  const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+  const dayCode = COURSE_DAY_CODE[new Date(dateStr + 'T12:00:00').getDay()];
   const courts = resolveCourseCourtsForDate(course, dateStr, dayCode);
-  return courts.length > 0 ? courts.join(", ") : null;
+  return courts.length > 0 ? courts.join(', ') : null;
 }
 
 function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {
   if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
   if (course.schedule_periods?.length) {
-    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + 'T12:00:00').getDay()];
     const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
     if (period?.time) return period.time;
   }
@@ -80,6 +99,7 @@ type Booking = {
   status: string;
   type: string;
   notes: string | null;
+  tournament_match_id?: string | null;
   created_at: string;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
@@ -99,14 +119,14 @@ export default function BookingDetailPage() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
-  const dashboardBase = pathname.split("/bookings")[0];
-  const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
+  const dashboardBase = pathname.split('/bookings')[0];
+  const isMaestroDashboard = dashboardBase.includes('/dashboard/maestro');
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const bookingSectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gray-50";
+  const bookingSectionClassName = 'bg-white rounded-lg border border-black/10 overflow-hidden';
+  const bookingSectionHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gray-50';
 
   const searchParams = useSearchParams();
-  const courseDate = searchParams?.get("date");
+  const courseDate = searchParams?.get('date');
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [linkedChallenge, setLinkedChallenge] = useState<LinkedChallengeMeta | null>(null);
@@ -116,6 +136,10 @@ export default function BookingDetailPage() {
   const [courseEnrollments, setCourseEnrollments] = useState<CourseEnrollment[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const { info: tournamentInfo } = useBookingTournament(
+    booking?.type === TOURNAMENT_BOOKING_TYPE ? booking.tournament_match_id : null,
+    booking?.participants,
+  );
 
   const hasParticipants = (currentBooking: Booking | null) =>
     (currentBooking?.participants?.length || 0) > 0;
@@ -134,7 +158,7 @@ export default function BookingDetailPage() {
         }))
       : [
           {
-            fullName: currentBooking.user_profile?.full_name || "Nome non disponibile",
+            fullName: currentBooking.user_profile?.full_name || 'Nome non disponibile',
             email: currentBooking.user_profile?.email || null,
             phone: currentBooking.user_profile?.phone || null,
             isCoach: false,
@@ -143,7 +167,7 @@ export default function BookingDetailPage() {
           },
         ];
 
-    if (currentBooking.type === "lezione_privata" && currentBooking.coach_profile) {
+    if (currentBooking.type === 'lezione_privata' && currentBooking.coach_profile) {
       athletes.push({
         fullName: currentBooking.coach_profile.full_name,
         email: currentBooking.coach_profile.email || null,
@@ -166,13 +190,15 @@ export default function BookingDetailPage() {
   // Load current user identity once on mount
   useEffect(() => {
     async function loadCurrentUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await getSessionUser();
       if (!user) return;
       setCurrentUserId(user.id);
       const { data: prof } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
         .maybeSingle();
       setCurrentUserRole(prof?.role ?? null);
     }
@@ -184,14 +210,16 @@ export default function BookingDetailPage() {
     async function loadCourse() {
       const [{ data: courseData }, { data: enrollData }] = await Promise.all([
         supabase
-          .from("courses")
-          .select("id, name, description, instructor_name, schedule_periods, court_name, schedule_time, lesson_overrides, lesson_time_overrides")
-          .eq("id", bookingId)
+          .from('courses')
+          .select(
+            'id, name, description, instructor_name, schedule_periods, court_name, schedule_time, lesson_overrides, lesson_time_overrides',
+          )
+          .eq('id', bookingId)
           .single(),
         supabase
-          .from("course_enrollments")
-          .select("user_id, guest_name")
-          .eq("course_id", bookingId),
+          .from('course_enrollments')
+          .select('user_id, guest_name')
+          .eq('course_id', bookingId),
       ]);
       setCourse(courseData);
       const enrollments: CourseEnrollment[] = [];
@@ -201,19 +229,39 @@ export default function BookingDetailPage() {
           .map((e: { user_id: string }) => e.user_id);
         if (registeredIds.length > 0) {
           const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, full_name")
-            .in("id", registeredIds);
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', registeredIds);
           for (const p of profiles ?? []) {
-            enrollments.push({ id: p.id, full_name: p.full_name, is_guest: false, is_instructor: false, user_id: p.id });
+            enrollments.push({
+              id: p.id,
+              full_name: p.full_name,
+              is_guest: false,
+              is_instructor: false,
+              user_id: p.id,
+            });
           }
         }
-        for (const e of enrollData.filter((e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name)) {
-          enrollments.push({ id: `guest-${e.guest_name}`, full_name: e.guest_name, is_guest: true, is_instructor: false, user_id: null });
+        for (const e of enrollData.filter(
+          (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name,
+        )) {
+          enrollments.push({
+            id: `guest-${e.guest_name}`,
+            full_name: e.guest_name,
+            is_guest: true,
+            is_instructor: false,
+            user_id: null,
+          });
         }
       }
       if (courseData?.instructor_name) {
-        enrollments.push({ id: "instructor", full_name: courseData.instructor_name, is_guest: false, is_instructor: true, user_id: null });
+        enrollments.push({
+          id: 'instructor',
+          full_name: courseData.instructor_name,
+          is_guest: false,
+          is_instructor: true,
+          user_id: null,
+        });
       }
       setCourseEnrollments(enrollments);
       setLoading(false);
@@ -226,29 +274,26 @@ export default function BookingDetailPage() {
       // Verifica che l'utente sia loggato
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
       if (!user) {
-        router.push("/login");
+        router.push('/login');
         return;
       }
 
-      let bookingQuery = supabase
-        .from("bookings")
-        .select("*")
-        .eq("id", bookingId);
+      let bookingQuery = supabase.from('bookings').select('*').eq('id', bookingId);
 
       if (isMaestroDashboard) {
         // In dashboard maestro, allow bookings where user is owner OR assigned coach.
         bookingQuery = bookingQuery.or(`user_id.eq.${user.id},coach_id.eq.${user.id}`);
       } else {
-        bookingQuery = bookingQuery.eq("user_id", user.id);
+        bookingQuery = bookingQuery.eq('user_id', user.id);
       }
 
       const { data: bookingData, error } = await bookingQuery.maybeSingle();
 
       if (error || !bookingData) {
-        console.error("Errore caricamento prenotazione:", error);
-        toast.error("Prenotazione non trovata");
+        console.error('Errore caricamento prenotazione:', error);
+        toast.error('Prenotazione non trovata');
         router.push(`${dashboardBase}/bookings`);
         return;
       }
@@ -259,10 +304,10 @@ export default function BookingDetailPage() {
       // Carica sfida arena collegata
       let challengeParticipantIds: string[] = [];
       const { data: linkedChallenges } = await supabase
-        .from("arena_challenges")
-        .select("id, status, challenger_id, opponent_id, my_partner_id, opponent_partner_id")
-        .eq("booking_id", bookingId)
-        .order("created_at", { ascending: false })
+        .from('arena_challenges')
+        .select('id, status, challenger_id, opponent_id, my_partner_id, opponent_partner_id')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: false })
         .limit(1);
 
       const latestChallenge = linkedChallenges?.[0];
@@ -274,7 +319,7 @@ export default function BookingDetailPage() {
               opponent_id: latestChallenge.opponent_id ?? null,
               opponent_partner_id: latestChallenge.opponent_partner_id ?? null,
             }
-          : null
+          : null,
       );
       challengeParticipantIds = [
         latestChallenge?.challenger_id,
@@ -283,30 +328,37 @@ export default function BookingDetailPage() {
         latestChallenge?.opponent_partner_id,
       ].filter((value): value is string => Boolean(value));
 
-      const allUserIds = [...userIds, ...challengeParticipantIds].filter((value): value is string => Boolean(value));
+      const allUserIds = [...userIds, ...challengeParticipantIds].filter((value): value is string =>
+        Boolean(value),
+      );
       const { data: profilesDataRaw } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", allUserIds);
-      const profilesData = profilesDataRaw as Array<{ id: string; full_name: string | null; email: string | null; phone: string | null }> | null;
+        .from('profiles')
+        .select('id, full_name, email, phone')
+        .in('id', allUserIds);
+      const profilesData = profilesDataRaw as Array<{
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        phone: string | null;
+      }> | null;
 
       // Carica i partecipanti con fallback se la colonna phone non esiste
       let participantsData = null;
 
       const participantsQuery = await supabase
-        .from("booking_participants")
-        .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-        .eq("booking_id", bookingId)
-        .order("order_index", { ascending: true });
+        .from('booking_participants')
+        .select('id, booking_id, full_name, email, phone, is_registered, user_id, order_index')
+        .eq('booking_id', bookingId)
+        .order('order_index', { ascending: true });
 
       participantsData = participantsQuery.data;
 
-      if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+      if (participantsQuery.error?.message?.toLowerCase().includes('phone')) {
         const fallbackParticipantsQuery = await supabase
-          .from("booking_participants")
-          .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
-          .eq("booking_id", bookingId)
-          .order("order_index", { ascending: true });
+          .from('booking_participants')
+          .select('id, booking_id, full_name, email, is_registered, user_id, order_index')
+          .eq('booking_id', bookingId)
+          .order('order_index', { ascending: true });
 
         participantsData = fallbackParticipantsQuery.data;
       }
@@ -318,7 +370,7 @@ export default function BookingDetailPage() {
         return {
           id: `challenge-${userId}-${index}`,
           booking_id: bookingId,
-          full_name: profile?.full_name || "Atleta",
+          full_name: profile?.full_name || 'Atleta',
           email: profile?.email || undefined,
           phone: profile?.phone || undefined,
           is_registered: true,
@@ -331,22 +383,20 @@ export default function BookingDetailPage() {
         (participantsData?.length || 0) > 1
           ? participantsData
           : arenaChallengeParticipants.length > 1
-            ? arenaChallengeParticipants
-            : participantsData || [];
+          ? arenaChallengeParticipants
+          : participantsData || [];
 
       const enrichedBooking = {
         ...bookingData,
         user_profile: profilesMap.get(bookingData.user_id) || null,
-        coach_profile: bookingData.coach_id
-          ? profilesMap.get(bookingData.coach_id) || null
-          : null,
+        coach_profile: bookingData.coach_id ? profilesMap.get(bookingData.coach_id) || null : null,
         participants: resolvedParticipants,
       };
 
       setBooking(enrichedBooking);
     } catch (error) {
-      console.error("Errore:", error);
-      toast.error("Errore nel caricamento della prenotazione");
+      console.error('Errore:', error);
+      toast.error('Errore nel caricamento della prenotazione');
       router.push(`${dashboardBase}/bookings`);
     } finally {
       setLoading(false);
@@ -359,10 +409,10 @@ export default function BookingDetailPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
-      if (!token) throw new Error("Sessione non valida.");
+      if (!token) throw new Error('Sessione non valida.');
 
       const res = await fetch(`/api/bookings/confirm?id=${booking.id}`, {
-        method: "POST",
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
@@ -370,17 +420,17 @@ export default function BookingDetailPage() {
       if (!res.ok) {
         if (json.conflict) {
           // Slot taken — redirect to edit so they can pick a new time
-          toast.error(json.error || "Conflitto: modifica la prenotazione.");
+          toast.error(json.error || 'Conflitto: modifica la prenotazione.');
           router.push(`${dashboardBase}/bookings/${booking.id}/edit`);
           return;
         }
-        throw new Error(json.error || "Errore durante la conferma.");
+        throw new Error(json.error || 'Errore durante la conferma.');
       }
 
-      toast.success("Lezione privata confermata.");
+      toast.success('Lezione privata confermata.');
       await loadBooking();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante la conferma.");
+      toast.error(err instanceof Error ? err.message : 'Errore durante la conferma.');
     } finally {
       setActionLoading(false);
     }
@@ -388,25 +438,25 @@ export default function BookingDetailPage() {
 
   async function rejectBooking() {
     if (!booking) return;
-    if (!confirm("Sei sicuro di voler rifiutare questa richiesta di lezione?")) return;
+    if (!confirm('Sei sicuro di voler rifiutare questa richiesta di lezione?')) return;
     setActionLoading(true);
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
-      if (!token) throw new Error("Sessione non valida.");
+      if (!token) throw new Error('Sessione non valida.');
 
       const res = await fetch(`/api/bookings/reject?id=${booking.id}`, {
-        method: "POST",
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
 
-      if (!res.ok) throw new Error(json.error || "Errore durante il rifiuto.");
+      if (!res.ok) throw new Error(json.error || 'Errore durante il rifiuto.');
 
-      toast.success("Richiesta rifiutata.");
+      toast.success('Richiesta rifiutata.');
       await loadBooking();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore durante il rifiuto.");
+      toast.error(err instanceof Error ? err.message : 'Errore durante il rifiuto.');
     } finally {
       setActionLoading(false);
     }
@@ -414,7 +464,7 @@ export default function BookingDetailPage() {
 
   async function cancelBooking() {
     if (!booking) return;
-    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
+    if (!confirm('Sei sicuro di voler annullare questa prenotazione?')) return;
 
     setActionLoading(true);
 
@@ -423,53 +473,54 @@ export default function BookingDetailPage() {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+        throw new Error('Sessione non valida. Effettua nuovamente il login.');
       }
 
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
 
       if (!user) {
-        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+        throw new Error('Sessione non valida. Effettua nuovamente il login.');
       }
 
       const updateQuery = supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", booking.id);
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', booking.id);
 
       const { error: updateError } = isMaestroDashboard
         ? await updateQuery.or(`user_id.eq.${user.id},coach_id.eq.${user.id}`)
-        : await updateQuery.eq("user_id", user.id);
+        : await updateQuery.eq('user_id', user.id);
 
       if (updateError) {
         throw new Error(updateError.message || "Errore durante l'annullamento");
       }
 
       const { data: actorProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
         .maybeSingle();
 
-      const actorName = actorProfile?.full_name?.trim() || "Un utente";
-      const dateLabel = new Date(booking.start_time).toLocaleDateString("it-IT", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
+      const actorName = actorProfile?.full_name?.trim() || 'Un utente';
+      const dateLabel = new Date(booking.start_time).toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
       });
-      const timeLabel = new Date(booking.start_time).toLocaleTimeString("it-IT", {
-        hour: "2-digit",
-        minute: "2-digit",
+      const timeLabel = new Date(booking.start_time).toLocaleTimeString('it-IT', {
+        hour: '2-digit',
+        minute: '2-digit',
       });
-      const bookingLabel = booking.type === "lezione_privata"
-        ? "lezione privata"
-        : booking.type === "lezione_gruppo"
-          ? "lezione di gruppo"
-          : booking.type === "arena"
-            ? "match arena"
-            : "prenotazione";
+      const bookingLabel =
+        booking.type === 'lezione_privata'
+          ? 'lezione privata'
+          : booking.type === 'lezione_gruppo'
+          ? 'lezione di gruppo'
+          : booking.type === 'arena'
+          ? 'match arena'
+          : 'prenotazione';
 
       const notifyPromises: Array<Promise<void>> = [];
 
@@ -477,11 +528,11 @@ export default function BookingDetailPage() {
         notifyPromises.push(
           createNotification({
             userId: booking.coach_id,
-            type: "booking",
-            title: "Prenotazione annullata",
+            type: 'booking',
+            title: 'Prenotazione annullata',
             message: `${actorName} ha annullato la ${bookingLabel} ${booking.court} del ${dateLabel} alle ${timeLabel}.`,
             link: `/dashboard/maestro/bookings/${booking.id}`,
-          })
+          }),
         );
       }
 
@@ -489,29 +540,29 @@ export default function BookingDetailPage() {
         notifyPromises.push(
           createNotification({
             userId: booking.user_id,
-            type: "booking",
-            title: "Prenotazione annullata",
+            type: 'booking',
+            title: 'Prenotazione annullata',
             message: `${actorName} ha annullato la ${bookingLabel} ${booking.court} del ${dateLabel} alle ${timeLabel}.`,
             link: `/dashboard/atleta/bookings/${booking.id}`,
-          })
+          }),
         );
       }
 
       const { data: managers } = await supabase
-        .from("profiles")
-        .select("id")
-        .in("role", ["admin", "gestore"]);
+        .from('profiles')
+        .select('id')
+        .in('role', ['admin', 'gestore']);
 
       for (const manager of managers || []) {
         if (manager.id === user.id) continue;
         notifyPromises.push(
           createNotification({
             userId: manager.id,
-            type: "booking",
-            title: "Prenotazione annullata",
+            type: 'booking',
+            title: 'Prenotazione annullata',
             message: `${actorName} ha annullato la ${bookingLabel} ${booking.court} del ${dateLabel} alle ${timeLabel}.`,
             link: `/dashboard/admin/bookings/${booking.id}`,
-          })
+          }),
         );
       }
 
@@ -519,7 +570,7 @@ export default function BookingDetailPage() {
 
       router.push(`${dashboardBase}/bookings`);
     } catch (error) {
-      console.error("Errore:", error);
+      console.error('Errore:', error);
       toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
     } finally {
       setActionLoading(false);
@@ -527,18 +578,22 @@ export default function BookingDetailPage() {
   }
 
   const typeConfig: Record<string, { label: string; color: string }> = {
-    campo: { label: "Prenotazione Campo", color: "bg-secondary text-white" },
-    lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
-    lezione_gruppo: { label: "Lezione Gruppo", color: "bg-secondary text-white" },
-    torneo: { label: "Torneo", color: "bg-secondary text-white" },
-    arena: { label: "Arena", color: "bg-secondary text-white" },
+    campo: { label: 'Prenotazione Campo', color: 'bg-secondary text-white' },
+    lezione_privata: { label: 'Lezione Privata', color: 'bg-secondary text-white' },
+    lezione_gruppo: { label: 'Lezione Gruppo', color: 'bg-secondary text-white' },
+    torneo: { label: 'Torneo', color: 'bg-secondary text-white' },
+    arena: { label: 'Arena', color: 'bg-secondary text-white' },
   };
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-    confirmed: { label: "Attiva", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
-    pending: { label: "In attesa", color: "bg-amber-100 text-amber-700", icon: Clock },
-    cancelled: { label: "Annullata", color: "bg-red-100 text-red-700", icon: XCircle },
-    cancellation_requested: { label: "Richiesta cancellazione", color: "bg-orange-100 text-orange-700", icon: AlertCircle },
+    confirmed: { label: 'Attiva', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
+    pending: { label: 'In attesa', color: 'bg-amber-100 text-amber-700', icon: Clock },
+    cancelled: { label: 'Annullata', color: 'bg-red-100 text-red-700', icon: XCircle },
+    cancellation_requested: {
+      label: 'Richiesta cancellazione',
+      color: 'bg-orange-100 text-orange-700',
+      icon: AlertCircle,
+    },
   };
 
   if (loading) {
@@ -553,23 +608,39 @@ export default function BookingDetailPage() {
   if (isMaestroDashboard && courseDate && course) {
     const court = getCourseCourtForDate(course, courseDate);
     const time = getCourseTimeForDate(course, courseDate);
-    const dateDisplay = new Date(courseDate + "T12:00:00")
-      .toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-      .split(" ")
-      .map((part, i) => (i === 0 || i === 2) ? part.charAt(0).toUpperCase() + part.slice(1) : part)
-      .join(" ");
+    const dateDisplay = new Date(courseDate + 'T12:00:00')
+      .toLocaleDateString('it-IT', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+      .split(' ')
+      .map((part, i) => (i === 0 || i === 2 ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+      .join(' ');
     return (
       <div className="space-y-6">
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-          {" › "}
+          <Link
+            href="/dashboard/maestro/bookings"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Prenotazioni
+          </Link>
+          {' › '}
           <span>Dettagli Prenotazione</span>
         </p>
         <div>
           <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
         </div>
-        <div className="rounded-2xl border-t border-r border-b p-6 border-l-4 shadow-sm"
-          style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}>
+        <div
+          className="rounded-2xl border-t border-r border-b p-6 border-l-4 shadow-sm"
+          style={{
+            backgroundColor: 'var(--color-frozen-lake-900)',
+            borderColor: 'var(--color-frozen-lake-900)',
+            borderLeftColor: 'var(--color-frozen-lake-900)',
+          }}
+        >
           <div className="flex items-start gap-6">
             <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1">
@@ -588,18 +659,32 @@ export default function BookingDetailPage() {
               <ul className="flex flex-col gap-2">
                 {courseEnrollments.map((e) => (
                   <li key={e.id}>
-                    <div className="flex items-center gap-4 py-3 px-3 rounded-lg"
-                      style={{ background: e.is_instructor ? "#023047" : e.is_guest ? "#023b52" : "var(--secondary)" }}>
+                    <div
+                      className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                      style={{
+                        background: e.is_instructor
+                          ? '#023047'
+                          : e.is_guest
+                          ? '#023b52'
+                          : 'var(--secondary)',
+                      }}
+                    >
                       <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                         <span className="text-sm font-bold text-white leading-none">
-                          {e.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                          {e.full_name
+                            .trim()
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .slice(0, 2)
+                            .join('')
+                            .toUpperCase()}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{e.full_name}</p>
                       </div>
                       <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
-                        {e.is_instructor ? "MAESTRO" : e.is_guest ? "OSPITE" : "ATLETA"}
+                        {e.is_instructor ? 'MAESTRO' : e.is_guest ? 'OSPITE' : 'ATLETA'}
                       </span>
                     </div>
                   </li>
@@ -610,40 +695,66 @@ export default function BookingDetailPage() {
         </div>
         <div className={bookingSectionClassName}>
           <div className={bookingSectionHeaderClassName}>
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              Dettagli prenotazione
+            </h2>
           </div>
-          <div className="p-6"><div className="space-y-6">
-            {course.description && (
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
-                <div className="flex-1"><p className="text-secondary font-semibold whitespace-pre-wrap">{course.description}</p></div>
-              </div>
-            )}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data</label>
-              <div className="flex-1"><p className="text-secondary font-semibold">{dateDisplay}</p></div>
-            </div>
-            {court && (
+          <div className="p-6">
+            <div className="space-y-6">
+              {course.description && (
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Descrizione
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary font-semibold whitespace-pre-wrap">
+                      {course.description}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                <div className="flex-1"><p className="text-secondary font-semibold">{court}</p></div>
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Data
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{dateDisplay}</p>
+                </div>
               </div>
-            )}
-            {time && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
-                <div className="flex-1"><p className="text-secondary font-semibold">{time}</p></div>
-              </div>
-            )}
-          </div></div>
+              {court && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Campo
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary font-semibold">{court}</p>
+                  </div>
+                </div>
+              )}
+              {time && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Orario
+                  </label>
+                  <div className="flex-1">
+                    <p className="text-secondary font-semibold">{time}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <Link href={`/dashboard/maestro/corsi/${bookingId}/lezioni/${courseDate}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium">
+          <Link
+            href={`/dashboard/maestro/corsi/${bookingId}/lezioni/${courseDate}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
+          >
             Presenze lezione
           </Link>
-          <Link href={`/dashboard/maestro/corsi/${bookingId}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium">
+          <Link
+            href={`/dashboard/maestro/corsi/${bookingId}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium"
+          >
             Vai al corso
           </Link>
         </div>
@@ -657,41 +768,38 @@ export default function BookingDetailPage() {
 
   const status = statusConfig[booking.status] || statusConfig.pending;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
-  const isLesson =
-    booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+  const isLesson = booking.type === 'lezione_privata' || booking.type === 'lezione_gruppo';
   const isArenaBooking =
-    booking.type === "arena" ||
-    booking.notes?.toLowerCase().includes("sfida arena") ||
+    booking.type === 'arena' ||
+    booking.notes?.toLowerCase().includes('sfida arena') ||
     Boolean(linkedChallenge?.id);
-  const isRankedArenaBooking = booking.notes?.toLowerCase().includes("ranked");
-  const bookingHeaderLabel = isArenaBooking ? "Sfida Arena" : bookingType.label;
+  const isRankedArenaBooking = booking.notes?.toLowerCase().includes('ranked');
+  const bookingHeaderLabel = isArenaBooking ? 'Sfida Arena' : bookingType.label;
   const isPast = new Date(booking.start_time) < new Date();
   const isPastLesson =
     isLesson &&
     new Date(booking.end_time) < new Date() &&
-    booking.status !== "cancelled" &&
-    booking.status !== "cancellation_requested";
+    booking.status !== 'cancelled' &&
+    booking.status !== 'cancellation_requested';
   const effectiveStatus = isPastLesson
-    ? { label: "Passata", icon: Clock }
+    ? { label: 'Passata', icon: Clock }
     : { label: status.label, icon: status.icon };
-  const StatusIcon = effectiveStatus.icon;
-  const isCancelled = booking.status === "cancelled";
-  const isCancellationRequested = booking.status === "cancellation_requested";
-  const isPending = booking.status === "pending";
+  const isCancelled = booking.status === 'cancelled';
+  const isCancellationRequested = booking.status === 'cancellation_requested';
+  const isPending = booking.status === 'pending';
   const isConfirmedPrivateLesson =
-    booking.type === "lezione_privata" && booking.status === "confirmed";
+    booking.type === 'lezione_privata' && booking.status === 'confirmed';
   const canCancel =
     !isCancelled && !isCancellationRequested && !isPending && !isPast && !isConfirmedPrivateLesson;
-  const canCancelPendingLesson =
-    booking.type === "lezione_privata" && isPending && !isPast;
+  const canCancelPendingLesson = booking.type === 'lezione_privata' && isPending && !isPast;
 
   // Conferma/Rifiuta: admin, gestore, o il maestro assegnato alla lezione
   const canApprove =
     isPending &&
-    booking.type === "lezione_privata" &&
-    (currentUserRole === "admin" ||
-      currentUserRole === "gestore" ||
-      (currentUserRole === "maestro" && currentUserId === booking.coach_id));
+    booking.type === 'lezione_privata' &&
+    (currentUserRole === 'admin' ||
+      currentUserRole === 'gestore' ||
+      (currentUserRole === 'maestro' && currentUserId === booking.coach_id));
 
   const displayParticipants = getDisplayParticipants(booking);
 
@@ -700,27 +808,34 @@ export default function BookingDetailPage() {
     if (!booking) {
       return {
         icon: Calendar,
-        backgroundColor: "var(--secondary)",
+        backgroundColor: 'var(--secondary)',
       };
     }
 
-    if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
+    if (booking.type === 'lezione_privata' || booking.type === 'lezione_gruppo') {
       return {
         icon: Users,
-        backgroundColor: "#023047",
+        backgroundColor: '#023047',
+      };
+    }
+
+    if (booking.type === TOURNAMENT_BOOKING_TYPE) {
+      return {
+        icon: Trophy,
+        backgroundColor: TOURNAMENT_BOOKING_BACKGROUND,
       };
     }
 
     if (isArenaBooking) {
       return {
         icon: isRankedArenaBooking ? Target : Handshake,
-        backgroundColor: "#023b52",
+        backgroundColor: '#023b52',
       };
     }
 
     return {
       icon: CalendarClock,
-      backgroundColor: "var(--secondary)",
+      backgroundColor: 'var(--secondary)',
     };
   }
 
@@ -737,10 +852,7 @@ export default function BookingDetailPage() {
         }}
       >
         <div className="flex items-start gap-6">
-          <BookingIcon
-            className="h-8 w-8 text-white flex-shrink-0"
-            strokeWidth={2.5}
-          />
+          <BookingIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-white">{bookingHeaderLabel}</h2>
           </div>
@@ -756,29 +868,40 @@ export default function BookingDetailPage() {
           <ul className="flex flex-col gap-2">
             {displayParticipants.map((participant, index) => {
               const isAwaitingAcceptance =
-                linkedChallenge?.status === "pending" &&
+                linkedChallenge?.status === 'pending' &&
                 Boolean(participant.userId) &&
                 (participant.userId === linkedChallenge.opponent_id ||
                   participant.userId === linkedChallenge.opponent_partner_id);
 
               const bg = isAwaitingAcceptance
-                ? "#9ca3af"
+                ? '#9ca3af'
                 : participant.isCoach
-                  ? "#023047"
-                  : participant.isGuest
-                    ? "#023b52"
-                    : "var(--secondary)";
+                ? '#023047'
+                : participant.isGuest
+                ? '#023b52'
+                : 'var(--secondary)';
 
               return (
                 <li key={`${participant.fullName}-${index}`}>
-                  <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: bg }}>
+                  <div
+                    className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                    style={{ background: bg }}
+                  >
                     <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                       <span className="text-sm font-bold text-white leading-none">
-                        {participant.fullName.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                        {participant.fullName
+                          .trim()
+                          .split(' ')
+                          .map((n: string) => n[0])
+                          .slice(0, 2)
+                          .join('')
+                          .toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white text-sm truncate">{participant.fullName}</p>
+                      <p className="font-semibold text-white text-sm truncate">
+                        {participant.fullName}
+                      </p>
                       {isAwaitingAcceptance && (
                         <p className="text-xs text-white/70 mt-0.5">In attesa di accettazione</p>
                       )}
@@ -790,7 +913,7 @@ export default function BookingDetailPage() {
                       )}
                     </div>
                     <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
-                      {participant.isCoach ? "MAESTRO" : participant.isGuest ? "OSPITE" : "ATLETA"}
+                      {participant.isCoach ? 'MAESTRO' : participant.isGuest ? 'OSPITE' : 'ATLETA'}
                     </span>
                   </div>
                 </li>
@@ -803,113 +926,130 @@ export default function BookingDetailPage() {
       {/* Dettagli prenotazione */}
       <div className={bookingSectionClassName}>
         <div className={bookingSectionHeaderClassName}>
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">
+            Dettagli prenotazione
+          </h2>
         </div>
 
         <div className="p-6">
-        <div className="space-y-6">
-          {/* Data */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Data
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {new Date(booking.start_time).toLocaleDateString("it-IT", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                }).split(' ').map((part, i) => (i === 0 || i === 2) ? part.charAt(0).toUpperCase() + part.slice(1) : part).join(' ')}
-              </p>
-            </div>
-          </div>
-
-          {/* Campo */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Campo
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{booking.court}</p>
-            </div>
-          </div>
-
-          {/* Modalità - solo per prenotazioni campo */}
-          {booking.type === "campo" && (
+          <div className="space-y-6">
+            {/* Data */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Modalità
+                Data
               </label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
-                  {(booking.participants?.length ?? 0) > 2 ? "Doppio" : "Singolo"}
+                  {new Date(booking.start_time)
+                    .toLocaleDateString('it-IT', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })
+                    .split(' ')
+                    .map((part, i) =>
+                      i === 0 || i === 2 ? part.charAt(0).toUpperCase() + part.slice(1) : part,
+                    )
+                    .join(' ')}
                 </p>
               </div>
             </div>
-          )}
 
-          {/* Orario */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Orario
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {new Date(booking.start_time).toLocaleTimeString("it-IT", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                -{" "}
-                {new Date(booking.end_time).toLocaleTimeString("it-IT", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          </div>
-
-          {/* Data creazione */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Creata il
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary/70">
-                {new Date(booking.created_at).toLocaleDateString("it-IT", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          </div>
-
-          {/* Creato da — solo nel dashboard maestro */}
-          {isMaestroDashboard && booking.user_profile?.full_name && (
+            {/* Campo */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Creato da
+                Campo
               </label>
               <div className="flex-1">
-                <p className="text-secondary font-semibold">{booking.user_profile.full_name}</p>
+                <p className="text-secondary font-semibold">{booking.court}</p>
               </div>
             </div>
-          )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Stato
-            </label>
-            <div className="flex-1">
-              <span className="text-secondary font-semibold">{effectiveStatus.label}</span>
+            {/* Modalità - solo per prenotazioni campo */}
+            {booking.type === 'campo' && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Modalità
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {(booking.participants?.length ?? 0) > 2 ? 'Doppio' : 'Singolo'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Orario */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Orario
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {new Date(booking.start_time).toLocaleTimeString('it-IT', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}{' '}
+                  -{' '}
+                  {new Date(booking.end_time).toLocaleTimeString('it-IT', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {/* Data creazione */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Creata il
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary/70">
+                  {new Date(booking.created_at).toLocaleDateString('it-IT', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {/* Creato da — solo nel dashboard maestro */}
+            {isMaestroDashboard && booking.user_profile?.full_name && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Creato da
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{booking.user_profile.full_name}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Stato
+              </label>
+              <div className="flex-1">
+                <span className="text-secondary font-semibold">{effectiveStatus.label}</span>
+              </div>
             </div>
           </div>
         </div>
-        </div>
       </div>
+
+      {/* Torneo e partita */}
+      {tournamentInfo && (
+        <TournamentBookingSection
+          info={tournamentInfo}
+          className={bookingSectionClassName}
+          headerClassName={bookingSectionHeaderClassName}
+        />
+      )}
 
       {/* Note */}
       {booking.notes && (
@@ -933,6 +1073,14 @@ export default function BookingDetailPage() {
             Dettagli Sfida
           </Link>
         )}
+        {tournamentInfo && (
+          <Link
+            href={`${dashboardBase}/tornei/${tournamentInfo.tournament.id}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
+          >
+            Vai al torneo
+          </Link>
+        )}
         {canApprove && (
           <>
             <button
@@ -940,7 +1088,11 @@ export default function BookingDetailPage() {
               disabled={actionLoading}
               className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsUp className="h-5 w-5" />}
+              {actionLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <ThumbsUp className="h-5 w-5" />
+              )}
               Conferma
             </button>
             <button
@@ -948,7 +1100,11 @@ export default function BookingDetailPage() {
               disabled={actionLoading}
               className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsDown className="h-5 w-5" />}
+              {actionLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <ThumbsDown className="h-5 w-5" />
+              )}
               Rifiuta
             </button>
           </>
@@ -966,9 +1122,7 @@ export default function BookingDetailPage() {
               disabled={actionLoading}
               className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {actionLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : null}
+              {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
               Annulla
             </button>
           </>

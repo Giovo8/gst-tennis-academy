@@ -1,11 +1,8 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { getRouteAuth, unauthorized } from '@/lib/auth/routeAuth';
 
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   const params = await context.params;
   try {
     const auth = await getRouteAuth();
@@ -15,18 +12,18 @@ export async function GET(
 
     // Fetch challenge data
     const { data: challenge, error } = await supabaseServer
-      .from("arena_challenges")
-      .select("*")
-      .eq("id", challengeId)
+      .from('arena_challenges')
+      .select('*')
+      .eq('id', challengeId)
       .single();
 
     if (error) {
-      console.error("Error fetching challenge:", error);
+      console.error('Error fetching challenge:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     if (!challenge) {
-      return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
     }
 
     // Fetch related profiles
@@ -38,17 +35,17 @@ export async function GET(
     ].filter(Boolean);
 
     const { data: profiles } = await supabaseServer
-      .from("profiles")
-      .select("id, full_name, avatar_url")
-      .in("id", userIds);
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', userIds);
 
     // Fetch booking if exists
     let booking = null;
     if (challenge.booking_id) {
       const { data: bookingData } = await supabaseServer
-        .from("bookings")
-        .select("id, court, start_time, end_time, status")
-        .eq("id", challenge.booking_id)
+        .from('bookings')
+        .select('id, court, start_time, end_time, status')
+        .eq('id', challenge.booking_id)
         .single();
       booking = bookingData;
     }
@@ -56,16 +53,16 @@ export async function GET(
     // Enrich challenge with related data
     const enrichedChallenge = {
       ...challenge,
-      challenger: profiles?.find(p => p.id === challenge.challenger_id),
-      opponent: profiles?.find(p => p.id === challenge.opponent_id),
-      my_partner: profiles?.find(p => p.id === challenge.my_partner_id),
-      opponent_partner: profiles?.find(p => p.id === challenge.opponent_partner_id),
+      challenger: profiles?.find((p) => p.id === challenge.challenger_id),
+      opponent: profiles?.find((p) => p.id === challenge.opponent_id),
+      my_partner: profiles?.find((p) => p.id === challenge.my_partner_id),
+      opponent_partner: profiles?.find((p) => p.id === challenge.opponent_partner_id),
       booking,
     };
 
     return NextResponse.json({ challenge: enrichedChallenge });
-  } catch (error: any) {
-    console.error("Error in GET /api/arena/challenges/[id]:", error);
+  } catch (error) {
+    console.error('Error in GET /api/arena/challenges/[id]:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -1,20 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import {
-  Video,
-  Loader2,
-  Search,
-  Plus,
-} from "lucide-react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { Video, Loader2, Search, Plus } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 function getYouTubeVideoId(url: string) {
-  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  const match = url.match(
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
+  );
   return match ? match[1] : null;
 }
 
@@ -38,17 +37,17 @@ interface VideoLesson {
 export default function AtletaVideosPage() {
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const pathname = usePathname();
-  const basePath = pathname.split("/videos")[0];
-  const isMaestroView = pathname.startsWith("/dashboard/maestro");
+  const basePath = pathname.split('/videos')[0];
+  const isMaestroView = pathname.startsWith('/dashboard/maestro');
 
   const categories = [
-    { value: "generale", label: "Generale" },
-    { value: "tecnica", label: "Tecnica" },
-    { value: "tattica", label: "Tattica" },
-    { value: "fitness", label: "Fitness" },
-    { value: "mentale", label: "Mentale" },
+    { value: 'generale', label: 'Generale' },
+    { value: 'tecnica', label: 'Tecnica' },
+    { value: 'tattica', label: 'Tattica' },
+    { value: 'fitness', label: 'Fitness' },
+    { value: 'mentale', label: 'Mentale' },
   ];
 
   useEffect(() => {
@@ -58,7 +57,9 @@ export default function AtletaVideosPage() {
   async function loadVideos() {
     setLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
     if (!user) {
       setLoading(false);
       return;
@@ -69,11 +70,11 @@ export default function AtletaVideosPage() {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+        throw new Error('Sessione non valida. Effettua nuovamente il login.');
       }
 
-      const response = await fetch("/api/video-lessons", {
-        method: "GET",
+      const response = await fetch('/api/video-lessons', {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -81,7 +82,7 @@ export default function AtletaVideosPage() {
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload?.error || "Errore durante il caricamento dei video");
+        throw new Error(payload?.error || 'Errore durante il caricamento dei video');
       }
 
       const videosData = payload?.videos || [];
@@ -96,12 +97,12 @@ export default function AtletaVideosPage() {
 
       if (creatorIds.length > 0) {
         const { data: creatorsData } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", creatorIds);
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', creatorIds);
 
         if (creatorsData) {
-          creatorsMap = new Map(creatorsData.map(c => [c.id, c]));
+          creatorsMap = new Map(creatorsData.map((c) => [c.id, c]));
         }
       }
 
@@ -112,7 +113,7 @@ export default function AtletaVideosPage() {
 
       setVideos(enrichedVideos);
     } catch (error) {
-      console.error("Errore caricamento video:", error);
+      console.error('Errore caricamento video:', error);
       setVideos([]);
     } finally {
       setLoading(false);
@@ -172,9 +173,7 @@ export default function AtletaVideosPage() {
           <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun video trovato</h3>
           <p className="text-gray-600">
-            {search
-              ? "Prova a modificare i filtri di ricerca"
-              : "Non hai ancora video assegnati"}
+            {search ? 'Prova a modificare i filtri di ricerca' : 'Non hai ancora video assegnati'}
           </p>
         </div>
       ) : (
@@ -187,19 +186,19 @@ export default function AtletaVideosPage() {
             const categoryLabel =
               categories.find((c) => c.value === video.category)?.label ?? video.category;
             const meta = [
-              format(new Date(video.created_at), "d MMM yyyy", { locale: it }),
+              format(new Date(video.created_at), 'd MMM yyyy', { locale: it }),
               categoryLabel,
               video.duration_minutes ? `${video.duration_minutes} min` : null,
             ]
               .filter(Boolean)
-              .join(" · ");
+              .join(' · ');
 
             return (
               <Link
                 key={video.id}
                 href={`${basePath}/videos/${video.id}`}
                 className="block rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
-                style={{ background: "var(--color-frozen-lake-900)" }}
+                style={{ background: 'var(--color-frozen-lake-900)' }}
               >
                 <div className="flex items-center gap-3 px-3 py-3.5">
                   <div className="flex h-10 aspect-video flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">

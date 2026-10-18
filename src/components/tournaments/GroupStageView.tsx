@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Users, Trophy, TrendingUp, RefreshCw, Target, Calendar } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trophy, RefreshCw, Target, Calendar } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
-import { getAvatarUrl } from '@/lib/utils';
 import { toast } from 'sonner';
-import Avatar from "@/components/ui/Avatar";
+import Avatar from '@/components/ui/Avatar';
 
 type TabType = 'participants' | 'standings' | 'matches';
 
@@ -73,47 +72,13 @@ export default function GroupStageView({
   onMatchUpdate,
   isAdmin = false,
   highlightUserId = null,
-  canEditOwnMatches = false
+  canEditOwnMatches = false,
 }: GroupStageViewProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [advancing, setAdvancing] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('standings');
-
-  const groupOrder = useMemo(() => {
-    const order = new Map<string, number>();
-    groups.forEach((group) => order.set(group.id, group.group_order ?? 0));
-    return order;
-  }, [groups]);
-
-  const participantsSorted = useMemo(() => {
-    return [...participants].sort((a, b) => {
-      const nameA = (a.profiles?.full_name || a.user_id || '').toLowerCase();
-      const nameB = (b.profiles?.full_name || b.user_id || '').toLowerCase();
-      const groupA = a.group_id ? groupOrder.get(a.group_id) ?? 999 : 999;
-      const groupB = b.group_id ? groupOrder.get(b.group_id) ?? 999 : 999;
-      if (groupA !== groupB) return groupA - groupB;
-      if ((a.group_position ?? 9999) !== (b.group_position ?? 9999)) {
-        return (a.group_position ?? 9999) - (b.group_position ?? 9999);
-      }
-      return nameA.localeCompare(nameB);
-    });
-  }, [participants, groupOrder]);
-
-  const getGroupName = (groupId?: string) => {
-    if (!groupId) return null;
-    return groups.find((g) => g.id === groupId)?.group_name || null;
-  };
-
-  const getInitials = (fullName?: string) => {
-    if (!fullName) return '??';
-    const parts = fullName.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return '??';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  };
 
   useEffect(() => {
     if (groups.length > 0) {
@@ -143,15 +108,21 @@ export default function GroupStageView({
   };
 
   const handleGenerateGroups = async () => {
-    if (!confirm('Sei sicuro di voler generare i gironi e i match? Questa operazione non può essere annullata.')) {
+    if (
+      !confirm(
+        'Sei sicuro di voler generare i gironi e i match? Questa operazione non può essere annullata.',
+      )
+    ) {
       return;
     }
 
     setGenerating(true);
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         toast.error('Sessione non valida');
         return;
@@ -160,8 +131,8 @@ export default function GroupStageView({
       const res = await fetch(`/api/tournaments/${tournamentId}/generate-groups`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       const data = await res.json();
@@ -182,11 +153,17 @@ export default function GroupStageView({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => {
+  const handleScoreSubmit = async (
+    matchId: string,
+    sets: SetScore[],
+    retiredPlayer: PlayerNum | null,
+  ) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         throw new Error('Non autenticato');
       }
@@ -195,14 +172,14 @@ export default function GroupStageView({
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ sets, retired_player: retiredPlayer })
+        body: JSON.stringify({ sets, retired_player: retiredPlayer }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Errore nell\'aggiornamento del punteggio');
+        throw new Error(data.error || "Errore nell'aggiornamento del punteggio");
       }
 
       if (selectedGroup) {
@@ -215,52 +192,24 @@ export default function GroupStageView({
     }
   };
 
-  const handleAdvanceToKnockout = async () => {
-    if (!confirm('Sei sicuro di voler far avanzare le prime squadre di ogni girone alla fase eliminatoria?')) {
-      return;
-    }
-
-    setAdvancing(true);
-    try {
-      const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('Non autenticato');
-      }
-
-      const res = await fetch(`/api/tournaments/${tournamentId}/advance-from-groups`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(data.message || 'Partecipanti avanzati alla fase eliminatoria!');
-        // Reload the page to show knockout phase
-        window.location.reload();
-      } else {
-        toast.error(data.error || 'Errore nell\'avanzamento alla fase eliminatoria');
-      }
-    } catch (error) {
-      console.error('Error advancing to knockout:', error);
-      toast.error('Errore nell\'avanzamento alla fase eliminatoria');
-    } finally {
-      setAdvancing(false);
-    }
-  };
-
   // Statistiche calcolate dalle partite del girone caricate: participant.stats (aggiornato dal
   // trigger DB) non conteggia set e game e non si corregge quando un admin modifica un risultato.
   const computeStats = (participantId: string): NonNullable<Participant['stats']> => {
-    const stats = { matches_played: 0, matches_won: 0, matches_lost: 0, sets_won: 0, sets_lost: 0, games_won: 0, games_lost: 0, points: 0 };
+    const stats = {
+      matches_played: 0,
+      matches_won: 0,
+      matches_lost: 0,
+      sets_won: 0,
+      sets_lost: 0,
+      games_won: 0,
+      games_lost: 0,
+      points: 0,
+    };
     for (const m of matches) {
       const isP1 = m.player1?.id === participantId;
       const isP2 = m.player2?.id === participantId;
-      const completed = (m.status === 'completata' || m.match_status === 'completed') && !!m.winner_id;
+      const completed =
+        (m.status === 'completata' || m.match_status === 'completed') && !!m.winner_id;
       if (!completed || (!isP1 && !isP2)) continue;
 
       stats.matches_played++;
@@ -285,24 +234,36 @@ export default function GroupStageView({
 
   const getGroupStandings = (groupId: string): Participant[] => {
     const groupParticipants = participants
-      .filter(p => p.group_id === groupId)
-      .map(p => ({ ...p, stats: computeStats(p.id) }));
+      .filter((p) => p.group_id === groupId)
+      .map((p) => ({ ...p, stats: computeStats(p.id) }));
 
     return groupParticipants.sort((a, b) => {
-      const aStats = a.stats || { points: 0, sets_won: 0, sets_lost: 0, games_won: 0, games_lost: 0 };
-      const bStats = b.stats || { points: 0, sets_won: 0, sets_lost: 0, games_won: 0, games_lost: 0 };
-      
+      const aStats = a.stats || {
+        points: 0,
+        sets_won: 0,
+        sets_lost: 0,
+        games_won: 0,
+        games_lost: 0,
+      };
+      const bStats = b.stats || {
+        points: 0,
+        sets_won: 0,
+        sets_lost: 0,
+        games_won: 0,
+        games_lost: 0,
+      };
+
       // Ordina per: 1) Punti, 2) Differenza set, 3) Differenza games
       if (aStats.points !== bStats.points) {
         return bStats.points - aStats.points;
       }
-      
+
       const aSetDiff = aStats.sets_won - aStats.sets_lost;
       const bSetDiff = bStats.sets_won - bStats.sets_lost;
       if (aSetDiff !== bSetDiff) {
         return bSetDiff - aSetDiff;
       }
-      
+
       const aGameDiff = aStats.games_won - aStats.games_lost;
       const bGameDiff = bStats.games_won - bStats.games_lost;
       return bGameDiff - aGameDiff;
@@ -333,11 +294,10 @@ export default function GroupStageView({
 
   return (
     <div className="space-y-6">
-
       {/* Selezione Girone */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2 overflow-x-auto">
-          {groups.map(group => (
+          {groups.map((group) => (
             <button
               key={group.id}
               onClick={() => setSelectedGroup(group.id)}
@@ -379,7 +339,7 @@ export default function GroupStageView({
 
       {activeTab === 'participants' && (
         <div className="space-y-3">
-          {participants.map((participant, index) => {
+          {participants.map((participant) => {
             const fullName = participant.profiles?.full_name || 'Sconosciuto';
             const avatarUrl = participant.profiles?.avatar_url;
             const initials = fullName
@@ -403,15 +363,13 @@ export default function GroupStageView({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-secondary truncate">
-                      {fullName}
-                    </div>
+                    <div className="font-bold text-secondary truncate">{fullName}</div>
                     <div className="text-xs text-secondary/60 truncate mt-0.5">
                       {participant.profiles?.email || participant.user_id}
                     </div>
                     {participant.group_id && (
                       <div className="text-xs text-secondary/70 mt-1 font-medium">
-                        {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'}
+                        {groups.find((g) => g.id === participant.group_id)?.group_name || 'Girone'}
                       </div>
                     )}
                   </div>
@@ -437,118 +395,120 @@ export default function GroupStageView({
 
       {/* Classifica per girone */}
       {activeTab === 'standings' && selectedGroup && (
-        <div className="space-y-4">{/* Header */}
-              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Pos</div>
-                  <div className="text-xs font-bold text-white/80 uppercase"></div>
-                  <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">PG</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Set</div>
-                </div>
-              </div>
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+            <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
+              <div className="text-xs font-bold text-white/80 uppercase">Pos</div>
+              <div className="text-xs font-bold text-white/80 uppercase"></div>
+              <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
+              <div className="text-xs font-bold text-white/80 uppercase text-center">PG</div>
+              <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
+              <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Set</div>
+            </div>
+          </div>
 
-              {/* Data Rows */}
-              <div className="space-y-2">
-                {getGroupStandings(selectedGroup).map((participant, index) => {
-                  const stats = participant.stats || {
-                    matches_played: 0,
-                    matches_won: 0,
-                    matches_lost: 0,
-                    sets_won: 0,
-                    sets_lost: 0,
-                    games_won: 0,
-                    games_lost: 0,
-                    points: 0
-                  };
-                  const isQualified = index < teamsAdvancing;
-                  const avatarUrl = participant.profiles?.avatar_url;
-                  const fullName = participant.profiles?.full_name || 'Sconosciuto';
-                  const initials = fullName
-                    .split(' ')
-                    .filter((part: string) => part.length > 0)
-                    .slice(0, 2)
-                    .map((part: string) => part[0]?.toUpperCase())
-                    .join('');
+          {/* Data Rows */}
+          <div className="space-y-2">
+            {getGroupStandings(selectedGroup).map((participant, index) => {
+              const stats = participant.stats || {
+                matches_played: 0,
+                matches_won: 0,
+                matches_lost: 0,
+                sets_won: 0,
+                sets_lost: 0,
+                games_won: 0,
+                games_lost: 0,
+                points: 0,
+              };
+              const isQualified = index < teamsAdvancing;
+              const avatarUrl = participant.profiles?.avatar_url;
+              const fullName = participant.profiles?.full_name || 'Sconosciuto';
+              const initials = fullName
+                .split(' ')
+                .filter((part: string) => part.length > 0)
+                .slice(0, 2)
+                .map((part: string) => part[0]?.toUpperCase())
+                .join('');
 
-                  let borderLeftColor = '#0f4c7c'; // secondary default
-                  if (isQualified) {
-                    if (index === 0) borderLeftColor = '#eab308'; // oro
-                    else if (index === 1) borderLeftColor = '#9ca3af'; // argento
-                    else if (index === 2) borderLeftColor = '#f97316'; // bronzo
-                  }
+              let borderLeftColor = '#0f4c7c'; // secondary default
+              if (isQualified) {
+                if (index === 0) borderLeftColor = '#eab308'; // oro
+                else if (index === 1) borderLeftColor = '#9ca3af'; // argento
+                else if (index === 2) borderLeftColor = '#f97316'; // bronzo
+              }
 
-                  return (
-                    <div
-                      key={participant.id}
-                      className="bg-white rounded-lg px-5 py-4 border border-black/10 hover:border-gray-300 transition-all border-l-4"
-                      style={{ borderLeftColor }}
-                    >
-                      <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
-                        <div className="text-lg font-bold text-secondary text-center">
-                          {index + 1}
-                        </div>
-                        <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-xs font-bold overflow-hidden relative">
-                          {avatarUrl ? (
-                            <Avatar src={avatarUrl} name={fullName} fill />
-                          ) : (
-                            <span>{initials || 'U'}</span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-bold text-secondary">{fullName}</div>
-                          <div className="text-xs text-secondary/60 mt-0.5">
-                            {stats.matches_won}V - {stats.matches_lost}S
-                          </div>
-                        </div>
-                        <div className="text-center font-semibold text-secondary">
-                          {stats.matches_played}
-                        </div>
-                        <div className="text-center">
-                          <div className="font-bold text-lg text-secondary">{stats.points}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-semibold text-secondary">
-                            {stats.sets_won - stats.sets_lost > 0 ? '+' : ''}
-                            {stats.sets_won - stats.sets_lost}
-                          </div>
-                        </div>
+              return (
+                <div
+                  key={participant.id}
+                  className="bg-white rounded-lg px-5 py-4 border border-black/10 hover:border-gray-300 transition-all border-l-4"
+                  style={{ borderLeftColor }}
+                >
+                  <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
+                    <div className="text-lg font-bold text-secondary text-center">{index + 1}</div>
+                    <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-xs font-bold overflow-hidden relative">
+                      {avatarUrl ? (
+                        <Avatar src={avatarUrl} name={fullName} fill />
+                      ) : (
+                        <span>{initials || 'U'}</span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-bold text-secondary">{fullName}</div>
+                      <div className="text-xs text-secondary/60 mt-0.5">
+                        {stats.matches_won}V - {stats.matches_lost}S
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                    <div className="text-center font-semibold text-secondary">
+                      {stats.matches_played}
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-lg text-secondary">{stats.points}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-secondary">
+                        {stats.sets_won - stats.sets_lost > 0 ? '+' : ''}
+                        {stats.sets_won - stats.sets_lost}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Calendario partite per girone */}
       {activeTab === 'matches' && selectedGroup && (
-        <div className="space-y-4">{loading ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
-                </div>
-              ) : matches.length === 0 ? (
-                <div className="rounded-lg border border-black/10 bg-white p-8 text-center">
-                  <p className="text-sm text-secondary/70">Nessuna partita generata per questo girone</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {matches.map(match => (
-                    <BracketMatchCard
-                      key={match.id}
-                      match={match}
-                      isAdmin={isAdmin}
-                      highlightUserId={highlightUserId}
-                      canEditOwn={canEditOwnMatches}
-                      bestOf={bestOf}
-                      onScoreSubmit={handleScoreSubmit}
-                    />
-                  ))}
-                </div>
-              )}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
+            </div>
+          ) : matches.length === 0 ? (
+            <div className="rounded-lg border border-black/10 bg-white p-8 text-center">
+              <p className="text-sm text-secondary/70">
+                Nessuna partita generata per questo girone
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {matches.map((match) => (
+                <BracketMatchCard
+                  key={match.id}
+                  match={match}
+                  isAdmin={isAdmin}
+                  highlightUserId={highlightUserId}
+                  canEditOwn={canEditOwnMatches}
+                  bestOf={bestOf}
+                  onScoreSubmit={handleScoreSubmit}
+                />
+              ))}
             </div>
           )}
+        </div>
+      )}
     </div>
   );
 }

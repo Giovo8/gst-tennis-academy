@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
 
+import { getSessionUser } from '@/lib/auth/clientSession';
 export interface DashboardNotification {
   id: string;
   title: string;
@@ -26,7 +27,7 @@ export function useNotifications(limit = 6) {
     async function load() {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
       if (!user) {
         if (!cancelled) setLoading(false);
         return;
@@ -34,10 +35,10 @@ export function useNotifications(limit = 6) {
 
       try {
         let query = supabase
-          .from("notifications")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
         if (limit > 0) {
           query = query.limit(limit);
@@ -52,7 +53,7 @@ export function useNotifications(limit = 6) {
           setUnreadCount(list.filter((n) => !n.is_read).length);
         }
       } catch (error) {
-        console.error("Error loading notifications:", error);
+        console.error('Error loading notifications:', error);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -61,11 +62,11 @@ export function useNotifications(limit = 6) {
       channel = supabase
         .channel(`notifications:${user.id}`)
         .on(
-          "postgres_changes",
+          'postgres_changes',
           {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
@@ -75,7 +76,7 @@ export function useNotifications(limit = 6) {
               return limit > 0 ? next.slice(0, limit) : next;
             });
             if (!newNotif.is_read) setUnreadCount((c) => c + 1);
-          }
+          },
         )
         .subscribe();
     }
@@ -90,17 +91,14 @@ export function useNotifications(limit = 6) {
 
   async function markRead(notificationId: string) {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n)),
     );
     setUnreadCount((c) => Math.max(0, c - 1));
 
     try {
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", notificationId);
+      await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId);
     } catch (e) {
-      console.error("Error marking notification read", e);
+      console.error('Error marking notification read', e);
     }
   }
 
@@ -112,20 +110,20 @@ export function useNotifications(limit = 6) {
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
       if (!user) return;
       const { error } = await supabase
-        .from("notifications")
+        .from('notifications')
         .update({ is_read: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
+        .eq('user_id', user.id)
+        .eq('is_read', false);
       if (error) {
         // rollback
         setNotifications(previous);
         setUnreadCount(previous.filter((n) => !n.is_read).length);
       }
     } catch (e) {
-      console.error("Error marking all notifications read", e);
+      console.error('Error marking all notifications read', e);
       setNotifications(previous);
       setUnreadCount(previous.filter((n) => !n.is_read).length);
     }

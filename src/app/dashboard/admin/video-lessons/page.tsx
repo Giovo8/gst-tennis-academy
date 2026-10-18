@@ -1,15 +1,17 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
-import { Video, Loader2, Search, Plus } from "lucide-react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
-import AuthGuard from "@/components/auth/AuthGuard";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+import { Video, Loader2, Search, Plus } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import AuthGuard from '@/components/auth/AuthGuard';
 
 function getYouTubeVideoId(url: string) {
-  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  const match = url.match(
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
+  );
   return match ? match[1] : null;
 }
 
@@ -34,22 +36,15 @@ type VideoLesson = {
 export default function VideoLessonsPage() {
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [filter] = useState<string>('all');
+  const [search, setSearch] = useState('');
 
   const categories = [
-    { value: "generale", label: "Generale" },
-    { value: "tecnica", label: "Tecnica" },
-    { value: "tattica", label: "Tattica" },
-    { value: "fitness", label: "Fitness" },
-    { value: "mentale", label: "Mentale" },
-  ];
-
-  const levels = [
-    { value: "tutti", label: "Tutti" },
-    { value: "principiante", label: "Principiante" },
-    { value: "intermedio", label: "Intermedio" },
-    { value: "avanzato", label: "Avanzato" },
+    { value: 'generale', label: 'Generale' },
+    { value: 'tecnica', label: 'Tecnica' },
+    { value: 'tattica', label: 'Tattica' },
+    { value: 'fitness', label: 'Fitness' },
+    { value: 'mentale', label: 'Mentale' },
   ];
 
   useEffect(() => {
@@ -62,11 +57,11 @@ export default function VideoLessonsPage() {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+        throw new Error('Sessione non valida. Effettua nuovamente il login.');
       }
 
-      const response = await fetch("/api/admin/video-lessons", {
-        method: "GET",
+      const response = await fetch('/api/admin/video-lessons', {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -75,19 +70,19 @@ export default function VideoLessonsPage() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(payload?.error || "Errore durante il caricamento dei video");
+        throw new Error(payload?.error || 'Errore durante il caricamento dei video');
       }
 
       setVideos(payload?.videos || []);
     } catch (error) {
-      console.error("Error loading videos:", error);
+      console.error('Error loading videos:', error);
       setVideos([]);
     } finally {
       setLoading(false);
     }
   }
   const filteredVideos = videos.filter((video) => {
-    const matchesCategory = filter === "all" || video.category === filter;
+    const matchesCategory = filter === 'all' || video.category === filter;
     const matchesSearch =
       !search ||
       video.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -97,8 +92,9 @@ export default function VideoLessonsPage() {
   });
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6 pt-3">{/* Header */}
+    <AuthGuard allowedRoles={['admin', 'gestore']}>
+      <div className="space-y-6 pt-3">
+        {/* Header */}
         <div>
           <p className="breadcrumb text-secondary/60">Video Lab</p>
           <h1 className="text-4xl font-bold text-secondary">Video Lab</h1>
@@ -135,11 +131,11 @@ export default function VideoLessonsPage() {
             <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun video trovato</h3>
             <p className="text-gray-600 mb-6">
-              {search || filter !== "all"
-                ? "Prova a modificare i filtri di ricerca"
-                : "Inizia creando il primo video lezione"}
+              {search || filter !== 'all'
+                ? 'Prova a modificare i filtri di ricerca'
+                : 'Inizia creando il primo video lezione'}
             </p>
-            {!search && filter === "all" && (
+            {!search && filter === 'all' && (
               <Link
                 href="/dashboard/admin/video-lessons/new"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all"
@@ -159,12 +155,12 @@ export default function VideoLessonsPage() {
               const categoryLabel =
                 categories.find((c) => c.value === video.category)?.label ?? video.category;
               const meta = [
-                format(new Date(video.created_at), "d MMM yyyy", { locale: it }),
+                format(new Date(video.created_at), 'd MMM yyyy', { locale: it }),
                 categoryLabel,
                 video.duration_minutes ? `${video.duration_minutes} min` : null,
               ]
                 .filter(Boolean)
-                .join(" · ");
+                .join(' · ');
 
               return (
                 <Link
@@ -172,7 +168,7 @@ export default function VideoLessonsPage() {
                   href={`/dashboard/admin/video-lessons/${video.id}`}
                   className="block rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
                   style={{
-                    background: video.is_active ? "var(--color-frozen-lake-900)" : "#9ca3af",
+                    background: video.is_active ? 'var(--color-frozen-lake-900)' : '#9ca3af',
                   }}
                 >
                   <div className="flex items-center gap-3 px-3 py-3.5">

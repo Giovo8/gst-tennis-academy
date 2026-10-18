@@ -1,32 +1,33 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from '@/lib/supabase/client';
 
-export type ActivityAction =
-  | "user.register"
-  | "user.login"
-  | "user.logout"
-  | "user.update_profile"
-  | "booking.create"
-  | "booking.update"
-  | "booking.cancel"
-  | "booking.confirm"
-  | "tournament.create"
-  | "tournament.join"
-  | "tournament.leave"
-  | "tournament.start"
-  | "tournament.complete"
-  | "email.send"
-  | "email.campaign.create"
-  | "email.campaign.delete"
-  | "court.block"
-  | "court.unblock"
-  | "invite_code.create"
-  | "invite_code.use"
-  | "video_lesson.create"
-  | "video_lesson.view"
-  | "notification.create"
-  | "notification.read";
+import { getSessionUser } from '@/lib/auth/clientSession';
+type ActivityAction =
+  | 'user.register'
+  | 'user.login'
+  | 'user.logout'
+  | 'user.update_profile'
+  | 'booking.create'
+  | 'booking.update'
+  | 'booking.cancel'
+  | 'booking.confirm'
+  | 'tournament.create'
+  | 'tournament.join'
+  | 'tournament.leave'
+  | 'tournament.start'
+  | 'tournament.complete'
+  | 'email.send'
+  | 'email.campaign.create'
+  | 'email.campaign.delete'
+  | 'court.block'
+  | 'court.unblock'
+  | 'invite_code.create'
+  | 'invite_code.use'
+  | 'video_lesson.create'
+  | 'video_lesson.view'
+  | 'notification.create'
+  | 'notification.read';
 
-export interface LogActivityParams {
+interface LogActivityParams {
   action: ActivityAction | string;
   entityType?: string;
   entityId?: string;
@@ -52,18 +53,20 @@ export async function logActivity({
 }: LogActivityParams): Promise<{ success: boolean; error?: string }> {
   try {
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
 
     if (!user) {
-      return { success: false, error: "No authenticated user" };
+      return { success: false, error: 'No authenticated user' };
     }
 
     // Get IP address and user agent from browser
     const ipAddress = null; // Not available in client-side
-    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
     // Insert activity log
-    const { error } = await supabase.from("activity_log").insert({
+    const { error } = await supabase.from('activity_log').insert({
       user_id: user.id,
       action,
       entity_type: entityType || null,
@@ -74,13 +77,13 @@ export async function logActivity({
     });
 
     if (error) {
-      console.error("Error logging activity:", error);
+      console.error('Error logging activity:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Exception logging activity:", error);
+    console.error('Exception logging activity:', error);
     return { success: false, error: String(error) };
   }
 }
@@ -104,9 +107,9 @@ export async function logActivityServer({
 }): Promise<{ success: boolean; error?: string }> {
   try {
     // Lazy import to avoid loading server client in client-side bundles
-    const { supabaseServer } = await import("@/lib/supabase/serverClient");
+    const { supabaseServer } = await import('@/lib/supabase/serverClient');
 
-    const { error } = await supabaseServer.from("activity_log").insert({
+    const { error } = await supabaseServer.from('activity_log').insert({
       user_id: userId,
       action,
       entity_type: entityType || null,
@@ -117,13 +120,13 @@ export async function logActivityServer({
     });
 
     if (error) {
-      console.error("Error logging activity (server):", error);
+      console.error('Error logging activity (server):', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Exception logging activity (server):", error);
+    console.error('Exception logging activity (server):', error);
     return { success: false, error: String(error) };
   }
 }

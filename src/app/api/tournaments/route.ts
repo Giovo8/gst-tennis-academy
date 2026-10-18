@@ -1,51 +1,41 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import type { RoundData, GroupData, GroupStanding } from "@/lib/types/tournament";
-import { createTournamentSchema } from "@/lib/validation/schemas";
-import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize-server";
-import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { createTournamentSchema } from '@/lib/validation/schemas';
+import { sanitizeObject, sanitizeUuid } from '@/lib/security/sanitize-server';
+import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from '@/lib/security/rate-limiter';
 import {
   HTTP_STATUS,
   ERROR_MESSAGES,
   USER_ROLES,
   COMPETITION_TYPE,
   COMPETITION_FORMAT,
-  TOURNAMENT_CONFIG
-} from "@/lib/constants/app";
-import type { CompetitionType, CompetitionFormat } from "@/lib/constants/app";
+  TOURNAMENT_CONFIG,
+} from '@/lib/constants/app';
+import type { CompetitionType } from '@/lib/constants/app';
 
 function getSupabase() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
-interface TournamentBody {
-  title: string;
-  start_date: string;
-  end_date?: string;
-  max_participants: number;
-  status: string;
-  competition_type?: CompetitionType;
-  format?: CompetitionFormat;
-  rounds_data?: RoundData[];
-  groups_data?: GroupData[];
-  standings?: GroupStanding[];
-}
-
 async function getUserProfileFromRequest(req: Request) {
   const supabase = getSupabase();
-  const authHeader = req.headers.get("authorization") ?? null;
-  const token = authHeader?.replace("Bearer ", "") ?? null;
+  const authHeader = req.headers.get('authorization') ?? null;
+  const token = authHeader?.replace('Bearer ', '') ?? null;
   if (!token) return { user: null, profile: null };
   const { data: userData, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !userData?.user) {
     return { user: null, profile: null };
   }
   const user = userData.user;
-  const { data: profile } = await supabase.from("profiles").select("id, role, full_name").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, role, full_name')
+    .eq('id', user.id)
+    .single();
   return { user, profile };
 }
 
@@ -56,42 +46,38 @@ export async function GET(req: Request) {
   try {
     const supabase = getSupabase();
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    const upcoming = url.searchParams.get("upcoming");
-    const type = url.searchParams.get("type") as CompetitionType | null;
-    const includeCounts = url.searchParams.get("includeCounts") === "true";
+    const id = url.searchParams.get('id');
+    const upcoming = url.searchParams.get('upcoming');
+    const type = url.searchParams.get('type') as CompetitionType | null;
+    const includeCounts = url.searchParams.get('includeCounts') === 'true';
 
     // Validate UUID if provided
     if (id && !sanitizeUuid(id)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
     if (id) {
-      const { data, error } = await supabase
-        .from("tournaments")
-        .select(`*`)
-        .eq("id", id)
-        .single();
+      const { data, error } = await supabase.from('tournaments').select(`*`).eq('id', id).single();
 
       if (error || !data) {
         return NextResponse.json(
           { error: ERROR_MESSAGES.NOT_FOUND },
-          { status: HTTP_STATUS.NOT_FOUND }
+          { status: HTTP_STATUS.NOT_FOUND },
         );
       }
 
       const { count, error: countErr } = await supabase
-        .from("tournament_participants")
-        .select("id", { count: "exact", head: true })
-        .eq("tournament_id", id);
+        .from('tournament_participants')
+        .select('id', { count: 'exact', head: true })
+        .eq('tournament_id', id);
 
       if (countErr) {
         return NextResponse.json(
           { error: ERROR_MESSAGES.SERVER_ERROR },
-          { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+          { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
         );
       }
 
@@ -99,17 +85,14 @@ export async function GET(req: Request) {
     }
 
     // Build query for list of tournaments
-    let query = supabase
-      .from("tournaments")
-      .select("*")
-      .order("start_date", { ascending: true });
+    let query = supabase.from('tournaments').select('*').order('start_date', { ascending: true });
 
-    if (upcoming === "true") {
-      query = query.in("status", ["Aperte le Iscrizioni", "In Corso"]);
+    if (upcoming === 'true') {
+      query = query.in('status', ['Aperte le Iscrizioni', 'In Corso']);
     }
 
     if (type && (type === COMPETITION_TYPE.TORNEO || type === COMPETITION_TYPE.CAMPIONATO)) {
-      query = query.eq("competition_type", type);
+      query = query.eq('competition_type', type);
     }
 
     const { data, error } = await query;
@@ -118,7 +101,7 @@ export async function GET(req: Request) {
       console.error('[API/tournaments] Database error:', error);
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -129,15 +112,15 @@ export async function GET(req: Request) {
 
     // Only add participant counts if explicitly requested AND time permits
     let result = data || [];
-    if (includeCounts && result.length > 0 && (Date.now() - startTime < requestTimeout - 2000)) {
+    if (includeCounts && result.length > 0 && Date.now() - startTime < requestTimeout - 2000) {
       result = await Promise.all(
         result.map(async (tournament) => {
           const { count } = await supabase
-            .from("tournament_participants")
-            .select("id", { count: "exact", head: true })
-            .eq("tournament_id", tournament.id);
+            .from('tournament_participants')
+            .select('id', { count: 'exact', head: true })
+            .eq('tournament_id', tournament.id);
           return { ...tournament, current_participants: count ?? 0 };
-        })
+        }),
       );
     }
 
@@ -151,7 +134,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
@@ -173,15 +156,15 @@ export async function POST(req: Request) {
             'X-RateLimit-Remaining': rateLimit.remaining.toString(),
             'X-RateLimit-Reset': rateLimit.reset.toString(),
           },
-        }
+        },
       );
     }
 
-    const { user, profile } = await getUserProfileFromRequest(req);
+    const { profile } = await getUserProfileFromRequest(req);
     if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
 
@@ -193,42 +176,51 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: ERROR_MESSAGES.INVALID_INPUT,
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.errors.map((e) => ({
             field: e.path.join('.'),
             message: e.message,
           })),
         },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
     const body = validationResult.data;
 
-    if (body.format === COMPETITION_FORMAT.ELIMINAZIONE_DIRETTA &&
-        !(TOURNAMENT_CONFIG.VALID_BRACKET_SIZES as readonly number[]).includes(body.max_participants)) {
-      return NextResponse.json({
-        error: `For eliminazione_diretta, max_participants must be one of: ${TOURNAMENT_CONFIG.VALID_BRACKET_SIZES.join(', ')}`
-      }, { status: HTTP_STATUS.BAD_REQUEST });
+    if (
+      body.format === COMPETITION_FORMAT.ELIMINAZIONE_DIRETTA &&
+      !(TOURNAMENT_CONFIG.VALID_BRACKET_SIZES as readonly number[]).includes(body.max_participants)
+    ) {
+      return NextResponse.json(
+        {
+          error: `For eliminazione_diretta, max_participants must be one of: ${TOURNAMENT_CONFIG.VALID_BRACKET_SIZES.join(
+            ', ',
+          )}`,
+        },
+        { status: HTTP_STATUS.BAD_REQUEST },
+      );
     }
 
-    if ((body.format === COMPETITION_FORMAT.ROUND_ROBIN ||
-         body.format === COMPETITION_FORMAT.GIRONE_ELIMINAZIONE) &&
-        body.max_participants < TOURNAMENT_CONFIG.MIN_GROUP_SIZE) {
-      return NextResponse.json({
-        error: `For round_robin or girone_eliminazione, max_participants must be at least ${TOURNAMENT_CONFIG.MIN_GROUP_SIZE}`
-      }, { status: HTTP_STATUS.BAD_REQUEST });
+    if (
+      (body.format === COMPETITION_FORMAT.ROUND_ROBIN ||
+        body.format === COMPETITION_FORMAT.GIRONE_ELIMINAZIONE) &&
+      body.max_participants < TOURNAMENT_CONFIG.MIN_GROUP_SIZE
+    ) {
+      return NextResponse.json(
+        {
+          error: `For round_robin or girone_eliminazione, max_participants must be at least ${TOURNAMENT_CONFIG.MIN_GROUP_SIZE}`,
+        },
+        { status: HTTP_STATUS.BAD_REQUEST },
+      );
     }
 
-    const { data, error } = await supabase
-      .from("tournaments")
-      .insert([body])
-      .select();
+    const { data, error } = await supabase.from('tournaments').insert([body]).select();
 
     if (error) {
       console.error('[API/tournaments] POST failed:', error);
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -237,7 +229,7 @@ export async function POST(req: Request) {
     console.error('[API/tournaments] POST exception:', error);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
@@ -246,20 +238,20 @@ export async function PUT(req: Request) {
   try {
     const supabase = getSupabase();
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+    const id = url.searchParams.get('id');
 
     if (!id || !sanitizeUuid(id)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
-    const { user, profile } = await getUserProfileFromRequest(req);
+    const { profile } = await getUserProfileFromRequest(req);
     if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
 
@@ -267,16 +259,16 @@ export async function PUT(req: Request) {
     const sanitized = sanitizeObject(rawBody);
 
     const { data, error } = await supabase
-      .from("tournaments")
+      .from('tournaments')
       .update(sanitized)
-      .eq("id", id)
+      .eq('id', id)
       .select();
 
     if (error) {
       console.error('[API/tournaments] PUT failed:', error);
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -285,7 +277,7 @@ export async function PUT(req: Request) {
     console.error('[API/tournaments] PUT exception:', error);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
@@ -294,30 +286,30 @@ export async function DELETE(req: Request) {
   try {
     const supabase = getSupabase();
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+    const id = url.searchParams.get('id');
 
     if (!id || !sanitizeUuid(id)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
-    const { user, profile } = await getUserProfileFromRequest(req);
+    const { profile } = await getUserProfileFromRequest(req);
     if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
 
-    const { error } = await supabase.from("tournaments").delete().eq("id", id);
+    const { error } = await supabase.from('tournaments').delete().eq('id', id);
 
     if (error) {
       console.error('[API/tournaments] DELETE failed:', error);
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -326,8 +318,7 @@ export async function DELETE(req: Request) {
     console.error('[API/tournaments] DELETE exception:', error);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
-

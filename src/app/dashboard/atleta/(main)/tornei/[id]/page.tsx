@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState, Suspense } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
-import TournamentTabBar, { type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
-import {
-  Trophy,
-  Loader2,
-  Target,
-  Users as UsersIcon,
-  Eye
-} from "lucide-react";
+import React, { useEffect, useState, Suspense } from 'react';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { useRouter, useParams, usePathname, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import TournamentManagerWrapper from '@/components/tournaments/TournamentManagerWrapper';
+import TournamentTabBar, { type TournamentTabKey } from '@/components/tournaments/TournamentTabBar';
+import TournamentScheduleSection, {
+  useScheduledTournamentMatches,
+} from '@/components/tournaments/TournamentScheduleSection';
+import { Trophy, Loader2, Target, Users as UsersIcon, Eye } from 'lucide-react';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -39,9 +38,9 @@ function AtletaTournamentDetailInner() {
   const params = useParams();
   const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
   const pathname = usePathname();
-  const dashboardBase = pathname.split("/tornei")[0];
-  const sectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const sectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gray-50";
+  const dashboardBase = pathname.split('/tornei')[0];
+  const sectionClassName = 'bg-white rounded-lg border border-black/10 overflow-hidden';
+  const sectionHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gray-50';
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [currentParticipants, setCurrentParticipants] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -49,9 +48,13 @@ function AtletaTournamentDetailInner() {
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
   const [managerTab, setManagerTab] = useState<TournamentTabKey>('overview');
-  const [managerMeta, setManagerMeta] = useState<{ tournamentType?: string; currentPhase?: string; participantsCount: number } | null>(null);
+  const [managerMeta, setManagerMeta] = useState<{
+    tournamentType?: string;
+    currentPhase?: string;
+    participantsCount: number;
+  } | null>(null);
   const router = useRouter();
-  const viewAsId = useSearchParams().get("viewAs");
+  const viewAsId = useSearchParams().get('viewAs');
   const [viewAsName, setViewAsName] = useState<string | null>(null);
   // Vista admin "come atleta": attiva solo dopo la verifica del ruolo (vedi load)
   const [isViewAs, setIsViewAs] = useState(false);
@@ -73,7 +76,7 @@ function AtletaTournamentDetailInner() {
         let json: any = {};
         try {
           json = await res.json();
-        } catch (e) {
+        } catch {
           json = {};
         }
         if (!res.ok) throw new Error(json.error || 'Errore caricamento torneo');
@@ -83,14 +86,22 @@ function AtletaTournamentDetailInner() {
         }
 
         // get user and check participation
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData } = await getSessionUser();
         const user = userData.user;
         let participantUserId = user?.id ?? null;
         if (user && viewAsId) {
-          const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+          const { data: me } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
           if (['admin', 'gestore'].includes(me?.role ?? '')) {
             participantUserId = viewAsId;
-            const { data: target } = await supabase.from('profiles').select('full_name').eq('id', viewAsId).single();
+            const { data: target } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', viewAsId)
+              .single();
             if (mounted) {
               setIsViewAs(true);
               setViewAsName(target?.full_name || 'Atleta');
@@ -99,18 +110,20 @@ function AtletaTournamentDetailInner() {
         }
         if (participantUserId) {
           if (mounted) setTargetUserId(participantUserId);
-          const pRes = await fetch(`/api/tournament_participants?user_id=${participantUserId}&tournament_id=${id}`);
+          const pRes = await fetch(
+            `/api/tournament_participants?user_id=${participantUserId}&tournament_id=${id}`,
+          );
           let pJson: any = {};
           try {
             pJson = await pRes.json();
-          } catch (e) {
+          } catch {
             pJson = {};
           }
           if (pRes.ok && pJson.participants && pJson.participants.length > 0) {
             if (mounted) setJoined(true);
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         if (mounted) setError(err.message || 'Errore');
       } finally {
         if (mounted) setLoading(false);
@@ -118,8 +131,31 @@ function AtletaTournamentDetailInner() {
     }
     load();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [id, viewAsId]);
+
+  // Partite prenotate in arrivo (pubbliche): tab "In programma" (prima tab, selezionata all'apertura)
+  const isStarted = Boolean(
+    managerMeta && managerMeta.participantsCount > 0 && managerMeta.currentPhase !== 'iscrizioni',
+  );
+  const scheduledMatches = useScheduledTournamentMatches(
+    typeof id === 'string' ? id : null,
+    isStarted,
+    0,
+    'public',
+  );
+  const hasScheduledMatches = isStarted && scheduledMatches.length > 0;
+  const [scheduleAutoSelected, setScheduleAutoSelected] = useState(false);
+  useEffect(() => {
+    if (hasScheduledMatches && !scheduleAutoSelected) {
+      setManagerTab('schedule');
+      setScheduleAutoSelected(true);
+    } else if (!hasScheduledMatches && managerTab === 'schedule') {
+      setManagerTab('overview'); // il manager riporta poi alla prima tab valida della fase
+    }
+  }, [hasScheduledMatches, scheduleAutoSelected, managerTab]);
 
   const handleJoin = async () => {
     setError(null);
@@ -136,13 +172,16 @@ function AtletaTournamentDetailInner() {
       const token = sessionData?.session?.access_token ?? null;
       const res = await fetch('/api/tournament_participants', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ user_id: user.id, tournament_id: id }),
       });
       let json: any = {};
       try {
         json = await res.json();
-      } catch (e) {
+      } catch {
         json = {};
       }
       if (!res.ok) {
@@ -153,7 +192,7 @@ function AtletaTournamentDetailInner() {
         // Reload the page to refresh TournamentManagerWrapper
         window.location.reload();
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Errore rete');
     } finally {
       setActionLoading(false);
@@ -177,14 +216,20 @@ function AtletaTournamentDetailInner() {
       }
 
       const token = sessionData?.session?.access_token ?? null;
-      const res = await fetch(`/api/tournament_participants?user_id=${user.id}&tournament_id=${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      });
+      const res = await fetch(
+        `/api/tournament_participants?user_id=${user.id}&tournament_id=${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      );
       let json: any = {};
       try {
         json = await res.json();
-      } catch (e) {
+      } catch {
         json = {};
       }
       if (!res.ok) {
@@ -195,7 +240,7 @@ function AtletaTournamentDetailInner() {
         // Reload the page to refresh TournamentManagerWrapper
         window.location.reload();
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Errore rete');
     } finally {
       setActionLoading(false);
@@ -218,13 +263,14 @@ function AtletaTournamentDetailInner() {
   const TournamentIcon = getTournamentIcon();
 
   const spotsLeft = (tournament?.max_participants ?? 0) - currentParticipants;
-  const isCampionato = tournament?.competition_type === 'campionato' || tournament?.tournament_type === 'campionato';
+  const isCampionato =
+    tournament?.competition_type === 'campionato' || tournament?.tournament_type === 'campionato';
   const isFull = tournament?.status === 'Aperto' && spotsLeft <= 0;
   const getDisplayStatus = () => {
     if (isFull) {
-      return "Registrazioni Chiuse - Posti Esauriti";
+      return 'Registrazioni Chiuse - Posti Esauriti';
     }
-    return tournament?.status || "In preparazione";
+    return tournament?.status || 'In preparazione';
   };
 
   if (loading) {
@@ -247,14 +293,16 @@ function AtletaTournamentDetailInner() {
           >
             Competizioni
           </Link>
-          {" › "}
+          {' › '}
           <span>Dettaglio</span>
         </p>
 
         <div className="text-center py-20 bg-white rounded-xl">
           <Trophy className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-secondary mb-2">Torneo non trovato</h2>
-          <p className="text-secondary/70 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
+          <p className="text-secondary/70 mb-6">
+            Il torneo che stai cercando non esiste o è stato rimosso.
+          </p>
           <button
             onClick={() => router.push(`${dashboardBase}/tornei`)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-lg font-medium hover:opacity-90 transition-all"
@@ -271,9 +319,7 @@ function AtletaTournamentDetailInner() {
       {/* Header con titolo e descrizione */}
       <div>
         <p className="breadcrumb text-secondary/60">Dettaglio Competizione</p>
-        <h1 className="text-3xl font-bold text-secondary mb-2">
-          Dettaglio Competizione
-        </h1>
+        <h1 className="text-3xl font-bold text-secondary mb-2">Dettaglio Competizione</h1>
       </div>
 
       {/* Banner vista admin */}
@@ -281,7 +327,8 @@ function AtletaTournamentDetailInner() {
         <div className="p-4 rounded-lg bg-orange-50 border border-orange-200 flex flex-wrap items-center gap-3">
           <Eye className="h-5 w-5 text-orange-600 flex-shrink-0" />
           <p className="flex-1 text-sm text-orange-800">
-            Stai vedendo il torneo come <strong>{viewAsName}</strong>. Puoi modificare solo i punteggi delle sue partite (il salvataggio avviene con il tuo account admin).
+            Stai vedendo il torneo come <strong>{viewAsName}</strong>. Puoi modificare solo i
+            punteggi delle sue partite (il salvataggio avviene con il tuo account admin).
           </p>
           <Link
             href={`/dashboard/admin/tornei/${id}`}
@@ -315,116 +362,149 @@ function AtletaTournamentDetailInner() {
       {/* Dettagli torneo */}
       <div className={sectionClassName}>
         <div className={sectionHeaderClassName}>
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">
+            Dettagli competizione
+          </h2>
         </div>
         <div className="p-6">
-        <div className="space-y-6">
-          {/* Descrizione */}
-          {tournament.description && (
-            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
-              <div className="flex-1">
-                <p className="text-secondary/70">{tournament.description}</p>
+          <div className="space-y-6">
+            {/* Descrizione */}
+            {tournament.description && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Descrizione
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.description}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Data Inizio */}
-          {tournament.start_date && (
+            {/* Data Inizio */}
+            {tournament.start_date && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Data inizio
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {(() => {
+                      const dateStr = new Date(tournament.start_date).toLocaleDateString('it-IT', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      });
+                      // Capitalizza il primo carattere (giorno della settimana) e il mese
+                      return dateStr
+                        .replace(/^(.)/, (match) => match.toUpperCase())
+                        .replace(
+                          /(\s)([a-z])/g,
+                          (match, space, char) => space + char.toUpperCase(),
+                        );
+                    })()}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tipo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Tipo competizione
+              </label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
-                  {(() => {
-                    const dateStr = new Date(tournament.start_date).toLocaleDateString("it-IT", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    });
-                    // Capitalizza il primo carattere (giorno della settimana) e il mese
-                    return dateStr.replace(/^(.)/, (match) => match.toUpperCase()).replace(/(\s)([a-z])/g, (match, space, char) => space + char.toUpperCase());
-                  })()}
+                  {isCampionato
+                    ? 'Campionato'
+                    : tournament.tournament_type === 'girone_eliminazione' ||
+                      tournament.competition_type === 'girone_eliminazione'
+                    ? 'Girone + Eliminazione'
+                    : 'Eliminazione Diretta'}
                 </p>
               </div>
             </div>
-          )}
 
-          {/* Tipo */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {isCampionato ? 'Campionato' :
-                 (tournament.tournament_type === 'girone_eliminazione' || tournament.competition_type === 'girone_eliminazione') ? 'Girone + Eliminazione' :
-                 'Eliminazione Diretta'}
-              </p>
-            </div>
-          </div>
-
-          {/* Stato */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{getDisplayStatus()}</p>
-            </div>
-          </div>
-
-          {/* Partecipanti */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {currentParticipants} / {tournament.max_participants}
-              </p>
-            </div>
-          </div>
-
-          {/* Categoria */}
-          {tournament.category && (
+            {/* Stato */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Stato
+              </label>
               <div className="flex-1">
-                <p className="text-secondary/70">{tournament.category}</p>
+                <p className="text-secondary font-semibold">{getDisplayStatus()}</p>
               </div>
             </div>
-          )}
 
-          {/* Livello */}
-          {tournament.level && (
+            {/* Partecipanti */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Livello</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Partecipanti
+              </label>
               <div className="flex-1">
-                <p className="text-secondary/70">{tournament.level}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Formato Partita */}
-          {(tournament.match_format || tournament.best_of) && (
-            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
-              <div className="flex-1">
-                <p className="text-secondary/70">
-                  {tournament.match_format === 'best_of_3' || tournament.best_of === 3 ? 'Al meglio di 3 set' :
-                   tournament.match_format === 'best_of_5' || tournament.best_of === 5 ? 'Al meglio di 5 set' :
-                   tournament.match_format === 'best_of_1' || tournament.best_of === 1 ? '1 set unico' :
-                   tournament.match_format || `Best of ${tournament.best_of}`}
+                <p className="text-secondary font-semibold">
+                  {currentParticipants} / {tournament.max_participants}
                 </p>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Categoria */}
+            {tournament.category && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Categoria
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.category}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Livello */}
+            {tournament.level && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Livello
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.level}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Formato Partita */}
+            {(tournament.match_format || tournament.best_of) && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Formato partita
+                </label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">
+                    {tournament.match_format === 'best_of_3' || tournament.best_of === 3
+                      ? 'Al meglio di 3 set'
+                      : tournament.match_format === 'best_of_5' || tournament.best_of === 5
+                      ? 'Al meglio di 5 set'
+                      : tournament.match_format === 'best_of_1' || tournament.best_of === 1
+                      ? '1 set unico'
+                      : tournament.match_format || `Best of ${tournament.best_of}`}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Tab Partecipanti/Tabellone/Gironi/Calendario/Classifica */}
       {currentParticipants > 0 && managerMeta && (
         <TournamentTabBar
-          meta={managerMeta}
+          meta={{ ...managerMeta, hasScheduledMatches }}
           activeTab={managerTab}
           onChange={setManagerTab}
         />
+      )}
+
+      {hasScheduledMatches && managerTab === 'schedule' && (
+        <TournamentScheduleSection matches={scheduledMatches} />
       )}
 
       {/* Tournament Manager */}
@@ -448,7 +528,7 @@ function AtletaTournamentDetailInner() {
           <button
             onClick={handleJoin}
             disabled={actionLoading || spotsLeft <= 0}
-            title={spotsLeft <= 0 ? "Posti esauriti" : "Iscriviti al torneo"}
+            title={spotsLeft <= 0 ? 'Posti esauriti' : 'Iscriviti al torneo'}
             className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {actionLoading ? (
@@ -457,9 +537,9 @@ function AtletaTournamentDetailInner() {
                 Iscrizione in corso...
               </>
             ) : spotsLeft <= 0 ? (
-              "Posti Esauriti"
+              'Posti Esauriti'
             ) : (
-              "Iscriviti al Torneo"
+              'Iscriviti al Torneo'
             )}
           </button>
         )}
@@ -477,7 +557,7 @@ function AtletaTournamentDetailInner() {
                 Cancellazione in corso...
               </>
             ) : (
-              "Cancella Iscrizione"
+              'Cancella Iscrizione'
             )}
           </button>
         )}
@@ -488,12 +568,14 @@ function AtletaTournamentDetailInner() {
 
 export default function AtletaTournamentDetailPage() {
   return (
-    <Suspense fallback={
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
-        <p className="mt-4 text-secondary/70">Caricamento...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+          <p className="mt-4 text-secondary/70">Caricamento...</p>
+        </div>
+      }
+    >
       <AtletaTournamentDetailInner />
     </Suspense>
   );

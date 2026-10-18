@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Trophy, Users, Target, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Trophy, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -44,19 +44,19 @@ export default function NewTournamentPage() {
     surface_type: 'terra',
     match_format: 'best_of_3',
     entry_fee: '',
-    extras: []
+    extras: [],
   });
 
   const tournamentTypes = [
     { id: 'eliminazione_diretta' as TournamentType, name: 'Eliminazione Diretta' },
     { id: 'girone_eliminazione' as TournamentType, name: 'Girone + Eliminazione' },
-    { id: 'campionato' as TournamentType, name: 'Campionato' }
+    { id: 'campionato' as TournamentType, name: 'Campionato' },
   ];
 
   const eliminationSizes = [4, 8, 16, 32, 64];
 
   const handleTypeSelect = (type: TournamentType) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updated = { ...prev, tournament_type: type };
       if (type === 'eliminazione_diretta') {
         updated.max_participants = 16;
@@ -73,14 +73,14 @@ export default function NewTournamentPage() {
   };
 
   const handleParticipantsChange = (value: number) => {
-    setFormData(prev => ({ ...prev, max_participants: value }));
+    setFormData((prev) => ({ ...prev, max_participants: value }));
   };
 
   const handleGroupConfigChange = (
     field: 'num_groups' | 'teams_per_group' | 'teams_advancing',
-    value: number
+    value: number,
   ) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updated: TournamentFormData = { ...prev, [field]: value } as TournamentFormData;
       if (field === 'num_groups' || field === 'teams_per_group') {
         updated.max_participants =
@@ -92,7 +92,7 @@ export default function NewTournamentPage() {
   };
 
   const toggleExtra = (value: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const exists = prev.extras.includes(value);
       return {
         ...prev,
@@ -108,7 +108,9 @@ export default function NewTournamentPage() {
 
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
         setError('Sessione non valida. Effettua nuovamente il login.');
@@ -139,7 +141,7 @@ export default function NewTournamentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -154,7 +156,7 @@ export default function NewTournamentPage() {
       setTimeout(() => {
         router.push('/dashboard/admin/tornei');
       }, 2000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating tournament:', err);
       setError(err.message || 'Errore nella creazione del torneo');
     } finally {
@@ -173,7 +175,7 @@ export default function NewTournamentPage() {
           >
             Gestione Competizioni
           </Link>
-          {" › "}
+          {' › '}
           <span>Nuovo Torneo</span>
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea nuovo torneo</h1>
@@ -207,255 +209,267 @@ export default function NewTournamentPage() {
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli torneo</h2>
           </div>
           <div className="p-6 space-y-6">
-          {/* Tipo competizione */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Tipo competizione *
-            </label>
-            <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3 flex-wrap">
-              {tournamentTypes.map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => handleTypeSelect(type.id)}
-                  className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                    formData.tournament_type === type.id
-                      ? 'bg-secondary text-white border-secondary'
-                      : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                  }`}
-                >
-                  {type.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Numero partecipanti - Eliminazione Diretta */}
-          {formData.tournament_type === 'eliminazione_diretta' && (
+            {/* Tipo competizione */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Numero partecipanti *
+                Tipo competizione *
               </label>
-              <div className="flex-1 flex flex-row gap-2 sm:gap-3 flex-wrap">
-                {eliminationSizes.map(size => (
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3 flex-wrap">
+                {tournamentTypes.map((type) => (
                   <button
-                    key={size}
+                    key={type.id}
                     type="button"
-                    onClick={() => handleParticipantsChange(size)}
-                    className={`px-5 py-2 text-sm rounded-lg border transition-all min-w-[60px] ${
-                      formData.max_participants === size
+                    onClick={() => handleTypeSelect(type.id)}
+                    className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      formData.tournament_type === type.id
                         ? 'bg-secondary text-white border-secondary'
                         : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                     }`}
                   >
-                    {size}
+                    {type.name}
                   </button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Configurazione Gironi */}
-          {formData.tournament_type === 'girone_eliminazione' && (
-            <>
+            {/* Numero partecipanti - Eliminazione Diretta */}
+            {formData.tournament_type === 'eliminazione_diretta' && (
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Numero gironi *
+                  Numero partecipanti *
                 </label>
-                <div className="flex-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max="8"
-                    value={formData.num_groups}
-                    onChange={(e) => handleGroupConfigChange('num_groups', Number(e.target.value))}
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  />
+                <div className="flex-1 flex flex-row gap-2 sm:gap-3 flex-wrap">
+                  {eliminationSizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => handleParticipantsChange(size)}
+                      className={`px-5 py-2 text-sm rounded-lg border transition-all min-w-[60px] ${
+                        formData.max_participants === size
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
                 </div>
               </div>
+            )}
 
+            {/* Configurazione Gironi */}
+            {formData.tournament_type === 'girone_eliminazione' && (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Numero gironi *
+                  </label>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="8"
+                      value={formData.num_groups}
+                      onChange={(e) =>
+                        handleGroupConfigChange('num_groups', Number(e.target.value))
+                      }
+                      className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Squadre per girone *
+                  </label>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="3"
+                      max="8"
+                      value={formData.teams_per_group}
+                      onChange={(e) =>
+                        handleGroupConfigChange('teams_per_group', Number(e.target.value))
+                      }
+                      className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Qualificati per girone *
+                  </label>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max={formData.teams_per_group - 1}
+                      value={formData.teams_advancing}
+                      onChange={(e) =>
+                        handleGroupConfigChange('teams_advancing', Number(e.target.value))
+                      }
+                      className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Partecipanti totali
+                  </label>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      value={formData.max_participants}
+                      readOnly
+                      className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Numero partecipanti - Campionato */}
+            {formData.tournament_type === 'campionato' && (
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Squadre per girone *
+                  Numero partecipanti *
                 </label>
                 <div className="flex-1">
                   <input
                     type="number"
                     min="3"
-                    max="8"
-                    value={formData.teams_per_group}
-                    onChange={(e) => handleGroupConfigChange('teams_per_group', Number(e.target.value))}
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Qualificati per girone *
-                </label>
-                <div className="flex-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max={formData.teams_per_group - 1}
-                    value={formData.teams_advancing}
-                    onChange={(e) => handleGroupConfigChange('teams_advancing', Number(e.target.value))}
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Partecipanti totali
-                </label>
-                <div className="flex-1">
-                  <input
-                    type="number"
+                    max="30"
                     value={formData.max_participants}
-                    readOnly
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary"
+                    onChange={(e) => handleParticipantsChange(Number(e.target.value))}
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
-            </>
-          )}
+            )}
 
-          {/* Numero partecipanti - Campionato */}
-          {formData.tournament_type === 'campionato' && (
+            {/* Nome torneo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Numero partecipanti *
+                Nome torneo *
               </label>
               <div className="flex-1">
                 <input
-                  type="number"
-                  min="3"
-                  max="30"
-                  value={formData.max_participants}
-                  onChange={(e) => handleParticipantsChange(Number(e.target.value))}
-                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Es: Torneo Open Estivo 2025"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
-          )}
 
-          {/* Nome torneo */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Nome torneo *
-            </label>
-            <div className="flex-1">
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Es: Torneo Open Estivo 2025"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-              />
-            </div>
-          </div>
-
-          {/* Descrizione */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Descrizione
-            </label>
-            <div className="flex-1">
-              <textarea
-                rows={3}
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Descrivi il torneo..."
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-              />
-            </div>
-          </div>
-
-          {/* Date */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Date
-            </label>
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-secondary/60 mb-1.5 block">Data inizio</label>
-                <input
-                  type="date"
-                  value={formData.start_date || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-secondary/60 mb-1.5 block">Data fine</label>
-                <input
-                  type="date"
-                  value={formData.end_date || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Categoria */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Categoria
-            </label>
-            <div className="flex-1">
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-              >
-                <option value="Open">Open</option>
-                <option value="Under 18">Under 18</option>
-                <option value="Under 16">Under 16</option>
-                <option value="Under 14">Under 14</option>
-                <option value="Veterani">Veterani</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Formato partita */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Formato partita
-            </label>
-            <div className="flex-1">
-              <select
-                value={formData.match_format}
-                onChange={(e) => setFormData(prev => ({ ...prev, match_format: e.target.value }))}
-                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-              >
-                <option value="best_of_3">Al meglio di 3 set</option>
-                <option value="best_of_5">Al meglio di 5 set</option>
-                <option value="best_of_1">1 set unico</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Extra */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Extra
-            </label>
-            <div className="flex-1">
-              <label className="inline-flex items-center gap-2 text-sm text-secondary cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.extras.includes('killer_point')}
-                  onChange={() => toggleExtra('killer_point')}
-                  className="h-4 w-4 rounded border-gray-300 text-secondary focus:ring-secondary/40"
-                />
-                <span>Killer point</span>
+            {/* Descrizione */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Descrizione
               </label>
+              <div className="flex-1">
+                <textarea
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  placeholder="Descrivi il torneo..."
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Date */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Date
+              </label>
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-secondary/60 mb-1.5 block">Data inizio</label>
+                  <input
+                    type="date"
+                    value={formData.start_date || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, start_date: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-secondary/60 mb-1.5 block">Data fine</label>
+                  <input
+                    type="date"
+                    value={formData.end_date || ''}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, end_date: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Categoria */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Categoria
+              </label>
+              <div className="flex-1">
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                >
+                  <option value="Open">Open</option>
+                  <option value="Under 18">Under 18</option>
+                  <option value="Under 16">Under 16</option>
+                  <option value="Under 14">Under 14</option>
+                  <option value="Veterani">Veterani</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Formato partita */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Formato partita
+              </label>
+              <div className="flex-1">
+                <select
+                  value={formData.match_format}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, match_format: e.target.value }))
+                  }
+                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                >
+                  <option value="best_of_3">Al meglio di 3 set</option>
+                  <option value="best_of_5">Al meglio di 5 set</option>
+                  <option value="best_of_1">1 set unico</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Extra */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Extra
+              </label>
+              <div className="flex-1">
+                <label className="inline-flex items-center gap-2 text-sm text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.extras.includes('killer_point')}
+                    onChange={() => toggleExtra('killer_point')}
+                    className="h-4 w-4 rounded border-gray-300 text-secondary focus:ring-secondary/40"
+                  />
+                  <span>Killer point</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 

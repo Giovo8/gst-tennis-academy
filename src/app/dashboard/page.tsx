@@ -1,35 +1,36 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import { getDestinationForRole, type UserRole } from "@/lib/roles";
-import { Loader2 } from "lucide-react";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+import { getDestinationForRole, type UserRole } from '@/lib/roles';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
-        router.replace("/login");
+        router.replace('/login');
         return;
       }
 
       const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
         .single();
 
       if (profile) {
         const destination = getDestinationForRole(profile.role as UserRole);
         router.replace(destination);
       } else {
-        router.replace("/login");
+        router.replace('/login');
       }
     }
 

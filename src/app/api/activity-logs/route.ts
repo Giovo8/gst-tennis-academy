@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
-import logger from "@/lib/logger/secure-logger";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from '@/lib/auth/routeAuth';
+import logger from '@/lib/logger/secure-logger';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
@@ -12,23 +12,23 @@ export async function GET(req: Request) {
     if (!isAdmin(auth.role)) return forbidden();
 
     const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") || "50");
-    const action = url.searchParams.get("action");
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const action = url.searchParams.get('action');
 
     let query = supabaseServer
-      .from("activity_log")
-      .select("*")
-      .order("created_at", { ascending: false })
+      .from('activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (action) {
-      query = query.eq("action", action);
+      query = query.eq('action', action);
     }
 
     const { data: logs, error } = await query;
 
     if (error) {
-      logger.error("Error loading activity logs:", error);
+      logger.error('Error loading activity logs:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -37,9 +37,9 @@ export async function GET(req: Request) {
 
     if (userIds.length > 0) {
       const { data: profiles } = await supabaseServer
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds);
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
 
       profiles?.forEach((profile: any) => {
         profilesMap.set(profile.id, profile);
@@ -48,12 +48,12 @@ export async function GET(req: Request) {
 
     const enrichedLogs = logs?.map((log: any) => ({
       ...log,
-      profiles: log.user_id ? profilesMap.get(log.user_id) : null
+      profiles: log.user_id ? profilesMap.get(log.user_id) : null,
     }));
 
     return NextResponse.json({ logs: enrichedLogs });
-  } catch (err: any) {
-    logger.error("Exception loading activity logs:", err);
+  } catch (err) {
+    logger.error('Exception loading activity logs:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

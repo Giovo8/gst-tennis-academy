@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       .slice(0, 5);
 
     return NextResponse.json({ events: enriched, topIps });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Eccezione nel caricamento degli eventi di sicurezza', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

@@ -1,34 +1,21 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  Calendar,
-  Video,
-  Users,
-  CheckCircle,
-  PlusCircle,
-  BarChart2,
-  MessageSquare,
-  Dumbbell,
-} from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import WeatherCard from "@/components/dashboard/WeatherCard";
-import NotificationsList from "@/components/dashboard/NotificationsList";
-import { UpcomingCommitmentsCard } from "@/components/dashboard/UpcomingCommitmentsCard";
-import BookingsTimeline from "@/components/admin/BookingsTimeline";
-import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Video, PlusCircle, MessageSquare, Dumbbell } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { getSessionUser } from '@/lib/auth/clientSession';
+import WeatherCard from '@/components/dashboard/WeatherCard';
+import NotificationsList from '@/components/dashboard/NotificationsList';
+import { UpcomingCommitmentsCard } from '@/components/dashboard/UpcomingCommitmentsCard';
+import BookingsTimeline from '@/components/admin/BookingsTimeline';
+import { resolveCourseCourtsForDate } from '@/lib/bookings/courseConflicts';
 
 function localDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
 }
-
-type Stats = {
-  upcomingLessons: number;
-  uniqueAthletes: number;
-  monthlyLessons: number;
-  assignedVideos: number;
-};
 
 interface TimelineBooking {
   id: string;
@@ -56,16 +43,9 @@ interface TimelineBooking {
 }
 
 export default function MaestroDashboardPage() {
-  const [stats, setStats] = useState<Stats>({
-    upcomingLessons: 0,
-    uniqueAthletes: 0,
-    monthlyLessons: 0,
-    assignedVideos: 0,
-  });
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<TimelineBooking[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
-  const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,61 +55,30 @@ export default function MaestroDashboardPage() {
   async function load() {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await getSessionUser();
     if (!user) {
       setLoading(false);
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
-    if (profile) setUserName(profile.full_name || "Maestro");
     setCurrentUserId(user.id);
 
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     try {
-      const [upcomingRes, monthRes, assignedVideosRes, allBookingsRes] = await Promise.all([
+      // Profilo (serve il nome per i corsi) e prenotazioni in parallelo. Le
+      // prenotazioni coprono un intervallo ampio per la timeline (le proprie
+      // colorate, le altre in grigio via highlightUserId).
+      const [{ data: profile }, allBookingsRes] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', user.id).single(),
         supabase
-          .from("bookings")
-          .select("id, user_id", { count: "exact", head: true })
-          .eq("coach_id", user.id)
-          .gte("start_time", now.toISOString()),
-        supabase
-          .from("bookings")
-          .select("id, user_id", { count: "exact" })
-          .eq("coach_id", user.id)
-          .gte("start_time", startOfMonth.toISOString())
-          .lt("start_time", startOfNextMonth.toISOString()),
-        supabase
-          .from("video_lessons")
-          .select("id", { count: "exact", head: true })
-          .eq("assigned_to", user.id),
-        // Fetch ALL bookings within a wide date range for the timeline
-        // (own ones colored, foreign ones rendered in grey via highlightUserId)
-        supabase
-          .from("bookings")
-          .select("*")
-          .gte("start_time", new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString())
-          .lte("start_time", new Date(now.getFullYear() + 1, now.getMonth(), 1).toISOString())
-          .order("start_time", { ascending: false })
+          .from('bookings')
+          .select('*')
+          .gte('start_time', new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString())
+          .lte('start_time', new Date(now.getFullYear() + 1, now.getMonth(), 1).toISOString())
+          .order('start_time', { ascending: false })
           .limit(2000),
       ]);
-
-      const monthRows = (monthRes.data ?? []) as Array<{ user_id: string }>;
-      const uniqueIds = new Set(monthRows.map((r) => r.user_id));
-
-      setStats({
-        upcomingLessons: upcomingRes.count || 0,
-        uniqueAthletes: uniqueIds.size,
-        monthlyLessons: monthRes.count || 0,
-        assignedVideos: assignedVideosRes.count || 0,
-      });
 
       const allBookingsData = allBookingsRes.data ?? [];
       if (allBookingsData.length > 0) {
@@ -137,7 +86,7 @@ export default function MaestroDashboardPage() {
         const ownBookingIds = new Set(
           allBookingsData
             .filter((b) => b.coach_id === user.id || b.user_id === user.id)
-            .map((b) => b.id)
+            .map((b) => b.id),
         );
 
         const ownBookingsData = allBookingsData.filter((b) => ownBookingIds.has(b.id));
@@ -149,19 +98,23 @@ export default function MaestroDashboardPage() {
           ]),
         ];
 
-        const profilesPromise = allUserIds.length > 0
-          ? supabase.from("profiles").select("id, full_name, email, phone").in("id", allUserIds)
-          : Promise.resolve({ data: [] });
+        const profilesPromise =
+          allUserIds.length > 0
+            ? supabase.from('profiles').select('id, full_name, email, phone').in('id', allUserIds)
+            : Promise.resolve({ data: [] });
 
         const ownBookingIdsList = ownBookingsData.map((b) => b.id);
-        const participantsPromise = ownBookingIdsList.length > 0
-          ? supabase
-              .from("booking_participants")
-              .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-              .in("booking_id", ownBookingIdsList)
-              .order("booking_id", { ascending: true })
-              .order("order_index", { ascending: true })
-          : Promise.resolve({ data: [], error: null });
+        const participantsPromise =
+          ownBookingIdsList.length > 0
+            ? supabase
+                .from('booking_participants')
+                .select(
+                  'id, booking_id, full_name, email, phone, is_registered, user_id, order_index',
+                )
+                .in('booking_id', ownBookingIdsList)
+                .order('booking_id', { ascending: true })
+                .order('order_index', { ascending: true })
+            : Promise.resolve({ data: [], error: null });
 
         const [{ data: allProfiles }, participantsQuery] = await Promise.all([
           profilesPromise,
@@ -170,54 +123,55 @@ export default function MaestroDashboardPage() {
 
         const allProfilesMap = new Map(allProfiles?.map((p) => [p.id, p]) || []);
 
-        let participantsData: TimelineBooking["participants"] | null = null;
+        let participantsData: TimelineBooking['participants'] | null = null;
         const { error: pqError, data: pqData } = participantsQuery as {
-          data: TimelineBooking["participants"] | null;
+          data: TimelineBooking['participants'] | null;
           error: { message?: string } | null;
         };
-        if (pqError?.message?.toLowerCase().includes("phone")) {
+        if (pqError?.message?.toLowerCase().includes('phone')) {
           const fallbackQuery = await supabase
-            .from("booking_participants")
-            .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
-            .in("booking_id", ownBookingIdsList);
+            .from('booking_participants')
+            .select('id, booking_id, full_name, email, is_registered, user_id, order_index')
+            .in('booking_id', ownBookingIdsList);
           if (!fallbackQuery.error) participantsData = fallbackQuery.data || [];
         } else if (!pqError) {
           participantsData = pqData || [];
         }
 
         const enrichedBookings = allBookingsData.map((booking) => {
-            const isOwn = ownBookingIds.has(booking.id);
-            return {
-              ...booking,
-              user_profile: isOwn ? (allProfilesMap.get(booking.user_id) || null) : null,
-              coach_profile: isOwn && booking.coach_id
-                ? (allProfilesMap.get(booking.coach_id) || null)
-                : null,
-              participants: isOwn
-                ? (participantsData?.filter((p) => p.booking_id === booking.id) || [])
-                : [],
-            };
-          });
+          const isOwn = ownBookingIds.has(booking.id);
+          return {
+            ...booking,
+            user_profile: isOwn ? allProfilesMap.get(booking.user_id) || null : null,
+            coach_profile:
+              isOwn && booking.coach_id ? allProfilesMap.get(booking.coach_id) || null : null,
+            participants: isOwn
+              ? participantsData?.filter((p) => p.booking_id === booking.id) || []
+              : [],
+          };
+        });
 
         setTimelineBookings(enrichedBookings);
         const upcomingFromBookings = enrichedBookings.filter(
           (b) =>
             new Date(b.start_time) >= now &&
-            b.status !== "cancelled" &&
-            (b.coach_id === user.id || b.user_id === user.id)
+            b.status !== 'cancelled' &&
+            (b.coach_id === user.id || b.user_id === user.id),
         );
 
         // Fetch upcoming course lessons for this maestro
-        const maestroFullName = profile?.full_name || "";
+        const maestroFullName = profile?.full_name || '';
         const courseItems: TimelineBooking[] = [];
         if (maestroFullName) {
           const { data: coursesData } = await supabase
-            .from("courses")
-            .select("id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_time_overrides, lesson_overrides, schedule_periods")
-            .eq("is_active", true)
-            .ilike("instructor_name", `%${maestroFullName}%`);
+            .from('courses')
+            .select(
+              'id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_time_overrides, lesson_overrides, schedule_periods',
+            )
+            .eq('is_active', true)
+            .ilike('instructor_name', `%${maestroFullName}%`);
 
-          const DAY_CODES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+          const DAY_CODES = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
           for (const c of coursesData ?? []) {
             const from = new Date(now);
             from.setHours(0, 0, 0, 0);
@@ -229,33 +183,43 @@ export default function MaestroDashboardPage() {
               const isExtra = (c.extra_dates ?? []).includes(dateStr);
               if ((isScheduled || isExtra) && !(c.cancelled_dates ?? []).includes(dateStr)) {
                 if (isScheduled && !isExtra) {
-                  if (c.start_date && c.start_date > dateStr) { from.setDate(from.getDate() + 1); continue; }
-                  if (c.end_date && c.end_date < dateStr) { from.setDate(from.getDate() + 1); continue; }
+                  if (c.start_date && c.start_date > dateStr) {
+                    from.setDate(from.getDate() + 1);
+                    continue;
+                  }
+                  if (c.end_date && c.end_date < dateStr) {
+                    from.setDate(from.getDate() + 1);
+                    continue;
+                  }
                 }
-                let timeStr: string = c.schedule_time || "";
+                let timeStr: string = c.schedule_time || '';
                 if (c.lesson_time_overrides?.[dateStr]) timeStr = c.lesson_time_overrides[dateStr];
                 else if (c.schedule_periods?.length > 0) {
-                  const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+                  const period = c.schedule_periods.find((p: { days: string[] }) =>
+                    p.days?.includes(dayCode),
+                  );
                   if (period?.time) timeStr = period.time;
                 }
-                const courtName = resolveCourseCourtsForDate(c, dateStr, dayCode).join(", ");
+                const courtName = resolveCourseCourtsForDate(c, dateStr, dayCode).join(', ');
                 const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
                 const sh = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
                 const sm = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
                 const eh = rangeMatch ? parseInt(rangeMatch[3], 10) : sh + 1;
                 const em = rangeMatch ? parseInt(rangeMatch[4], 10) : sm;
-                const startTime = new Date(from); startTime.setHours(sh, sm, 0, 0);
-                const endTime = new Date(from); endTime.setHours(eh, em, 0, 0);
+                const startTime = new Date(from);
+                startTime.setHours(sh, sm, 0, 0);
+                const endTime = new Date(from);
+                endTime.setHours(eh, em, 0, 0);
                 if (startTime >= now) {
                   courseItems.push({
                     id: c.id,
                     court: courtName,
-                    user_id: "",
+                    user_id: '',
                     coach_id: user.id,
                     start_time: startTime.toISOString(),
                     end_time: endTime.toISOString(),
-                    status: "confirmed",
-                    type: "corso",
+                    status: 'confirmed',
+                    type: 'corso',
                     notes: c.name,
                     isCourse: true,
                   });
@@ -268,15 +232,16 @@ export default function MaestroDashboardPage() {
         }
 
         setUpcomingBookings(
-          [...upcomingFromBookings, ...courseItems]
-            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+          [...upcomingFromBookings, ...courseItems].sort(
+            (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+          ),
         );
       } else {
         setTimelineBookings([]);
         setUpcomingBookings([]);
       }
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      console.error('Error loading dashboard data:', error);
     }
 
     setLoading(false);
@@ -304,7 +269,16 @@ export default function MaestroDashboardPage() {
       <WeatherCard />
 
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} basePath="/dashboard/maestro" highlightUserId={currentUserId} showEntryModal={false} scrollToCurrentTime={true} enableDragEdit={true} onBookingsChanged={load} />
+        <BookingsTimeline
+          bookings={timelineBookings}
+          loading={loading}
+          basePath="/dashboard/maestro"
+          highlightUserId={currentUserId}
+          showEntryModal={false}
+          scrollToCurrentTime={true}
+          enableDragEdit={true}
+          onBookingsChanged={load}
+        />
       </div>
 
       {/* PROSSIMI IMPEGNI + CENTRO NOTIFICHE */}
@@ -321,7 +295,14 @@ export default function MaestroDashboardPage() {
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <NotificationsList limit={0} showSearch={true} showFilterButton={false} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+            <NotificationsList
+              limit={0}
+              showSearch={true}
+              showFilterButton={false}
+              showTableHeader={true}
+              showHeader={false}
+              maxVisibleRows={5}
+            />
           </div>
         </div>
       </div>
@@ -333,25 +314,37 @@ export default function MaestroDashboardPage() {
         </div>
         <div className="px-6 py-5">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <Link href="/dashboard/maestro/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
+            <Link
+              href="/dashboard/maestro/bookings/new"
+              className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all"
+            >
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <PlusCircle className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Prenotazione</span>
             </Link>
-            <Link href="/dashboard/maestro/videos/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
+            <Link
+              href="/dashboard/maestro/videos/new"
+              className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all"
+            >
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Video Lab</span>
             </Link>
-            <Link href="/dashboard/maestro/maestro" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
+            <Link
+              href="/dashboard/maestro/maestro"
+              className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all"
+            >
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Dumbbell className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Area Maestro</span>
             </Link>
-            <Link href="/dashboard/maestro/mail" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
+            <Link
+              href="/dashboard/maestro/mail"
+              className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all"
+            >
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <MessageSquare className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
@@ -361,34 +354,5 @@ export default function MaestroDashboardPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function StatTile({
-  href,
-  icon,
-  label,
-  value,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <Link
-      href={href}
-      className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4"
-    >
-      <div className="flex-shrink-0">{icon}</div>
-      <div className="flex-1 hidden sm:block">
-        <p className="text-sm text-white/70">{label}</p>
-        <h3 className="text-2xl font-bold text-white">{value}</h3>
-      </div>
-      <div className="flex sm:hidden items-center gap-3 flex-1">
-        <h3 className="text-3xl font-bold text-white">{value}</h3>
-        <p className="text-base text-white/70">{label}</p>
-      </div>
-    </Link>
   );
 }

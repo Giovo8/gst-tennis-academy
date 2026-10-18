@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-export interface WeatherData {
+interface WeatherData {
   temperature: number;
   apparentTemperature: number;
   humidity: number;
@@ -23,7 +23,7 @@ export interface ForecastDay {
   hourly: { time: string; temp: number; weatherCode: number }[];
 }
 
-const ENDPOINT = "/api/weather";
+const ENDPOINT = '/api/weather';
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 let cache: { ts: number; data: { weather: WeatherData; forecast: ForecastDay[] } } | null = null;
@@ -48,7 +48,7 @@ export function useWeather() {
       try {
         const response = await fetch(ENDPOINT, {
           signal: controller.signal,
-          cache: "no-store",
+          cache: 'no-store',
         });
 
         if (!response.ok) {
@@ -100,7 +100,7 @@ export function useWeather() {
         }
       } catch (error) {
         // Ignore aborted and temporary network errors: WeatherCard already has a fallback UI.
-        if (error instanceof DOMException && error.name === "AbortError") {
+        if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
       } finally {

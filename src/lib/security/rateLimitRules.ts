@@ -2,12 +2,12 @@
  * Regole di rate limiting per le route API, applicate centralmente dal
  * middleware invece che route per route.
  *
- * Perché centralizzate: le route API sono 89 e ne nascono di nuove; agganciare
+ * Perché centralizzate: le route API sono decine e ne nascono di nuove; agganciare
  * il limitatore a mano in ognuna lascerebbe scoperte quelle dimenticate e quelle
  * future. Qui una route nuova è protetta dal momento in cui esiste.
  *
  * Le route che hanno già un `applyRateLimit` interno (signup, bookings,
- * tournaments, users/search, weather) lo mantengono: sono limiti più stretti e
+ * tournaments, weather, live-tennis) lo mantengono: sono limiti più stretti e
  * specifici, e i due livelli si sommano come difesa in profondità.
  *
  * ⚠️ Il contatore vive nella memoria del processo: su Vercel ogni istanza ha il
@@ -20,7 +20,7 @@ import { RATE_LIMITS } from '@/lib/security/rate-limiter';
 
 type LimitConfig = { maxRequests: number; windowMs: number };
 
-export interface RateLimitRule {
+interface RateLimitRule {
   /** Valutata sul pathname della richiesta. */
   pattern: RegExp;
   /** Se assente, la regola vale per qualsiasi metodo. */
@@ -41,7 +41,7 @@ const GENERALE_WRITE: LimitConfig = { maxRequests: 60, windowMs: 60 * 1000 };
 /**
  * Valutate in ordine: vince la prima che combacia. Le più specifiche prima.
  */
-export const RATE_LIMIT_RULES: RateLimitRule[] = [
+const RATE_LIMIT_RULES: RateLimitRule[] = [
   // --- Autenticazione: il bersaglio classico del credential stuffing ---
   {
     pattern: /^\/api\/auth\/(login|signin)/,

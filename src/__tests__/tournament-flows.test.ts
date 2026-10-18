@@ -17,12 +17,13 @@ const describeTests = hasCredentials ? describe : describe.skip;
 describeTests('Tournament System - Full Flows', () => {
   let testUserId: string;
   let testTournamentId: string;
-  let participantIds: string[] = [];
 
   beforeAll(async () => {
     supabase = createClient(supabaseUrl!, supabaseKey!);
     // Setup: Get or create test user
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       testUserId = user.id;
     }
@@ -31,10 +32,7 @@ describeTests('Tournament System - Full Flows', () => {
   afterAll(async () => {
     // Cleanup: Delete test tournaments
     if (testTournamentId) {
-      await supabase
-        .from('tournaments')
-        .delete()
-        .eq('id', testTournamentId);
+      await supabase.from('tournaments').delete().eq('id', testTournamentId);
     }
   });
 
@@ -50,7 +48,7 @@ describeTests('Tournament System - Full Flows', () => {
           best_of: 3,
           status: 'Aperto',
           start_date: new Date().toISOString(),
-          created_by: testUserId
+          created_by: testUserId,
         })
         .select()
         .single();
@@ -68,7 +66,7 @@ describeTests('Tournament System - Full Flows', () => {
         enrollments.push({
           tournament_id: testTournamentId,
           user_id: testUserId, // In real test, use different users
-          status: 'accepted'
+          status: 'accepted',
         });
       }
 
@@ -79,14 +77,17 @@ describeTests('Tournament System - Full Flows', () => {
 
       expect(error).toBeNull();
       expect(data).toHaveLength(8);
-      participantIds = data?.map(p => p.id) || [];
+      participantIds = data?.map((p) => p.id) || [];
     });
 
     it('should generate elimination bracket', async () => {
-      const response = await fetch(`http://localhost:3000/api/tournaments/${testTournamentId}/generate-bracket`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/tournaments/${testTournamentId}/generate-bracket`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
 
       expect(response.ok).toBe(true);
       const data = await response.json();
@@ -117,10 +118,10 @@ describeTests('Tournament System - Full Flows', () => {
         .update({
           sets: [
             { player1_score: 6, player2_score: 4 },
-            { player1_score: 6, player2_score: 3 }
+            { player1_score: 6, player2_score: 3 },
           ],
           winner_id: match.player1_id,
-          status: 'completed'
+          status: 'completed',
         })
         .eq('id', match.id);
 
@@ -143,10 +144,10 @@ describeTests('Tournament System - Full Flows', () => {
             .update({
               sets: [
                 { player1_score: 6, player2_score: 4 },
-                { player1_score: 6, player2_score: 3 }
+                { player1_score: 6, player2_score: 3 },
               ],
               winner_id: match.player1_id,
-              status: 'completed'
+              status: 'completed',
             })
             .eq('id', match.id);
         }
@@ -178,7 +179,7 @@ describeTests('Tournament System - Full Flows', () => {
           best_of: 3,
           status: 'Aperto',
           start_date: new Date().toISOString(),
-          created_by: testUserId
+          created_by: testUserId,
         })
         .select()
         .single();
@@ -195,19 +196,20 @@ describeTests('Tournament System - Full Flows', () => {
         enrollments.push({
           tournament_id: groupTournamentId,
           user_id: testUserId,
-          status: 'accepted'
+          status: 'accepted',
         });
       }
 
-      await supabase
-        .from('tournament_participants')
-        .insert(enrollments);
+      await supabase.from('tournament_participants').insert(enrollments);
 
-      const response = await fetch(`http://localhost:3000/api/tournaments/${groupTournamentId}/generate-groups`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numGroups: 2 })
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/tournaments/${groupTournamentId}/generate-groups`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ numGroups: 2 }),
+        },
+      );
 
       expect(response.ok).toBe(true);
 
@@ -234,18 +236,21 @@ describeTests('Tournament System - Full Flows', () => {
           .update({
             sets: [
               { player1_score: 6, player2_score: 4 },
-              { player1_score: 6, player2_score: 3 }
+              { player1_score: 6, player2_score: 3 },
             ],
             winner_id: match.player1_id,
-            status: 'completed'
+            status: 'completed',
           })
           .eq('id', match.id);
       }
 
-      const response = await fetch(`http://localhost:3000/api/tournaments/${groupTournamentId}/advance-from-groups`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/tournaments/${groupTournamentId}/advance-from-groups`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
 
       expect(response.ok).toBe(true);
 
@@ -261,10 +266,7 @@ describeTests('Tournament System - Full Flows', () => {
 
     afterAll(async () => {
       if (groupTournamentId) {
-        await supabase
-          .from('tournaments')
-          .delete()
-          .eq('id', groupTournamentId);
+        await supabase.from('tournaments').delete().eq('id', groupTournamentId);
       }
     });
   });
@@ -283,7 +285,7 @@ describeTests('Tournament System - Full Flows', () => {
           best_of: 3,
           status: 'Aperto',
           start_date: new Date().toISOString(),
-          created_by: testUserId
+          created_by: testUserId,
         })
         .select()
         .single();
@@ -300,18 +302,19 @@ describeTests('Tournament System - Full Flows', () => {
         enrollments.push({
           tournament_id: championshipId,
           user_id: testUserId,
-          status: 'accepted'
+          status: 'accepted',
         });
       }
 
-      await supabase
-        .from('tournament_participants')
-        .insert(enrollments);
+      await supabase.from('tournament_participants').insert(enrollments);
 
-      const response = await fetch(`http://localhost:3000/api/tournaments/${championshipId}/generate-championship`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/tournaments/${championshipId}/generate-championship`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
 
       expect(response.ok).toBe(true);
 
@@ -338,10 +341,10 @@ describeTests('Tournament System - Full Flows', () => {
           .update({
             sets: [
               { player1_score: 6, player2_score: 4 },
-              { player1_score: 6, player2_score: 3 }
+              { player1_score: 6, player2_score: 3 },
             ],
             winner_id: match.player1_id,
-            status: 'completed'
+            status: 'completed',
           })
           .eq('id', match.id);
       }
@@ -353,81 +356,14 @@ describeTests('Tournament System - Full Flows', () => {
         .eq('tournament_id', championshipId);
 
       expect(allMatches).toBeDefined();
-      const completedMatches = allMatches?.filter(m => m.status === 'completed');
+      const completedMatches = allMatches?.filter((m) => m.status === 'completed');
       expect(completedMatches?.length).toBeGreaterThan(0);
     });
 
     afterAll(async () => {
       if (championshipId) {
-        await supabase
-          .from('tournaments')
-          .delete()
-          .eq('id', championshipId);
+        await supabase.from('tournaments').delete().eq('id', championshipId);
       }
-    });
-  });
-
-  describe('Statistics and Reports', () => {
-    it('should fetch tournament statistics', async () => {
-      const response = await fetch('http://localhost:3000/api/tournaments/stats');
-      
-      if (response.status === 403) {
-        // Stats endpoint requires admin role
-        console.log('Stats endpoint requires admin authentication');
-        return;
-      }
-
-      expect(response.ok).toBe(true);
-      const data = await response.json();
-      expect(data.stats).toBeDefined();
-    });
-
-    it('should generate player reports', async () => {
-      const response = await fetch('http://localhost:3000/api/tournaments/reports');
-      
-      expect(response.ok).toBe(true);
-      const data = await response.json();
-      expect(data.report).toBeDefined();
-      expect(data.report.overview).toBeDefined();
-      expect(data.report.player_rankings).toBeDefined();
-    });
-
-    it('should calculate player statistics correctly', async () => {
-      const response = await fetch('http://localhost:3000/api/tournaments/reports');
-      const { report } = await response.json();
-
-      // Verify statistics structure
-      if (report.player_rankings.length > 0) {
-        const player = report.player_rankings[0];
-        expect(player).toHaveProperty('player_name');
-        expect(player).toHaveProperty('tournaments_played');
-        expect(player).toHaveProperty('matches_won');
-        expect(player).toHaveProperty('matches_lost');
-        expect(player).toHaveProperty('win_rate');
-        expect(player.win_rate).toBeGreaterThanOrEqual(0);
-        expect(player.win_rate).toBeLessThanOrEqual(100);
-      }
-    });
-  });
-
-  describe('Role-Based Access Control', () => {
-    it('should allow admin to access all features', async () => {
-      // Test admin dashboard access
-      const response = await fetch('http://localhost:3000/api/tournaments/stats');
-      // Admin should be able to access stats
-      expect([200, 403]).toContain(response.status); // 403 if not authenticated
-    });
-
-    it('should restrict maestro from creating tournaments', async () => {
-      // Maestro role should only view tournaments
-      // This would require role-based authentication in tests
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('should allow atleta to enroll in tournaments', async () => {
-      // Atleta should be able to enroll
-      // This would require authenticated user in tests
-      expect(true).toBe(true); // Placeholder
     });
   });
 
@@ -435,7 +371,7 @@ describeTests('Tournament System - Full Flows', () => {
     it('should validate best-of-3 scoring', async () => {
       const validSets = [
         { player1_score: 6, player2_score: 4 },
-        { player1_score: 6, player2_score: 3 }
+        { player1_score: 6, player2_score: 3 },
       ];
 
       // Player 1 wins 2-0, valid for best-of-3
@@ -449,11 +385,11 @@ describeTests('Tournament System - Full Flows', () => {
         { player1_score: 6, player2_score: 4 },
         { player1_score: 4, player2_score: 6 },
         { player1_score: 6, player2_score: 3 },
-        { player1_score: 6, player2_score: 2 }
+        { player1_score: 6, player2_score: 2 },
       ];
 
       // Player 1 wins 3-1, valid for best-of-5
-      const player1Wins = validSets.filter(s => s.player1_score > s.player2_score).length;
+      const player1Wins = validSets.filter((s) => s.player1_score > s.player2_score).length;
       expect(player1Wins).toBe(3);
       expect(validSets.length).toBeLessThanOrEqual(5);
     });
@@ -467,15 +403,13 @@ describeTests('Tournament System - Full Flows', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid tournament type', async () => {
-      const { error } = await supabase
-        .from('tournaments')
-        .insert({
-          title: 'Invalid Tournament',
-          tournament_type: 'invalid_type',
-          max_participants: 8,
-          status: 'Aperto',
-          created_by: testUserId
-        });
+      const { error } = await supabase.from('tournaments').insert({
+        title: 'Invalid Tournament',
+        tournament_type: 'invalid_type',
+        max_participants: 8,
+        status: 'Aperto',
+        created_by: testUserId,
+      });
 
       expect(error).toBeDefined();
     });
@@ -488,15 +422,18 @@ describeTests('Tournament System - Full Flows', () => {
           tournament_type: 'eliminazione_diretta',
           max_participants: 8,
           status: 'Aperto',
-          created_by: testUserId
+          created_by: testUserId,
         })
         .select()
         .single();
 
       // Try to generate bracket with 0 participants
-      const response = await fetch(`http://localhost:3000/api/tournaments/${tournament?.id}/generate-bracket`, {
-        method: 'POST'
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/tournaments/${tournament?.id}/generate-bracket`,
+        {
+          method: 'POST',
+        },
+      );
 
       expect(response.ok).toBe(false);
       const data = await response.json();
@@ -514,7 +451,7 @@ describeTests('Tournament System - Full Flows', () => {
           tournament_type: 'eliminazione_diretta',
           max_participants: 4,
           status: 'In Corso',
-          created_by: testUserId
+          created_by: testUserId,
         })
         .select()
         .single();
@@ -525,21 +462,27 @@ describeTests('Tournament System - Full Flows', () => {
         enrollments.push({
           tournament_id: tournament?.id,
           user_id: testUserId,
-          status: 'accepted'
+          status: 'accepted',
         });
       }
       await supabase.from('tournament_participants').insert(enrollments);
 
       // Generate bracket first time
-      const response1 = await fetch(`http://localhost:3000/api/tournaments/${tournament?.id}/generate-bracket`, {
-        method: 'POST'
-      });
+      const response1 = await fetch(
+        `http://localhost:3000/api/tournaments/${tournament?.id}/generate-bracket`,
+        {
+          method: 'POST',
+        },
+      );
       expect(response1.ok).toBe(true);
 
       // Try to generate again
-      const response2 = await fetch(`http://localhost:3000/api/tournaments/${tournament?.id}/generate-bracket`, {
-        method: 'POST'
-      });
+      const response2 = await fetch(
+        `http://localhost:3000/api/tournaments/${tournament?.id}/generate-bracket`,
+        {
+          method: 'POST',
+        },
+      );
       expect(response2.ok).toBe(false);
 
       // Cleanup

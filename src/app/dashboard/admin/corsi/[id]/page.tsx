@@ -1,22 +1,21 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   GraduationCap,
   Loader2,
   MoreVertical,
   Pencil,
   Trash2,
-  Users,
   Calendar,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
   X,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Modal,
   ModalContent,
@@ -24,10 +23,10 @@ import {
   ModalTitle,
   ModalBody,
   ModalFooter,
-} from "@/components/ui";
-import { supabase } from "@/lib/supabase/client";
-import { getCourts } from "@/lib/courts/getCourts";
-import { DEFAULT_COURTS } from "@/lib/courts/constants";
+} from '@/components/ui';
+import { supabase } from '@/lib/supabase/client';
+import { getCourts } from '@/lib/courts/getCourts';
+import { DEFAULT_COURTS } from '@/lib/courts/constants';
 import { toast } from 'sonner';
 
 type Athlete = {
@@ -67,29 +66,57 @@ type Course = {
   extra_dates: string[] | null;
   lesson_overrides: Record<string, string> | null;
   lesson_time_overrides: Record<string, string> | null;
-  schedule_periods: { days: string[]; time: string | null; court: string | null; courts?: string[] | null; start_date?: string | null; end_date?: string | null }[] | null;
+  schedule_periods:
+    | {
+        days: string[];
+        time: string | null;
+        court: string | null;
+        courts?: string[] | null;
+        start_date?: string | null;
+        end_date?: string | null;
+      }[]
+    | null;
   created_by: string | null;
 };
 
 const TIME_SLOTS: string[] = Array.from({ length: 31 }, (_, i) => {
   const h = 7 + Math.floor(i / 2);
-  const m = i % 2 === 0 ? "00" : "30";
-  return `${String(h).padStart(2, "0")}:${m}`;
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
 });
 
 const DAYS: Record<string, string> = {
-  lun: "Lunedì", mar: "Martedì", mer: "Mercoledì", gio: "Giovedì",
-  ven: "Venerdì", sab: "Sabato", dom: "Domenica",
+  lun: 'Lunedì',
+  mar: 'Martedì',
+  mer: 'Mercoledì',
+  gio: 'Giovedì',
+  ven: 'Venerdì',
+  sab: 'Sabato',
+  dom: 'Domenica',
 };
 
 const DAY_INDEX: Record<string, number> = {
-  dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
+  dom: 0,
+  lun: 1,
+  mar: 2,
+  mer: 3,
+  gio: 4,
+  ven: 5,
+  sab: 6,
 };
-const DAY_CODE: Record<number, string> = { 0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab" };
+const DAY_CODE: Record<number, string> = {
+  0: 'dom',
+  1: 'lun',
+  2: 'mar',
+  3: 'mer',
+  4: 'gio',
+  5: 'ven',
+  6: 'sab',
+};
 
 function getPeriodForDate(course: Course, dateStr: string) {
   if (!course.schedule_periods?.length) return null;
-  const dayCode = DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+  const dayCode = DAY_CODE[new Date(dateStr + 'T12:00:00').getDay()];
   return course.schedule_periods.find((p) => p.days?.includes(dayCode)) ?? null;
 }
 
@@ -127,7 +154,7 @@ function computeLessonDates(course: {
   const result: Date[] = [];
   const cur = new Date(start);
   while (cur <= end) {
-    const dateStr = cur.toISOString().split("T")[0];
+    const dateStr = cur.toISOString().split('T')[0];
     if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
     cur.setDate(cur.getDate() + 1);
   }
@@ -166,22 +193,26 @@ export default function CorsoDetailPage() {
     let left = buttonRect.right - menuWidth;
     left = Math.max(pad, Math.min(left, window.innerWidth - menuWidth - pad));
     let top = buttonRect.bottom + 6;
-    if (top + menuHeight > window.innerHeight - pad) top = Math.max(pad, buttonRect.top - menuHeight - 6);
+    if (top + menuHeight > window.innerHeight - pad)
+      top = Math.max(pad, buttonRect.top - menuHeight - 6);
     setOpenMenuLesson(dateStr);
     setMenuPosition({ top, left });
   }
   const [editingLesson, setEditingLesson] = useState<string | null>(null);
-  const [editingNewDate, setEditingNewDate] = useState("");
-  const [editingNewDateText, setEditingNewDateText] = useState("");
-  const [editingNewCourt, setEditingNewCourt] = useState("");
-  const [editingStartTime, setEditingStartTime] = useState("");
-  const [editingEndTime, setEditingEndTime] = useState("");
+  const [editingNewDate, setEditingNewDate] = useState('');
+  const [editingNewDateText, setEditingNewDateText] = useState('');
+  const [editingNewCourt, setEditingNewCourt] = useState('');
+  const [editingStartTime, setEditingStartTime] = useState('');
+  const [editingEndTime, setEditingEndTime] = useState('');
   const [slotError, setSlotError] = useState<string | null>(null);
   const [calPickerOpen, setCalPickerOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
 
-  const WEEK_DAYS_CAL = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+  const WEEK_DAYS_CAL = ['lu', 'ma', 'me', 'gi', 've', 'sa', 'do'];
 
   const calendarDays = useMemo(() => {
     const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
@@ -196,49 +227,57 @@ export default function CorsoDetailPage() {
   }, [calendarViewDate]);
 
   function normalizeDate(date: Date): Date {
-    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    return d;
   }
 
   function isSameCalendarDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
   function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
   function openCalendar() {
-    const base = editingNewDate ? normalizeDate(new Date(editingNewDate + "T12:00:00")) : normalizeDate(new Date());
+    const base = editingNewDate
+      ? normalizeDate(new Date(editingNewDate + 'T12:00:00'))
+      : normalizeDate(new Date());
     setPendingDate(base);
     setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
     setCalPickerOpen(true);
   }
 
   function applyCalendarDate() {
-    const iso = pendingDate.toISOString().split("T")[0];
+    const iso = pendingDate.toISOString().split('T')[0];
     setEditingNewDate(iso);
     setEditingNewDateText(isoToDisplay(iso));
     setCalPickerOpen(false);
   }
 
   function parseTimeRange(timeStr: string | null): { start: string; end: string } {
-    if (!timeStr) return { start: "", end: "" };
+    if (!timeStr) return { start: '', end: '' };
     const match = timeStr.match(/(\d{1,2}:\d{2})\s*[\u2013\-]\s*(\d{1,2}:\d{2})/);
-    if (!match) return { start: timeStr.trim(), end: "" };
+    if (!match) return { start: timeStr.trim(), end: '' };
     return { start: match[1], end: match[2] };
   }
 
   function isoToDisplay(iso: string): string {
-    if (!iso) return "";
-    const parts = iso.split("-");
-    if (parts.length !== 3) return "";
+    if (!iso) return '';
+    const parts = iso.split('-');
+    if (parts.length !== 3) return '';
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
   function displayToIso(text: string): string {
     const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return "";
+    if (!match) return '';
     return `${match[3]}-${match[2]}-${match[1]}`;
   }
 
@@ -246,7 +285,7 @@ export default function CorsoDetailPage() {
     setEditingNewDateText(value);
     const iso = displayToIso(value);
     if (iso) setEditingNewDate(iso);
-    else if (value === "") setEditingNewDate("");
+    else if (value === '') setEditingNewDate('');
   }
   const [savingEdit, setSavingEdit] = useState(false);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
@@ -262,13 +301,13 @@ export default function CorsoDetailPage() {
   async function loadCourse() {
     setLoading(true);
     const { data, error } = await supabase
-      .from("courses")
-      .select("*")
-      .eq("id", courseId)
+      .from('courses')
+      .select('*')
+      .eq('id', courseId)
       .maybeSingle();
 
     if (error || !data) {
-      router.push("/dashboard/admin/corsi");
+      router.push('/dashboard/admin/corsi');
       return;
     }
     setCourse(data as Course);
@@ -276,47 +315,53 @@ export default function CorsoDetailPage() {
     // Load creator name
     if (data.created_by) {
       const { data: creator } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", data.created_by)
+        .from('profiles')
+        .select('full_name')
+        .eq('id', data.created_by)
         .maybeSingle();
       if (creator) setCreatorName(creator.full_name);
     }
 
     // Load maestros by name — merge course-level + per-lesson overrides
-    const courseInstructors = (data.instructor_name ?? "").split(", ").filter(Boolean);
-    const lessonOverrideValues = Object.values((data.lesson_instructor_overrides as Record<string, string> | null) ?? {});
-    const lessonInstructors = lessonOverrideValues.flatMap((v) => v.split(", ").filter(Boolean));
+    const courseInstructors = (data.instructor_name ?? '').split(', ').filter(Boolean);
+    const lessonOverrideValues = Object.values(
+      (data.lesson_instructor_overrides as Record<string, string> | null) ?? {},
+    );
+    const lessonInstructors = lessonOverrideValues.flatMap((v) => v.split(', ').filter(Boolean));
     const allMaestroNames = Array.from(new Set([...courseInstructors, ...lessonInstructors]));
     if (allMaestroNames.length > 0) {
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("full_name", allMaestroNames);
-      const profileMap = new Map<string, string>((profiles ?? []).map((p: { id: string; full_name: string }) => [p.full_name, p.id]));
-      setMaestros(allMaestroNames.map((name) => ({ id: profileMap.get(name) ?? undefined, full_name: name })));
+        .from('profiles')
+        .select('id, full_name')
+        .in('full_name', allMaestroNames);
+      const profileMap = new Map<string, string>(
+        (profiles ?? []).map((p: { id: string; full_name: string }) => [p.full_name, p.id]),
+      );
+      setMaestros(
+        allMaestroNames.map((name) => ({ id: profileMap.get(name) ?? undefined, full_name: name })),
+      );
     }
 
     const { data: enrollments } = await supabase
-      .from("course_enrollments")
-      .select("user_id, guest_name")
-      .eq("course_id", courseId);
+      .from('course_enrollments')
+      .select('user_id, guest_name')
+      .eq('course_id', courseId);
 
     if (enrollments && enrollments.length > 0) {
       const registeredIds = enrollments
         .filter((e: { user_id: string | null }) => e.user_id)
         .map((e: { user_id: string }) => e.user_id);
       const guestEnrollments = enrollments.filter(
-        (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name
+        (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name,
       );
 
       const allParticipants: (Athlete | GuestAthlete)[] = [];
 
       if (registeredIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, phone")
-          .in("id", registeredIds);
+          .from('profiles')
+          .select('id, full_name, email, phone')
+          .in('id', registeredIds);
         if (profiles) allParticipants.push(...(profiles as Athlete[]));
       }
 
@@ -328,11 +373,13 @@ export default function CorsoDetailPage() {
     }
 
     const { data: attendanceRecords } = await supabase
-      .from("lesson_attendance")
-      .select("lesson_date")
-      .eq("course_id", courseId);
+      .from('lesson_attendance')
+      .select('lesson_date')
+      .eq('course_id', courseId);
     if (attendanceRecords) {
-      setAttendedDates(new Set(attendanceRecords.map((r: { lesson_date: string }) => r.lesson_date)));
+      setAttendedDates(
+        new Set(attendanceRecords.map((r: { lesson_date: string }) => r.lesson_date)),
+      );
     }
 
     setLoading(false);
@@ -343,9 +390,9 @@ export default function CorsoDetailPage() {
     const updated = [...(course.cancelled_dates ?? []), dateStr];
     setDeletingLesson(dateStr);
     const { error } = await supabase
-      .from("courses")
+      .from('courses')
       .update({ cancelled_dates: updated })
-      .eq("id", course.id);
+      .eq('id', course.id);
     if (!error) setCourse({ ...course, cancelled_dates: updated });
     setDeletingLesson(null);
   }
@@ -357,19 +404,20 @@ export default function CorsoDetailPage() {
 
     // Conflict check
     const targetCourt = editingNewCourt || course.court_name;
-    const rawTime = (editingStartTime && editingEndTime)
-      ? `${editingStartTime} – ${editingEndTime}`
-      : (course.lesson_time_overrides?.[toDateStr] ?? course.schedule_time ?? "");
+    const rawTime =
+      editingStartTime && editingEndTime
+        ? `${editingStartTime} – ${editingEndTime}`
+        : course.lesson_time_overrides?.[toDateStr] ?? course.schedule_time ?? '';
     const rangeMatch = rawTime.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
     if (targetCourt && rangeMatch) {
-      const startIso = `${toDateStr}T${rangeMatch[1].padStart(2,"0")}:${rangeMatch[2]}:00`;
-      const endIso   = `${toDateStr}T${rangeMatch[3].padStart(2,"0")}:${rangeMatch[4]}:00`;
+      const startIso = `${toDateStr}T${rangeMatch[1].padStart(2, '0')}:${rangeMatch[2]}:00`;
+      const endIso = `${toDateStr}T${rangeMatch[3].padStart(2, '0')}:${rangeMatch[4]}:00`;
       const { data: conflicts } = await supabase
-        .from("bookings")
-        .select("id")
-        .eq("court", targetCourt)
-        .neq("status", "cancelled")
-        .neq("status", "rejected")
+        .from('bookings')
+        .select('id')
+        .eq('court', targetCourt)
+        .neq('status', 'cancelled')
+        .neq('status', 'rejected')
         .or(`and(start_time.lt.${endIso},end_time.gt.${startIso})`);
       if (conflicts && conflicts.length > 0) {
         setSlotError(`Il campo ${targetCourt} è già occupato in questo orario.`);
@@ -390,23 +438,37 @@ export default function CorsoDetailPage() {
     }
     const targetDate = dateChanged ? toDateStr : fromDateStr;
     if (editingNewCourt) overrides[targetDate] = editingNewCourt;
-    const newTimeStr = editingStartTime && editingEndTime ? `${editingStartTime} – ${editingEndTime}` : editingStartTime || "";
+    const newTimeStr =
+      editingStartTime && editingEndTime
+        ? `${editingStartTime} – ${editingEndTime}`
+        : editingStartTime || '';
     if (newTimeStr) timeOverrides[targetDate] = newTimeStr;
     const { error } = await supabase
-      .from("courses")
-      .update({ cancelled_dates: newCancelled, extra_dates: newExtra, lesson_overrides: overrides, lesson_time_overrides: timeOverrides })
-      .eq("id", course.id);
+      .from('courses')
+      .update({
+        cancelled_dates: newCancelled,
+        extra_dates: newExtra,
+        lesson_overrides: overrides,
+        lesson_time_overrides: timeOverrides,
+      })
+      .eq('id', course.id);
     if (error) {
-      console.error("handleRescheduleLesson error:", error);
-      setSlotError("Errore nel salvataggio: " + error.message);
+      console.error('handleRescheduleLesson error:', error);
+      setSlotError('Errore nel salvataggio: ' + error.message);
     } else {
-      setCourse({ ...course, cancelled_dates: newCancelled, extra_dates: newExtra, lesson_overrides: overrides, lesson_time_overrides: timeOverrides });
+      setCourse({
+        ...course,
+        cancelled_dates: newCancelled,
+        extra_dates: newExtra,
+        lesson_overrides: overrides,
+        lesson_time_overrides: timeOverrides,
+      });
       setEditingLesson(null);
-      setEditingNewDate("");
-      setEditingNewDateText("");
-      setEditingNewCourt("");
-      setEditingStartTime("");
-      setEditingEndTime("");
+      setEditingNewDate('');
+      setEditingNewDateText('');
+      setEditingNewCourt('');
+      setEditingStartTime('');
+      setEditingEndTime('');
       setSlotError(null);
     }
     setSavingEdit(false);
@@ -416,12 +478,12 @@ export default function CorsoDetailPage() {
     if (!course) return;
     if (!confirm(`Sei sicuro di voler eliminare il corso "${course.name}"?`)) return;
     setDeleting(true);
-    const { error } = await supabase.from("courses").delete().eq("id", course.id);
+    const { error } = await supabase.from('courses').delete().eq('id', course.id);
     if (error) {
-      toast.error("Errore: " + error.message);
+      toast.error('Errore: ' + error.message);
       setDeleting(false);
     } else {
-      router.push("/dashboard/admin/corsi");
+      router.push('/dashboard/admin/corsi');
     }
   }
 
@@ -436,7 +498,6 @@ export default function CorsoDetailPage() {
 
   if (!course) return null;
 
-  const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
   const lessonDates = computeLessonDates(course);
 
   return (
@@ -444,8 +505,10 @@ export default function CorsoDetailPage() {
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/admin/corsi" className="hover:text-secondary/80 transition-colors">Corsi</Link>
-          {" › "}
+          <Link href="/dashboard/admin/corsi" className="hover:text-secondary/80 transition-colors">
+            Corsi
+          </Link>
+          {' › '}
           <span>Dettagli Corso</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">Dettagli Corso</h1>
@@ -454,7 +517,11 @@ export default function CorsoDetailPage() {
       {/* Header card */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}
+        style={{
+          backgroundColor: 'var(--color-frozen-lake-900)',
+          borderColor: 'var(--color-frozen-lake-900)',
+          borderLeftColor: 'var(--color-frozen-lake-900)',
+        }}
       >
         <div className="flex items-start gap-6">
           <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -504,10 +571,10 @@ export default function CorsoDetailPage() {
               Creato il
             </label>
             <p className="text-secondary/60">
-              {new Date(course.created_at).toLocaleDateString("it-IT", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
+              {new Date(course.created_at).toLocaleDateString('it-IT', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
               })}
             </p>
           </div>
@@ -516,51 +583,75 @@ export default function CorsoDetailPage() {
 
       {/* Periodi */}
       {(() => {
-        const periodsToShow = course.schedule_periods && course.schedule_periods.length > 0
-          ? course.schedule_periods
-          : (course.schedule_days?.length || course.schedule_time || course.court_name)
-            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, courts: course.court_name ? [course.court_name] : [], start_date: course.start_date, end_date: course.end_date }]
+        const periodsToShow =
+          course.schedule_periods && course.schedule_periods.length > 0
+            ? course.schedule_periods
+            : course.schedule_days?.length || course.schedule_time || course.court_name
+            ? [
+                {
+                  days: course.schedule_days ?? [],
+                  time: course.schedule_time,
+                  court: course.court_name,
+                  courts: course.court_name ? [course.court_name] : [],
+                  start_date: course.start_date,
+                  end_date: course.end_date,
+                },
+              ]
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
           <div key={i} className="bg-white rounded-lg border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
-                {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
+                {periodsToShow.length > 1 ? `Periodo ${i + 1}` : 'Periodo'}
               </h2>
             </div>
             <div className="px-6 py-6 space-y-5">
               {(p.start_date || p.end_date) && (
                 <>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
-                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                      Data inizio
+                    </label>
                     <p className="text-secondary font-semibold">
-                      {p.start_date ? new Date(p.start_date).toLocaleDateString("it-IT") : "—"}
+                      {p.start_date ? new Date(p.start_date).toLocaleDateString('it-IT') : '—'}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
-                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                      Data fine
+                    </label>
                     <p className="text-secondary font-semibold">
-                      {p.end_date ? new Date(p.end_date).toLocaleDateString("it-IT") : "—"}
+                      {p.end_date ? new Date(p.end_date).toLocaleDateString('it-IT') : '—'}
                     </p>
                   </div>
                 </>
               )}
               {(p.days ?? []).length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
-                  <p className="text-secondary font-semibold">{(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}</p>
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Giorni
+                  </label>
+                  <p className="text-secondary font-semibold">
+                    {(p.days ?? []).map((d) => DAYS[d] ?? d).join(', ')}
+                  </p>
                 </div>
               )}
               {(p.courts?.length ? p.courts : p.court ? [p.court] : []).length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <p className="text-secondary font-semibold">{(p.courts?.length ? p.courts : p.court ? [p.court] : []).join(", ")}</p>
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Campo
+                  </label>
+                  <p className="text-secondary font-semibold">
+                    {(p.courts?.length ? p.courts : p.court ? [p.court] : []).join(', ')}
+                  </p>
                 </div>
               )}
               {p.time && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                    Orario
+                  </label>
                   <p className="text-secondary font-semibold">{p.time}</p>
                 </div>
               )}
@@ -577,11 +668,17 @@ export default function CorsoDetailPage() {
           </div>
           <ul className="flex flex-col gap-2 px-4 py-4">
             {maestros.map((m, i) => {
-              const initials = m.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+              const initials = m.full_name
+                .trim()
+                .split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
               const inner = (
                 <div
                   className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                  style={{ background: "#023047" }}
+                  style={{ background: '#023047' }}
                 >
                   <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                     <span className="text-sm font-bold text-white leading-none">{initials}</span>
@@ -603,47 +700,60 @@ export default function CorsoDetailPage() {
 
       {/* Partecipanti */}
       {athletes.length > 0 && (
-      <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-        <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+          </div>
+          {
+            <ul className="flex flex-col gap-2 px-4 py-4">
+              {athletes.map((a, idx) => {
+                const initials = a.full_name
+                  .trim()
+                  .split(' ')
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase();
+                const inner = (
+                  <div
+                    className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+                    style={{ background: 'var(--color-frozen-lake-900)' }}
+                  >
+                    <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-white leading-none">{initials}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
+                      {a.id && (a.email || a.phone) && (
+                        <p className="text-xs text-white/60 truncate mt-0.5">
+                          {[a.email, a.phone].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      {!a.id && <p className="text-xs text-white/50 mt-0.5">Ospite</p>}
+                    </div>
+                  </div>
+                );
+                return (
+                  <li key={a.id ?? `guest-${idx}`}>
+                    {a.id ? (
+                      <Link href={`/dashboard/admin/corsi/${courseId}/partecipanti/${a.id}`}>
+                        {inner}
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/dashboard/admin/corsi/${courseId}/partecipanti/ospite/${encodeURIComponent(
+                          a.full_name,
+                        )}`}
+                      >
+                        {inner}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          }
         </div>
-        {
-          <ul className="flex flex-col gap-2 px-4 py-4">
-            {athletes.map((a, idx) => {
-              const initials = a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
-              const inner = (
-                <div
-                  className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                  style={{ background: "var(--color-frozen-lake-900)" }}
-                >
-                  <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-white leading-none">{initials}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
-                    {a.id && (a.email || a.phone) && (
-                      <p className="text-xs text-white/60 truncate mt-0.5">
-                        {[a.email, a.phone].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                    {!a.id && (
-                      <p className="text-xs text-white/50 mt-0.5">Ospite</p>
-                    )}
-                  </div>
-                </div>
-              );
-              return (
-                <li key={a.id ?? `guest-${idx}`}>
-                  {a.id
-                    ? <Link href={`/dashboard/admin/corsi/${courseId}/partecipanti/${a.id}`}>{inner}</Link>
-                    : <Link href={`/dashboard/admin/corsi/${courseId}/partecipanti/ospite/${encodeURIComponent(a.full_name)}`}>{inner}</Link>
-                  }
-                </li>
-              );
-            })}
-          </ul>
-        }
-      </div>
       )}
 
       {/* Lezioni */}
@@ -654,43 +764,65 @@ export default function CorsoDetailPage() {
         {lessonDates.length === 0 ? (
           <div className="px-6 py-8 text-center">
             <Calendar className="h-10 w-10 text-secondary/20 mx-auto mb-2" />
-            <p className="text-sm text-secondary/50">Nessuna lezione calcolabile — inserisci date di inizio/fine e giorni</p>
+            <p className="text-sm text-secondary/50">
+              Nessuna lezione calcolabile — inserisci date di inizio/fine e giorni
+            </p>
           </div>
         ) : (
           <ul className="flex flex-col gap-2 px-4 py-4">
             {lessonDates.map((date, i) => {
-              const label = date.toLocaleDateString("it-IT", {
-                weekday: "long", day: "numeric", month: "long", year: "numeric",
-              }).replace(/^./, (c) => c.toUpperCase());
-              const dateStr = date.toISOString().split("T")[0];
+              const label = date
+                .toLocaleDateString('it-IT', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })
+                .replace(/^./, (c) => c.toUpperCase());
+              const dateStr = date.toISOString().split('T')[0];
               return (
                 <li key={i} className="relative">
                   <div
                     className="flex items-center rounded-lg overflow-hidden"
-                    style={{ background: attendedDates.has(dateStr) ? "#023047" : "var(--secondary)" }}
+                    style={{
+                      background: attendedDates.has(dateStr) ? '#023047' : 'var(--secondary)',
+                    }}
                   >
                     <Link
                       href={`/dashboard/admin/corsi/${courseId}/lezioni/${dateStr}`}
                       className="flex flex-1 items-center gap-4 py-3 px-3 min-w-0 hover:opacity-90 transition-opacity cursor-pointer"
                     >
                       <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                        {attendedDates.has(dateStr)
-                          ? <CheckCircle2 className="w-5 h-5 text-white" />
-                          : <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
-                        }
+                        {attendedDates.has(dateStr) ? (
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        ) : (
+                          <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {(getCourtsForDate(course, dateStr).length > 0 || getTimeForDate(course, dateStr)) && (
+                        {(getCourtsForDate(course, dateStr).length > 0 ||
+                          getTimeForDate(course, dateStr)) && (
                           <p className="text-xs text-white/70 mt-0.5">
-                            {[getCourtsForDate(course, dateStr).join(", "), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
+                            {[
+                              getCourtsForDate(course, dateStr).join(', '),
+                              getTimeForDate(course, dateStr),
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
                           </p>
                         )}
                       </div>
                     </Link>
                     <button
                       type="button"
-                      onClick={(e) => { if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
+                      onClick={(e) => {
+                        if (openMenuLesson === dateStr) {
+                          closeActionMenu();
+                          return;
+                        }
+                        openActionMenu(dateStr, e.currentTarget.getBoundingClientRect());
+                      }}
                       className="flex-shrink-0 p-2.5 mr-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                       aria-label="Opzioni lezione"
                     >
@@ -699,14 +831,29 @@ export default function CorsoDetailPage() {
                   </div>
                   {openMenuLesson === dateStr && menuPosition && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeActionMenu();
+                        }}
+                      />
                       <div
                         className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
                         style={{ top: menuPosition.top, left: menuPosition.left }}
                       >
                         <button
                           type="button"
-                          onClick={() => { closeActionMenu(); setEditingLesson(dateStr); setEditingNewDate(dateStr); setEditingNewDateText(isoToDisplay(dateStr)); setEditingNewCourt(getCourtForDate(course, dateStr) ?? ""); const _t = parseTimeRange(getTimeForDate(course, dateStr) ?? ""); setEditingStartTime(_t.start); setEditingEndTime(_t.end); }}
+                          onClick={() => {
+                            closeActionMenu();
+                            setEditingLesson(dateStr);
+                            setEditingNewDate(dateStr);
+                            setEditingNewDateText(isoToDisplay(dateStr));
+                            setEditingNewCourt(getCourtForDate(course, dateStr) ?? '');
+                            const _t = parseTimeRange(getTimeForDate(course, dateStr) ?? '');
+                            setEditingStartTime(_t.start);
+                            setEditingEndTime(_t.end);
+                          }}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -714,12 +861,15 @@ export default function CorsoDetailPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => { closeActionMenu(); handleDeleteLesson(dateStr); }}
+                          onClick={() => {
+                            closeActionMenu();
+                            handleDeleteLesson(dateStr);
+                          }}
                           disabled={deletingLesson === dateStr}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full disabled:opacity-40"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                          {deletingLesson === dateStr ? "Eliminando..." : "Elimina"}
+                          {deletingLesson === dateStr ? 'Eliminando...' : 'Elimina'}
                         </button>
                       </div>
                     </>
@@ -753,11 +903,22 @@ export default function CorsoDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4" style={{ background: "var(--color-frozen-lake-900)" }}>
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ background: 'var(--color-frozen-lake-900)' }}
+            >
               <h3 className="text-lg font-semibold text-white">Modifica lezione</h3>
               <button
                 type="button"
-                onClick={() => { setEditingLesson(null); setEditingNewDate(""); setEditingNewDateText(""); setEditingNewCourt(""); setEditingStartTime(""); setEditingEndTime(""); setSlotError(null); }}
+                onClick={() => {
+                  setEditingLesson(null);
+                  setEditingNewDate('');
+                  setEditingNewDateText('');
+                  setEditingNewCourt('');
+                  setEditingStartTime('');
+                  setEditingEndTime('');
+                  setSlotError(null);
+                }}
                 className="text-white/70 hover:text-white transition-colors"
                 aria-label="Chiudi"
               >
@@ -791,12 +952,17 @@ export default function CorsoDetailPage() {
                 <span className="text-sm font-medium text-secondary">Ora inizio</span>
                 <select
                   value={editingStartTime}
-                  onChange={(e) => { setEditingStartTime(e.target.value); setSlotError(null); }}
+                  onChange={(e) => {
+                    setEditingStartTime(e.target.value);
+                    setSlotError(null);
+                  }}
                   className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="">—</option>
                   {TIME_SLOTS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -804,12 +970,17 @@ export default function CorsoDetailPage() {
                 <span className="text-sm font-medium text-secondary">Ora fine</span>
                 <select
                   value={editingEndTime}
-                  onChange={(e) => { setEditingEndTime(e.target.value); setSlotError(null); }}
+                  onChange={(e) => {
+                    setEditingEndTime(e.target.value);
+                    setSlotError(null);
+                  }}
                   className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="">—</option>
                   {TIME_SLOTS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -817,12 +988,17 @@ export default function CorsoDetailPage() {
                 <span className="text-sm font-medium text-secondary">Campo</span>
                 <select
                   value={editingNewCourt}
-                  onChange={(e) => { setEditingNewCourt(e.target.value); setSlotError(null); }}
+                  onChange={(e) => {
+                    setEditingNewCourt(e.target.value);
+                    setSlotError(null);
+                  }}
                   className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="">—</option>
                   {courts.map((court) => (
-                    <option key={court} value={court}>{court}</option>
+                    <option key={court} value={court}>
+                      {court}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -837,13 +1013,21 @@ export default function CorsoDetailPage() {
               <button
                 type="button"
                 onClick={() => handleRescheduleLesson(editingLesson, editingNewDate)}
-                disabled={savingEdit || !editingNewDate || (editingNewDate === editingLesson && !editingNewCourt)}
+                disabled={
+                  savingEdit ||
+                  !editingNewDate ||
+                  (editingNewDate === editingLesson && !editingNewCourt)
+                }
                 className="w-full py-3 rounded-xl bg-secondary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
               >
-                {savingEdit
-                  ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Salvataggio...</span></>
-                  : "Conferma"
-                }
+                {savingEdit ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Salvataggio...</span>
+                  </>
+                ) : (
+                  'Conferma'
+                )}
               </button>
             </div>
           </div>
@@ -852,19 +1036,49 @@ export default function CorsoDetailPage() {
 
       {/* Calendar picker */}
       <Modal open={calPickerOpen} onOpenChange={setCalPickerOpen}>
-        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+        <ModalContent
+          size="sm"
+          showBuiltinClose={false}
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
+        >
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="font-semibold text-white">Seleziona data</ModalTitle>
           </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+          <ModalBody className="px-4 py-4 bg-white">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"><ChevronLeft className="h-4 w-4" /></button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">{getCalendarMonthLabel(calendarViewDate)}</p>
-                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"><ChevronRight className="h-4 w-4" /></button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))
+                  }
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))
+                  }
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
               <div className="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS_CAL.map((d) => <span key={d} className="py-1">{d}</span>)}
+                {WEEK_DAYS_CAL.map((d) => (
+                  <span key={d} className="py-1">
+                    {d}
+                  </span>
+                ))}
               </div>
               <div className="calendar-grid grid grid-cols-7 gap-1">
                 {calendarDays.map(({ date, isCurrentMonth }) => {
@@ -876,9 +1090,12 @@ export default function CorsoDetailPage() {
                       type="button"
                       onClick={() => setPendingDate(normalizeDate(date))}
                       className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-lg text-sm leading-none transition-colors ${
-                        isSelected ? "bg-secondary text-white font-semibold" :
-                        isCurrentMonth ? "text-gray-800 hover:bg-gray-100" : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isToday ? "ring-1 ring-secondary/40" : ""}`}
+                        isSelected
+                          ? 'bg-secondary text-white font-semibold'
+                          : isCurrentMonth
+                          ? 'text-gray-800 hover:bg-gray-100'
+                          : 'text-gray-400 hover:bg-gray-50'
+                      } ${!isSelected && isToday ? 'ring-1 ring-secondary/40' : ''}`}
                     >
                       {date.getDate()}
                     </button>
@@ -887,9 +1104,25 @@ export default function CorsoDetailPage() {
               </div>
             </div>
           </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button type="button" onClick={() => { const t = normalizeDate(new Date()); setPendingDate(t); setCalendarViewDate(new Date(t.getFullYear(), t.getMonth(), 1)); }} className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">Oggi</button>
-            <button type="button" onClick={applyCalendarDate} className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity">Applica</button>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
+            <button
+              type="button"
+              onClick={() => {
+                const t = normalizeDate(new Date());
+                setPendingDate(t);
+                setCalendarViewDate(new Date(t.getFullYear(), t.getMonth(), 1));
+              }}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyCalendarDate}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
           </ModalFooter>
         </ModalContent>
       </Modal>

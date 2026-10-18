@@ -1,52 +1,41 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import AuthGuard from "@/components/auth/AuthGuard";
-import { Newspaper, Plus, Pencil, Loader2, AlertCircle, CheckCircle, Upload, Link as LinkIcon, X } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
-import { createNotification } from "@/lib/notifications/createNotification";
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { Loader2, AlertCircle, CheckCircle, Upload, Link as LinkIcon, X } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
-type News = {
-  id: string;
-  title: string;
-  category: string;
-  content: string;
-  excerpt?: string;
-  image_url: string | null;
-  is_published: boolean;
-  published_at?: string;
-  created_at: string;
-};
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { createNotification } from '@/lib/notifications/createNotification';
 
 export default function CreateNewsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const editId = searchParams.get("id");
+  const editId = searchParams.get('id');
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [summary, setSummary] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('');
+  const [summary, setSummary] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const categoryLabels: Record<string, string> = {
-    'notizie': 'Notizie',
-    'risultati': 'Risultati',
-    'eventi': 'Eventi',
-    'generale': 'Generale',
-    'tornei': 'Tornei',
-    'orari': 'Orari',
-    'lezioni': 'Lezioni',
-    'novità': 'Novità'
+    notizie: 'Notizie',
+    risultati: 'Risultati',
+    eventi: 'Eventi',
+    generale: 'Generale',
+    tornei: 'Tornei',
+    orari: 'Orari',
+    lezioni: 'Lezioni',
+    novità: 'Novità',
   };
 
   useEffect(() => {
@@ -57,16 +46,12 @@ export default function CreateNewsPage() {
 
   async function loadNews() {
     if (!editId) return;
-    
+
     setLoading(true);
-    const { data, error } = await supabase
-      .from("news")
-      .select("*")
-      .eq("id", editId)
-      .single();
+    const { data, error } = await supabase.from('news').select('*').eq('id', editId).single();
 
     if (error || !data) {
-      setError("News non trovata");
+      setError('News non trovata');
       setLoading(false);
       return;
     }
@@ -74,7 +59,7 @@ export default function CreateNewsPage() {
     setTitle(data.title);
     setCategory(data.category);
     setSummary(data.content);
-    setImageUrl(data.image_url || "");
+    setImageUrl(data.image_url || '');
     setLoading(false);
   }
 
@@ -85,7 +70,7 @@ export default function CreateNewsPage() {
     setSaving(true);
 
     if (!title || !category || !summary) {
-      setError("Titolo, categoria e contenuto sono obbligatori");
+      setError('Titolo, categoria e contenuto sono obbligatori');
       setSaving(false);
       return;
     }
@@ -94,7 +79,7 @@ export default function CreateNewsPage() {
       if (editId) {
         // Update existing
         const { error } = await supabase
-          .from("news")
+          .from('news')
           .update({
             title,
             category,
@@ -105,17 +90,17 @@ export default function CreateNewsPage() {
             published_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("id", editId);
+          .eq('id', editId);
 
         if (error) throw error;
-        setSuccess("News aggiornata con successo!");
-        setTimeout(() => router.push("/dashboard/admin/news"), 1500);
+        setSuccess('News aggiornata con successo!');
+        setTimeout(() => router.push('/dashboard/admin/news'), 1500);
       } else {
         // Create new
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData } = await getSessionUser();
         const creatorId = userData.user?.id;
         const { data: insertedNews, error } = await supabase
-          .from("news")
+          .from('news')
           .insert({
             title,
             category,
@@ -126,7 +111,7 @@ export default function CreateNewsPage() {
             author_id: creatorId,
             published_at: new Date().toISOString(),
           })
-          .select("id")
+          .select('id')
           .single();
 
         if (error) throw error;
@@ -134,30 +119,30 @@ export default function CreateNewsPage() {
         // Notify all users except the creator
         if (insertedNews?.id) {
           const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id")
-            .neq("id", creatorId ?? "");
+            .from('profiles')
+            .select('id')
+            .neq('id', creatorId ?? '');
 
           if (profiles && profiles.length > 0) {
             await Promise.allSettled(
               profiles.map((p) =>
                 createNotification({
                   userId: p.id,
-                  type: "announcement",
-                  title: "Nuova news pubblicata",
+                  type: 'announcement',
+                  title: 'Nuova news pubblicata',
                   message: title,
                   link: `/news/${insertedNews.id}`,
-                })
-              )
+                }),
+              ),
             );
           }
         }
 
-        setSuccess("News creata con successo!");
-        setTimeout(() => router.push("/dashboard/admin/news"), 1500);
+        setSuccess('News creata con successo!');
+        setTimeout(() => router.push('/dashboard/admin/news'), 1500);
       }
-    } catch (err: any) {
-      setError(err.message || "Errore durante il salvataggio");
+    } catch (err) {
+      setError(err.message || 'Errore durante il salvataggio');
     } finally {
       setSaving(false);
     }
@@ -165,24 +150,23 @@ export default function CreateNewsPage() {
 
   async function handleDelete() {
     if (!editId) return;
-    
-    const confirmed = confirm("Sei sicuro di voler eliminare questa news? Questa azione non può essere annullata.");
+
+    const confirmed = confirm(
+      'Sei sicuro di voler eliminare questa news? Questa azione non può essere annullata.',
+    );
     if (!confirmed) return;
 
     setDeleting(true);
     setError(null);
 
     try {
-      const { error } = await supabase
-        .from("news")
-        .delete()
-        .eq("id", editId);
+      const { error } = await supabase.from('news').delete().eq('id', editId);
 
       if (error) throw error;
 
-      setSuccess("News eliminata con successo!");
-      setTimeout(() => router.push("/dashboard/admin/news"), 1000);
-    } catch (err: any) {
+      setSuccess('News eliminata con successo!');
+      setTimeout(() => router.push('/dashboard/admin/news'), 1000);
+    } catch (err) {
       setError(err.message || "Errore durante l'eliminazione");
     } finally {
       setDeleting(false);
@@ -198,7 +182,7 @@ export default function CreateNewsPage() {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       setError("Il file deve essere un'immagine");
       return;
     }
@@ -209,18 +193,18 @@ export default function CreateNewsPage() {
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
+      uploadFormData.append('file', file);
       if (imageUrl) {
-        uploadFormData.append("oldImageUrl", imageUrl);
+        uploadFormData.append('oldImageUrl', imageUrl);
       }
 
-      const response = await fetch("/api/upload/news-image", {
-        method: "POST",
+      const response = await fetch('/api/upload/news-image', {
+        method: 'POST',
         body: uploadFormData,
       });
 
       if (!response.ok) {
-        let errorMessage = "Errore upload";
+        let errorMessage = 'Errore upload';
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
@@ -232,16 +216,16 @@ export default function CreateNewsPage() {
 
       const responseData = await response.json();
       if (!responseData.url) {
-        throw new Error("Server non ha restituito un URL valido");
+        throw new Error('Server non ha restituito un URL valido');
       }
 
       setImageUrl(responseData.url);
-    } catch (uploadError: any) {
+    } catch (uploadError) {
       setError(uploadError?.message || "Errore durante l'upload dell'immagine");
     } finally {
       setUploadingImage(false);
-      const fileInput = document.getElementById("news-image-upload") as HTMLInputElement | null;
-      if (fileInput) fileInput.value = "";
+      const fileInput = document.getElementById('news-image-upload') as HTMLInputElement | null;
+      if (fileInput) fileInput.value = '';
     }
   }
 
@@ -251,7 +235,7 @@ export default function CreateNewsPage() {
     try {
       new URL(imageUrlInput);
     } catch {
-      setError("Inserisci un URL immagine valido");
+      setError('Inserisci un URL immagine valido');
       return;
     }
 
@@ -261,13 +245,13 @@ export default function CreateNewsPage() {
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("externalUrl", imageUrlInput);
+      uploadFormData.append('externalUrl', imageUrlInput);
       if (imageUrl) {
-        uploadFormData.append("oldImageUrl", imageUrl);
+        uploadFormData.append('oldImageUrl', imageUrl);
       }
 
-      const response = await fetch("/api/upload/news-image", {
-        method: "POST",
+      const response = await fetch('/api/upload/news-image', {
+        method: 'POST',
         body: uploadFormData,
       });
 
@@ -283,12 +267,16 @@ export default function CreateNewsPage() {
       }
 
       const responseData = await response.json();
-      if (!responseData.url) throw new Error("Server non ha restituito un URL valido");
+      if (!responseData.url) throw new Error('Server non ha restituito un URL valido');
 
       setImageUrl(responseData.url);
-      setImageUrlInput("");
+      setImageUrlInput('');
     } catch (uploadError: unknown) {
-      setError(uploadError instanceof Error ? uploadError.message : "Errore durante il recupero dell'immagine");
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Errore durante il recupero dell'immagine",
+      );
     } finally {
       setUploadingImage(false);
     }
@@ -296,7 +284,7 @@ export default function CreateNewsPage() {
 
   if (loading) {
     return (
-      <AuthGuard allowedRoles={["admin", "gestore"]}>
+      <AuthGuard allowedRoles={['admin', 'gestore']}>
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-secondary mx-auto mb-3" />
@@ -308,16 +296,18 @@ export default function CreateNewsPage() {
   }
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={['admin', 'gestore']}>
       <div className="space-y-6 pt-3">
         {/* Header */}
         <div>
           <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-            GESTIONE NEWS › {editId ? "MODIFICA" : "CREA"} NEWS
+            GESTIONE NEWS › {editId ? 'MODIFICA' : 'CREA'} NEWS
           </div>
-          <p className="breadcrumb text-secondary/60">{editId ? "Modifica News" : "Crea nuova news"}</p>
+          <p className="breadcrumb text-secondary/60">
+            {editId ? 'Modifica News' : 'Crea nuova news'}
+          </p>
           <h1 className="text-4xl font-bold text-secondary">
-            {editId ? "Modifica News" : "Crea nuova news"}
+            {editId ? 'Modifica News' : 'Crea nuova news'}
           </h1>
         </div>
 
@@ -333,7 +323,7 @@ export default function CreateNewsPage() {
             </div>
           </div>
         )}
-        
+
         {success && (
           <div className="mt-2">
             <div className="bg-green-50 rounded-xl border border-green-200 p-4 flex items-start gap-3">
@@ -351,7 +341,9 @@ export default function CreateNewsPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="page-card">
               <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni News</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                  Informazioni News
+                </h2>
               </div>
 
               <div className="p-6 space-y-6">
@@ -386,7 +378,9 @@ export default function CreateNewsPage() {
                     >
                       <option value="">Seleziona categoria</option>
                       {Object.entries(categoryLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -394,7 +388,9 @@ export default function CreateNewsPage() {
 
                 {/* URL Immagine */}
                 <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
+                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    URL Immagine
+                  </label>
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <button
@@ -406,13 +402,17 @@ export default function CreateNewsPage() {
                         disabled={uploadingImage}
                         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-secondary font-medium hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                        {imageUrl ? "Cambia immagine" : "Carica immagine"}
+                        {uploadingImage ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                        {imageUrl ? 'Cambia immagine' : 'Carica immagine'}
                       </button>
                       {imageUrl && (
                         <button
                           type="button"
-                          onClick={() => setImageUrl("")}
+                          onClick={() => setImageUrl('')}
                           className="p-2.5 rounded-lg border border-gray-300 bg-white text-secondary hover:bg-gray-50 transition-all"
                           title="Rimuovi immagine"
                         >
@@ -434,7 +434,8 @@ export default function CreateNewsPage() {
                               if (parent) {
                                 // Safely set error message without innerHTML
                                 const errorDiv = document.createElement('div');
-                                errorDiv.className = 'flex items-center justify-center h-full text-sm text-red-600';
+                                errorDiv.className =
+                                  'flex items-center justify-center h-full text-sm text-red-600';
                                 errorDiv.textContent = 'URL immagine non valido';
                                 parent.replaceChildren(errorDiv);
                               }
@@ -485,7 +486,7 @@ export default function CreateNewsPage() {
                   )}
                 </button>
               )}
-              
+
               <button
                 type="submit"
                 disabled={!title || !category || !summary || saving || deleting}
@@ -497,7 +498,7 @@ export default function CreateNewsPage() {
                     <span>Salvataggio...</span>
                   </>
                 ) : (
-                  <span>{editId ? "Aggiorna News" : "Crea News"}</span>
+                  <span>{editId ? 'Aggiorna News' : 'Crea News'}</span>
                 )}
               </button>
             </div>
@@ -526,7 +527,7 @@ export default function CreateNewsPage() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => document.getElementById("news-image-upload")?.click()}
+                    onClick={() => document.getElementById('news-image-upload')?.click()}
                     className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all"
                   >
                     <Upload className="h-5 w-5" />
@@ -539,9 +540,7 @@ export default function CreateNewsPage() {
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Massimo 5MB - Formati: JPG, PNG, GIF
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Massimo 5MB - Formati: JPG, PNG, GIF</p>
                 </div>
 
                 <div className="relative">
@@ -564,7 +563,7 @@ export default function CreateNewsPage() {
                       onChange={(e) => setImageUrlInput(e.target.value)}
                       placeholder="https://esempio.com/immagine.jpg"
                       className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
-                      onKeyDown={(e) => e.key === "Enter" && handleImageUrl()}
+                      onKeyDown={(e) => e.key === 'Enter' && handleImageUrl()}
                     />
                     <button
                       type="button"

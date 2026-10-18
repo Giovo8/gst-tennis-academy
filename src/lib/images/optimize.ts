@@ -1,5 +1,5 @@
-import sharp from "sharp";
-import logger from "@/lib/logger/secure-logger";
+import sharp from 'sharp';
+import logger from '@/lib/logger/secure-logger';
 
 /**
  * Ottimizzazione immagini prima dell'upload su Supabase Storage.
@@ -9,7 +9,7 @@ import logger from "@/lib/logger/secure-logger";
  * di consumo di egress CDN. Qui vengono ridimensionate e convertite in WebP.
  */
 
-export type OptimizedImage = {
+type OptimizedImage = {
   buffer: Buffer;
   contentType: string;
   ext: string;
@@ -30,7 +30,7 @@ export async function optimizeImage(
   input: ArrayBuffer | Buffer,
   originalContentType: string,
   originalExt: string,
-  options: OptimizeOptions = {}
+  options: OptimizeOptions = {},
 ): Promise<OptimizedImage> {
   const { maxWidth = 1280, quality = 80 } = options;
   const inputBuffer = Buffer.isBuffer(input) ? input : Buffer.from(input);
@@ -42,7 +42,7 @@ export async function optimizeImage(
   };
 
   // Le GIF animate perderebbero l'animazione: meglio lasciarle intatte.
-  if (originalContentType === "image/gif") {
+  if (originalContentType === 'image/gif') {
     return passthrough;
   }
 
@@ -57,10 +57,10 @@ export async function optimizeImage(
       return passthrough;
     }
 
-    return { buffer: optimized, contentType: "image/webp", ext: "webp" };
+    return { buffer: optimized, contentType: 'image/webp', ext: 'webp' };
   } catch (error) {
     logger.warn("Ottimizzazione immagine fallita, uso l'originale", {
-      error: error instanceof Error ? error.message : "errore sconosciuto",
+      error: error instanceof Error ? error.message : 'errore sconosciuto',
     });
     return passthrough;
   }

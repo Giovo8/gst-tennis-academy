@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
 import {
   Bell,
   Mail,
@@ -20,11 +22,11 @@ import {
   Search,
   SlidersHorizontal,
   X,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
-import { toast } from "sonner";
-import { getMessageNotificationLink } from "@/lib/notifications/links";
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { getMessageNotificationLink } from '@/lib/notifications/links';
 
 interface Notification {
   id: string;
@@ -37,34 +39,34 @@ interface Notification {
   created_at: string;
 }
 
-function isVideoNotification(n: Pick<Notification, "type" | "title" | "message">) {
+function isVideoNotification(n: Pick<Notification, 'type' | 'title' | 'message'>) {
   const text = `${n.title} ${n.message}`.toLowerCase();
-  return n.type === "video" || text.includes("video");
+  return n.type === 'video' || text.includes('video');
 }
 
 function getNotificationIcon(n: Notification) {
-  const cls = "h-5 w-5 text-white";
+  const cls = 'h-5 w-5 text-white';
   if (isVideoNotification(n)) return <Video className={cls} strokeWidth={2.5} />;
 
   switch (n.type) {
-    case "message":
+    case 'message':
       return <Mail className={cls} strokeWidth={2.5} />;
-    case "tournament":
+    case 'tournament':
       return <Trophy className={cls} strokeWidth={2.5} />;
-    case "announcement":
+    case 'announcement':
       return <Megaphone className={cls} strokeWidth={2.5} />;
-    case "booking": {
+    case 'booking': {
       const text = `${n.title} ${n.message}`.toLowerCase();
-      if (text.includes("lezione")) return <Users className={cls} strokeWidth={2.5} />;
+      if (text.includes('lezione')) return <Users className={cls} strokeWidth={2.5} />;
       return <CalendarClock className={cls} strokeWidth={2.5} />;
     }
-    case "arena_challenge":
-    case "arena_challenge_booked":
+    case 'arena_challenge':
+    case 'arena_challenge_booked':
       return <Swords className={cls} strokeWidth={2.5} />;
-    case "success":
+    case 'success':
       return <CheckCircle2 className={cls} strokeWidth={2.5} />;
-    case "warning":
-    case "error":
+    case 'warning':
+    case 'error':
       return <AlertTriangle className={cls} strokeWidth={2.5} />;
     default:
       return <Bell className={cls} strokeWidth={2.5} />;
@@ -73,44 +75,50 @@ function getNotificationIcon(n: Notification) {
 
 function getNotificationColor(n: Notification): string {
   const text = `${n.title} ${n.message}`.toLowerCase();
-  if (n.type === "booking" && text.includes("lezione")) return "#023047";
+  if (n.type === 'booking' && text.includes('lezione')) return '#023047';
 
   const colorMap: Record<string, string> = {
-    booking: "var(--secondary)",
-    arena_challenge: "var(--secondary)",
-    arena_challenge_booked: "var(--secondary)",
-    tournament: "#6d28d9",
-    message: "#0369a1",
-    success: "#15803d",
-    warning: "#b45309",
-    error: "#b91c1c",
-    announcement: "var(--secondary)",
+    booking: 'var(--secondary)',
+    arena_challenge: 'var(--secondary)',
+    arena_challenge_booked: 'var(--secondary)',
+    tournament: '#6d28d9',
+    message: '#0369a1',
+    success: '#15803d',
+    warning: '#b45309',
+    error: '#b91c1c',
+    announcement: 'var(--secondary)',
   };
 
-  return colorMap[n.type] ?? "var(--secondary)";
+  return colorMap[n.type] ?? 'var(--secondary)';
 }
 
 export default function NotificationCenter() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
-  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [search, setSearch] = useState('');
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   async function loadNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
     if (!user) return;
 
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
     setUserRole(profile?.role ?? null);
 
     const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (!error && data) {
       setNotifications(data);
@@ -123,7 +131,7 @@ export default function NotificationCenter() {
   }, []);
 
   async function markAsRead(id: string) {
-    const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
     if (!error) {
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     }
@@ -133,22 +141,25 @@ export default function NotificationCenter() {
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
     if (unreadIds.length === 0) return;
 
-    const { error } = await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .in('id', unreadIds);
     if (!error) {
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     }
   }
 
   function resolveLink(n: Notification): string | null {
-    if (n.type === "message") return getMessageNotificationLink(userRole);
+    if (n.type === 'message') return getMessageNotificationLink(userRole);
     return n.link || null;
   }
 
   const normalizedSearch = search.trim().toLowerCase();
-  const hasActiveFilters = filter !== "all" || normalizedSearch !== "";
+  const hasActiveFilters = filter !== 'all' || normalizedSearch !== '';
 
   const filteredNotifications = notifications.filter((n) => {
-    const matchesFilter = filter === "unread" ? !n.is_read : filter === "read" ? n.is_read : true;
+    const matchesFilter = filter === 'unread' ? !n.is_read : filter === 'read' ? n.is_read : true;
     const matchesSearch =
       !normalizedSearch ||
       n.title.toLowerCase().includes(normalizedSearch) ||
@@ -165,7 +176,7 @@ export default function NotificationCenter() {
         <h1 className="text-4xl font-bold text-secondary">Centro Notifiche</h1>
       </div>
 
-      {(unreadCount > 0 || userRole !== "atleta") && (
+      {(unreadCount > 0 || userRole !== 'atleta') && (
         <div className="flex gap-3">
           {unreadCount > 0 && (
             <button
@@ -176,9 +187,9 @@ export default function NotificationCenter() {
               Segna tutte come lette
             </button>
           )}
-          {userRole !== "atleta" && (
+          {userRole !== 'atleta' && (
             <button
-              onClick={() => toast.info("Funzionalità in arrivo")}
+              onClick={() => toast.info('Funzionalità in arrivo')}
               className="flex-1 px-4 py-3 text-sm font-semibold text-secondary bg-white border border-black/10 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
             >
               <Send className="h-4 w-4" />
@@ -205,8 +216,8 @@ export default function NotificationCenter() {
             onClick={() => setIsFilterPanelOpen((prev) => !prev)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
               hasActiveFilters || isFilterPanelOpen
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                ? 'border-secondary bg-secondary text-white hover:opacity-90'
+                : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
             }`}
             aria-label="Mostra o nascondi filtri"
             title="Filtri"
@@ -219,20 +230,24 @@ export default function NotificationCenter() {
           <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
               <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
-                {(["all", "unread", "read"] as const).map((f) => (
+                {(['all', 'unread', 'read'] as const).map((f) => (
                   <button
                     key={f}
                     type="button"
                     onClick={() => setFilter(f)}
                     className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
                       filter === f
-                        ? "border-secondary bg-secondary text-white"
-                        : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                        ? 'border-secondary bg-secondary text-white'
+                        : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
                     }`}
                   >
-                    {f === "all" ? "Tutte" : f === "unread" ? "Non lette" : "Lette"}
-                    {f === "unread" && unreadCount > 0 && (
-                      <span className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${filter === f ? "bg-white/20" : "bg-secondary/10"}`}>
+                    {f === 'all' ? 'Tutte' : f === 'unread' ? 'Non lette' : 'Lette'}
+                    {f === 'unread' && unreadCount > 0 && (
+                      <span
+                        className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${
+                          filter === f ? 'bg-white/20' : 'bg-secondary/10'
+                        }`}
+                      >
                         {unreadCount}
                       </span>
                     )}
@@ -243,8 +258,8 @@ export default function NotificationCenter() {
               <button
                 type="button"
                 onClick={() => {
-                  setSearch("");
-                  setFilter("all");
+                  setSearch('');
+                  setFilter('all');
                 }}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
                 aria-label="Reset filtri"
@@ -268,8 +283,8 @@ export default function NotificationCenter() {
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna notifica</h3>
           <p className="text-secondary/60">
             {hasActiveFilters
-              ? "Nessun risultato per la ricerca o i filtri selezionati"
-              : "Non hai ancora ricevuto notifiche"}
+              ? 'Nessun risultato per la ricerca o i filtri selezionati'
+              : 'Non hai ancora ricevuto notifiche'}
           </p>
         </div>
       ) : (
@@ -279,7 +294,9 @@ export default function NotificationCenter() {
             return (
               <div
                 key={n.id}
-                className={`rounded-lg overflow-visible transition-opacity ${link ? "cursor-pointer hover:opacity-95" : ""}`}
+                className={`rounded-lg overflow-visible transition-opacity ${
+                  link ? 'cursor-pointer hover:opacity-95' : ''
+                }`}
                 style={{ background: getNotificationColor(n) }}
                 onClick={() => {
                   if (!n.is_read) markAsRead(n.id);
@@ -291,7 +308,13 @@ export default function NotificationCenter() {
                     {getNotificationIcon(n)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`font-semibold text-sm truncate ${n.is_read ? "text-white/80" : "text-white"}`}>{n.title}</p>
+                    <p
+                      className={`font-semibold text-sm truncate ${
+                        n.is_read ? 'text-white/80' : 'text-white'
+                      }`}
+                    >
+                      {n.title}
+                    </p>
                     <p className="text-xs text-white/70 mt-0.5 truncate">{n.message}</p>
                   </div>
                   {n.is_read ? (

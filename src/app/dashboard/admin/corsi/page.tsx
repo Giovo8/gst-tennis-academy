@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   GraduationCap,
   Plus,
@@ -11,13 +11,20 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   X,
-} from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import { courseAllCourtsSummary } from "@/lib/bookings/courseConflicts";
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { courseAllCourtsSummary } from '@/lib/bookings/courseConflicts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SchedulePeriod = { days: string[]; time: string | null; court?: string | null; courts?: string[] | null; start_date?: string | null; end_date?: string | null };
+type SchedulePeriod = {
+  days: string[];
+  time: string | null;
+  court?: string | null;
+  courts?: string[] | null;
+  start_date?: string | null;
+  end_date?: string | null;
+};
 
 type Course = {
   id: string;
@@ -36,15 +43,10 @@ type Course = {
   created_at: string;
 };
 
-const DAYS: Record<string, string> = {
-  lun: "Lun", mar: "Mar", mer: "Mer", gio: "Gio",
-  ven: "Ven", sab: "Sab", dom: "Dom",
-};
-
 function localDateStr(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -54,10 +56,10 @@ export default function CorsiAdminPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("active");
+  const [search, setSearch] = useState('');
+  const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('active');
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     loadCourses();
@@ -66,25 +68,14 @@ export default function CorsiAdminPage() {
   async function loadCourses() {
     setLoading(true);
     const { data, error } = await supabase
-      .from("courses")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('courses')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (!error && data) setCourses(data as Course[]);
     setLoading(false);
   }
 
-  async function toggleActive(course: Course) {
-    const { error } = await supabase
-      .from("courses")
-      .update({ is_active: !course.is_active })
-      .eq("id", course.id);
-    if (!error)
-      setCourses((prev) =>
-        prev.map((c) => (c.id === course.id ? { ...c, is_active: !c.is_active } : c))
-      );
-  }
-
-  const hasActiveFilters = filterActive !== "active";
+  const hasActiveFilters = filterActive !== 'active';
 
   const hasUpcomingLessons = (course: Course): boolean => {
     const todayStr = localDateStr(new Date());
@@ -114,14 +105,14 @@ export default function CorsiAdminPage() {
         c.instructor_name?.toLowerCase().includes(q) ||
         courseAllCourtsSummary(c).some((court) => court.toLowerCase().includes(q));
       const matchesActive =
-        filterActive === "all" ||
-        (filterActive === "active" && hasUpcomingLessons(c)) ||
-        (filterActive === "inactive" && !hasUpcomingLessons(c));
+        filterActive === 'all' ||
+        (filterActive === 'active' && hasUpcomingLessons(c)) ||
+        (filterActive === 'inactive' && !hasUpcomingLessons(c));
       return matchesSearch && matchesActive;
     })
     .sort((a, b) => {
       const byCreatedAt = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return sortOrder === "asc" ? byCreatedAt : -byCreatedAt;
+      return sortOrder === 'asc' ? byCreatedAt : -byCreatedAt;
     });
 
   return (
@@ -157,8 +148,8 @@ export default function CorsiAdminPage() {
             onClick={() => setIsFilterPanelOpen((prev) => !prev)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
               hasActiveFilters || isFilterPanelOpen
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                ? 'border-secondary bg-secondary text-white hover:opacity-90'
+                : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
             }`}
             aria-label="Mostra o nascondi filtri"
             title="Filtri"
@@ -170,57 +161,57 @@ export default function CorsiAdminPage() {
         {isFilterPanelOpen && (
           <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
-            <button
-              type="button"
-              onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-              className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
-                sortOrder === "desc"
-                  ? "border-[#023047] bg-[#023047] text-white hover:opacity-90"
-                  : "border-black/10 bg-white text-secondary hover:bg-gray-50"
-              }`}
-              aria-label="Inverti ordinamento"
-              title="Inverti ordinamento"
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+                className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+                  sortOrder === 'desc'
+                    ? 'border-[#023047] bg-[#023047] text-white hover:opacity-90'
+                    : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
+                }`}
+                aria-label="Inverti ordinamento"
+                title="Inverti ordinamento"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </button>
 
-            <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
-              {[
-                { value: "all", label: "Tutti" },
-                { value: "active", label: "Attivi" },
-                { value: "inactive", label: "Inattivi" },
-              ].map((option) => {
-                const isSelected = filterActive === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setFilterActive(option.value as "all" | "active" | "inactive")}
-                    className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
-                      isSelected
-                        ? "border-secondary bg-secondary text-white"
-                        : "border-black/10 bg-white text-secondary hover:bg-gray-50"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
+              <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
+                {[
+                  { value: 'all', label: 'Tutti' },
+                  { value: 'active', label: 'Attivi' },
+                  { value: 'inactive', label: 'Inattivi' },
+                ].map((option) => {
+                  const isSelected = filterActive === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFilterActive(option.value as 'all' | 'active' | 'inactive')}
+                      className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
+                        isSelected
+                          ? 'border-secondary bg-secondary text-white'
+                          : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setFilterActive("active");
-                setSortOrder("desc");
-              }}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
-              aria-label="Reset filtri"
-              title="Reset filtri"
-            >
-              <X className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setFilterActive('active');
+                  setSortOrder('desc');
+                }}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
+                aria-label="Reset filtri"
+                title="Reset filtri"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}
@@ -236,10 +227,12 @@ export default function CorsiAdminPage() {
         <div className="text-center py-20 rounded-lg bg-white">
           <GraduationCap className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">
-            {search || hasActiveFilters ? "Nessun corso trovato" : "Nessun corso presente"}
+            {search || hasActiveFilters ? 'Nessun corso trovato' : 'Nessun corso presente'}
           </h3>
           <p className="text-secondary/60 mb-6">
-            {search || hasActiveFilters ? "Prova a modificare i filtri" : "Crea il primo corso per iniziare"}
+            {search || hasActiveFilters
+              ? 'Prova a modificare i filtri'
+              : 'Crea il primo corso per iniziare'}
           </p>
           {!search && !hasActiveFilters && (
             <Link
@@ -254,7 +247,6 @@ export default function CorsiAdminPage() {
       ) : (
         <div className="space-y-2">
           {filtered.map((course) => {
-            const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
             const subtitle = course.instructor_name ?? null;
             const isInactiveCourse = !hasUpcomingLessons(course);
 
@@ -262,7 +254,9 @@ export default function CorsiAdminPage() {
               <div
                 key={course.id}
                 className="rounded-lg overflow-visible cursor-pointer transition-all hover:opacity-95 hover:shadow-[0_0_18px_rgba(8,179,247,0.35)]"
-                style={{ background: isInactiveCourse ? "#9ca3af" : "var(--color-frozen-lake-900)" }}
+                style={{
+                  background: isInactiveCourse ? '#9ca3af' : 'var(--color-frozen-lake-900)',
+                }}
                 onClick={() => router.push(`/dashboard/admin/corsi/${course.id}`)}
               >
                 <div className="flex items-center gap-4 py-3 px-3">
@@ -282,7 +276,6 @@ export default function CorsiAdminPage() {
           })}
         </div>
       )}
-
     </div>
   );
 }

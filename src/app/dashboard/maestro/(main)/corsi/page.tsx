@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { GraduationCap, Loader2, Search } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import { courseAllCourtsSummary } from "@/lib/bookings/courseConflicts";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { GraduationCap, Loader2, Search } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
+import { courseAllCourtsSummary } from '@/lib/bookings/courseConflicts';
 
 type Course = {
   id: string;
@@ -16,23 +18,20 @@ type Course = {
   schedule_time: string | null;
   instructor_name: string | null;
   court_name: string | null;
-  schedule_periods: { days: string[]; time: string | null; court?: string | null; courts?: string[] | null }[] | null;
+  schedule_periods:
+    | { days: string[]; time: string | null; court?: string | null; courts?: string[] | null }[]
+    | null;
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
   created_at: string;
 };
 
-const DAYS: Record<string, string> = {
-  lun: "Lun", mar: "Mar", mer: "Mer", gio: "Gio",
-  ven: "Ven", sab: "Sab", dom: "Dom",
-};
-
 export default function MaestroCorsiPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     loadCourses();
@@ -40,27 +39,32 @@ export default function MaestroCorsiPage() {
 
   async function loadCourses() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    const {
+      data: { user },
+    } = await getSessionUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
       .single();
 
-    const fullName = profile?.full_name ?? "";
+    const fullName = profile?.full_name ?? '';
 
     const { data, error } = await supabase
-      .from("courses")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('courses')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (!error && data) {
       const mine = (data as Course[]).filter((c) =>
         fullName && c.instructor_name
-          ? c.instructor_name.split(", ").some((n) => n.trim() === fullName.trim())
-          : false
+          ? c.instructor_name.split(', ').some((n) => n.trim() === fullName.trim())
+          : false,
       );
       setCourses(mine);
     }
@@ -102,23 +106,25 @@ export default function MaestroCorsiPage() {
         <div className="text-center py-20 rounded-lg bg-white">
           <GraduationCap className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">
-            {search ? "Nessun corso trovato" : "Nessun corso assegnato"}
+            {search ? 'Nessun corso trovato' : 'Nessun corso assegnato'}
           </h3>
           <p className="text-secondary/60">
-            {search ? "Prova a modificare la ricerca" : "Non sei ancora assegnato a nessun corso"}
+            {search ? 'Prova a modificare la ricerca' : 'Non sei ancora assegnato a nessun corso'}
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((course) => {
-            const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
-            const subtitle = courseAllCourtsSummary(course).join(", ");
+            const subtitle = courseAllCourtsSummary(course).join(', ');
 
             return (
               <div
                 key={course.id}
                 className="rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                style={{ background: "var(--color-frozen-lake-900)", opacity: course.is_active ? 1 : 0.55 }}
+                style={{
+                  background: 'var(--color-frozen-lake-900)',
+                  opacity: course.is_active ? 1 : 0.55,
+                }}
                 onClick={() => router.push(`/dashboard/maestro/corsi/${course.id}`)}
               >
                 <div className="flex items-center gap-4 py-3 px-3">

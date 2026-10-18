@@ -1,24 +1,23 @@
-import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-import ConditionalFooter from "@/components/layout/ConditionalFooter";
-import { defaultMetadata, generateOrganizationSchema } from "@/lib/seo/metadata";
-import { ThemeProvider } from "@/components/theme";
-import { Toaster } from "sonner";
+import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
+import './globals.css';
+import ConditionalFooter from '@/components/layout/ConditionalFooter';
+import { defaultMetadata, generateOrganizationSchema } from '@/lib/seo/metadata';
+import { Toaster } from 'sonner';
 
 // Font self-hosted (variable, subset latin): evita il fetch da Google Fonts in fase di build
 const inter = localFont({
-  src: "./fonts/InterTight-latin.woff2",
-  variable: "--font-inter",
-  display: "swap",
-  weight: "300 900",
+  src: './fonts/InterTight-latin.woff2',
+  variable: '--font-inter',
+  display: 'swap',
+  weight: '300 900',
 });
 
 const urbanist = localFont({
-  src: "./fonts/Urbanist-latin.woff2",
-  variable: "--font-urbanist",
-  display: "swap",
-  weight: "300 900",
+  src: './fonts/Urbanist-latin.woff2',
+  variable: '--font-urbanist',
+  display: 'swap',
+  weight: '300 900',
 });
 
 export const metadata: Metadata = {
@@ -54,28 +53,11 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  // Force light mode only
-                  localStorage.removeItem('gst-theme');
-                  localStorage.removeItem('darkMode');
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.classList.add('light');
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
       </head>
       <body className={`${inter.variable} ${urbanist.variable} antialiased font-sans`}>
-        <ThemeProvider defaultTheme="light">
-          {children}
-          <ConditionalFooter />
-          <Toaster position="top-right" richColors closeButton />
-        </ThemeProvider>
+        {children}
+        <ConditionalFooter />
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

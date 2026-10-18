@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Loader2,
   Trophy,
@@ -11,10 +11,8 @@ import {
   SlidersHorizontal,
   Target,
   X,
-} from "lucide-react";
-import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
-import TournamentStats from "@/components/tournaments/TournamentStats";
-import Link from "next/link";
+} from 'lucide-react';
+import TournamentManagerWrapper from '@/components/tournaments/TournamentManagerWrapper';
 
 type Tournament = {
   id: string;
@@ -38,9 +36,11 @@ function AdminTorneiPageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [managingTournamentId, setManagingTournamentId] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<
+    'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'
+  >('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [search, setSearch] = useState('');
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   useEffect(() => {
@@ -52,12 +52,15 @@ function AdminTorneiPageInner() {
     try {
       const res = await fetch('/api/tournaments?includeCounts=true');
       let json: any = {};
-      try { json = await res.json(); } catch (e) { json = {}; }
+      try {
+        json = await res.json();
+      } catch {
+        json = {};
+      }
       if (res.ok) {
         setTournaments(json.tournaments ?? []);
-      }
-      else setError(json.error || 'Errore caricamento tornei');
-    } catch (err: any) {
+      } else setError(json.error || 'Errore caricamento tornei');
+    } catch (err) {
       setError(err?.message || 'Errore rete');
     } finally {
       setLoading(false);
@@ -67,9 +70,10 @@ function AdminTorneiPageInner() {
   const hasActiveFilters = filterType !== 'all' || filterStatus !== 'all';
 
   const filteredTournaments = tournaments.filter((t) => {
-    const matchesType = filterType === 'all' || t.tournament_type === filterType || t.competition_type === filterType;
+    const matchesType =
+      filterType === 'all' || t.tournament_type === filterType || t.competition_type === filterType;
     const matchesStatus = filterStatus === 'all' || (t.status || 'Aperto') === filterStatus;
-    const matchesSearch = 
+    const matchesSearch =
       !search ||
       t.title?.toLowerCase().includes(search.toLowerCase()) ||
       t.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -111,8 +115,8 @@ function AdminTorneiPageInner() {
             onClick={() => setIsFilterPanelOpen((prev) => !prev)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
               hasActiveFilters || isFilterPanelOpen
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                ? 'border-secondary bg-secondary text-white hover:opacity-90'
+                : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
             }`}
             aria-label="Mostra o nascondi filtri"
             title="Filtri"
@@ -126,10 +130,10 @@ function AdminTorneiPageInner() {
             <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex min-w-max items-center gap-2">
                 {[
-                  { value: "all", label: "Tutti i tipi" },
-                  { value: "eliminazione_diretta", label: "Eliminazione Diretta" },
-                  { value: "girone_eliminazione", label: "Girone + Eliminazione" },
-                  { value: "campionato", label: "Campionato" },
+                  { value: 'all', label: 'Tutti i tipi' },
+                  { value: 'eliminazione_diretta', label: 'Eliminazione Diretta' },
+                  { value: 'girone_eliminazione', label: 'Girone + Eliminazione' },
+                  { value: 'campionato', label: 'Campionato' },
                 ].map((option) => {
                   const isSelected = filterType === option.value;
                   return (
@@ -139,8 +143,8 @@ function AdminTorneiPageInner() {
                       onClick={() => setFilterType(option.value as typeof filterType)}
                       className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors ${
                         isSelected
-                          ? "border-secondary bg-secondary text-white"
-                          : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                          ? 'border-secondary bg-secondary text-white'
+                          : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
                       }`}
                     >
                       {option.label}
@@ -151,12 +155,12 @@ function AdminTorneiPageInner() {
                 <div className="w-px h-7 bg-black/10 shrink-0" />
 
                 {[
-                  { value: "all", label: "Tutti gli stati" },
-                  { value: "Aperto", label: "Aperto" },
-                  { value: "In Corso", label: "In Corso" },
-                  { value: "Completato", label: "Completato" },
-                  { value: "Concluso", label: "Concluso" },
-                  { value: "Chiuso", label: "Chiuso" },
+                  { value: 'all', label: 'Tutti gli stati' },
+                  { value: 'Aperto', label: 'Aperto' },
+                  { value: 'In Corso', label: 'In Corso' },
+                  { value: 'Completato', label: 'Completato' },
+                  { value: 'Concluso', label: 'Concluso' },
+                  { value: 'Chiuso', label: 'Chiuso' },
                 ].map((option) => {
                   const isSelected = filterStatus === option.value;
                   return (
@@ -166,8 +170,8 @@ function AdminTorneiPageInner() {
                       onClick={() => setFilterStatus(option.value)}
                       className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors ${
                         isSelected
-                          ? "border-secondary bg-secondary text-white"
-                          : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                          ? 'border-secondary bg-secondary text-white'
+                          : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
                       }`}
                     >
                       {option.label}
@@ -180,8 +184,8 @@ function AdminTorneiPageInner() {
             <button
               type="button"
               onClick={() => {
-                setFilterType("all");
-                setFilterStatus("all");
+                setFilterType('all');
+                setFilterStatus('all');
               }}
               className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
               aria-label="Reset filtri"
@@ -209,22 +213,33 @@ function AdminTorneiPageInner() {
         <div className="space-y-2">
           {filteredTournaments.map((tournament) => {
             // Colore sfondo card in base allo stato (allineato alla palette di dashboard/admin/bookings)
-            let cardBg = "var(--secondary)";
-            if (tournament.status === "Aperto") {
-              cardBg = (tournament.current_participants || 0) >= (tournament.max_participants || 0)
-                ? "#023047"
-                : "var(--secondary)";
-            } else if (tournament.status === "In Corso") {
-              cardBg = "#023b52";
-            } else if (tournament.status === "Completato" || tournament.status === "Concluso" || tournament.status === "Chiuso") {
-              cardBg = "#9ca3af";
+            let cardBg = 'var(--secondary)';
+            if (tournament.status === 'Aperto') {
+              cardBg =
+                (tournament.current_participants || 0) >= (tournament.max_participants || 0)
+                  ? '#023047'
+                  : 'var(--secondary)';
+            } else if (tournament.status === 'In Corso') {
+              cardBg = '#023b52';
+            } else if (
+              tournament.status === 'Completato' ||
+              tournament.status === 'Concluso' ||
+              tournament.status === 'Chiuso'
+            ) {
+              cardBg = '#9ca3af';
             }
 
             // Icona in base al tipo
             let TournamentIcon = Trophy;
-            if (tournament.tournament_type === 'girone_eliminazione' || tournament.competition_type === 'girone_eliminazione') {
+            if (
+              tournament.tournament_type === 'girone_eliminazione' ||
+              tournament.competition_type === 'girone_eliminazione'
+            ) {
               TournamentIcon = Target;
-            } else if (tournament.tournament_type === 'campionato' || tournament.competition_type === 'campionato') {
+            } else if (
+              tournament.tournament_type === 'campionato' ||
+              tournament.competition_type === 'campionato'
+            ) {
               TournamentIcon = UsersIcon;
             }
 
@@ -244,15 +259,22 @@ function AdminTorneiPageInner() {
                     <p className="font-semibold text-white text-sm truncate">{tournament.title}</p>
                     <p className="text-xs text-white/70 mt-0.5 truncate">
                       {tournament.start_date
-                        ? new Date(tournament.start_date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
+                        ? new Date(tournament.start_date).toLocaleDateString('it-IT', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
                         : '—'}
                       {' · '}
-                      {tournament.current_participants || 0}/{tournament.max_participants || 0} iscritti
+                      {tournament.current_participants || 0}/{tournament.max_participants || 0}{' '}
+                      iscritti
                     </p>
                   </div>
 
                   <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
-                    {!tournament.status || tournament.status === 'Aperto' ? 'Iscrizioni aperte' : tournament.status}
+                    {!tournament.status || tournament.status === 'Aperto'
+                      ? 'Iscrizioni aperte'
+                      : tournament.status}
                   </span>
                 </div>
               </div>
@@ -287,28 +309,26 @@ function AdminTorneiPageInner() {
                 <p className="text-sm font-semibold text-red-800 mb-1">Errore</p>
                 <p className="text-xs text-red-700">{error}</p>
               </div>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-600 hover:text-red-800"
-              >
+              <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
                 ✕
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
 export default function AdminTorneiPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      }
+    >
       <AdminTorneiPageInner />
     </Suspense>
   );

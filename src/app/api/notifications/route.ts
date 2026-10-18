@@ -1,176 +1,82 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
-import logger from "@/lib/logger/secure-logger";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { getRouteAuth, unauthorized } from '@/lib/auth/routeAuth';
+import { sanitizeUuid } from '@/lib/security/sanitize-server';
+import logger from '@/lib/logger/secure-logger';
 
-const SERVER_ERROR = "Errore interno del server";
+const SERVER_ERROR = 'Errore interno del server';
+const MAX_TITLE = 200;
+const MAX_MESSAGE = 2000;
 
-// GET - Fetch user notifications
-export async function GET(request: NextRequest) {
-  try {
-    const auth = await getRouteAuth();
-    if (!auth) return unauthorized();
-
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
-    const unreadOnly = searchParams.get("unread_only") === "true";
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "user_id is required" },
-        { status: 400 }
-      );
-    }
-
-    // IDOR check: utenti normali possono leggere solo le proprie notifiche
-    if (userId !== auth.user.id && !isAdmin(auth.role)) {
-      return forbidden();
-    }
-
-    let query = supabaseServer
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (unreadOnly) {
-      query = query.eq("is_read", false);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      logger.error("notifications GET query failed", error);
-      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-    }
-
-    return NextResponse.json({ notifications: data });
-  } catch (err: any) {
-    logger.error("notifications GET exception", err);
-    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-  }
-}
-
-// POST - Create new notification
+/**
+ * POST /api/notifications — crea una notifica per un altro utente
+ * (usata da `createNotification()`: avvisi al maestro, al proprietario di una
+ * prenotazione, ai gestori, al destinatario di un messaggio).
+ *
+ * Lettura, "segna come letta" ed eliminazione avvengono direttamente su
+ * Supabase con la RLS della tabella `notifications`, non da questa route.
+ *
+ * Qualsiasi utente loggato può notificare un altro utente, quindi il contenuto
+ * è vincolato: link solo interni (niente phishing verso siti esterni),
+ * lunghezze massime e tipo con formato semplice.
+ */
 export async function POST(request: NextRequest) {
   try {
     const auth = await getRouteAuth();
     if (!auth) return unauthorized();
 
     const body = await request.json();
-    const { user_id, title, message, type, link } = body;
+    const { user_id, title, message, type, link } = body ?? {};
 
-    if (!user_id || !title || !message) {
+    if (
+      !sanitizeUuid(String(user_id ?? '')) ||
+      typeof title !== 'string' ||
+      typeof message !== 'string' ||
+      !title.trim() ||
+      !message.trim()
+    ) {
       return NextResponse.json(
-        { error: "user_id, title, and message are required" },
-        { status: 400 }
+        { error: 'user_id, title e message sono obbligatori' },
+        { status: 400 },
       );
     }
 
+    if (title.length > MAX_TITLE || message.length > MAX_MESSAGE) {
+      return NextResponse.json({ error: 'Titolo o messaggio troppo lunghi' }, { status: 400 });
+    }
+
+    const safeType = typeof type === 'string' && /^[a-z_]{1,40}$/.test(type) ? type : 'general';
+
+    // Solo percorsi interni all'app ("/..."), mai URL assoluti o "//host"
+    const safeLink =
+      typeof link === 'string' &&
+      link.startsWith('/') &&
+      !link.startsWith('//') &&
+      link.length <= 500
+        ? link
+        : null;
+
     const { data, error } = await supabaseServer
-      .from("notifications")
+      .from('notifications')
       .insert({
         user_id,
-        title,
-        message,
-        type: type || "general",
-        link: link || null,
+        title: title.trim(),
+        message: message.trim(),
+        type: safeType,
+        link: safeLink,
         is_read: false,
       })
       .select()
       .single();
 
     if (error) {
-      logger.error("notifications POST insert failed", error);
+      logger.error('notifications POST insert failed', error);
       return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
     return NextResponse.json({ notification: data });
-  } catch (err: any) {
-    logger.error("notifications POST exception", err);
-    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-  }
-}
-
-// PATCH - Mark notification as read
-export async function PATCH(request: NextRequest) {
-  try {
-    const auth = await getRouteAuth();
-    if (!auth) return unauthorized();
-
-    const body = await request.json();
-    const { notification_id, user_id, mark_all_read } = body;
-
-    if (mark_all_read && user_id) {
-      const { error } = await supabaseServer
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("user_id", user_id)
-        .eq("is_read", false);
-
-      if (error) {
-        logger.error("notifications PATCH mark-all-read failed", error);
-        return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-      }
-
-      return NextResponse.json({ message: "All notifications marked as read" });
-    }
-
-    if (!notification_id) {
-      return NextResponse.json(
-        { error: "notification_id is required" },
-        { status: 400 }
-      );
-    }
-
-    const { data, error } = await supabaseServer
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", notification_id)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("notifications PATCH update failed", error);
-      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-    }
-
-    return NextResponse.json({ notification: data });
-  } catch (err: any) {
-    logger.error("notifications PATCH exception", err);
-    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-  }
-}
-
-// DELETE - Delete notification
-export async function DELETE(request: NextRequest) {
-  try {
-    const auth = await getRouteAuth();
-    if (!auth) return unauthorized();
-
-    const { searchParams } = new URL(request.url);
-    const notificationId = searchParams.get("notification_id");
-
-    if (!notificationId) {
-      return NextResponse.json(
-        { error: "notification_id is required" },
-        { status: 400 }
-      );
-    }
-
-    const { error } = await supabaseServer
-      .from("notifications")
-      .delete()
-      .eq("id", notificationId);
-
-    if (error) {
-      logger.error("notifications DELETE failed", error);
-      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
-    }
-
-    return NextResponse.json({ message: "Notification deleted" });
-  } catch (err: any) {
-    logger.error("notifications DELETE exception", err);
+  } catch (err) {
+    logger.error('notifications POST exception', err);
     return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }

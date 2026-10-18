@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
 import {
   Loader2,
   User,
@@ -17,16 +17,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
-} from "lucide-react";
+} from 'lucide-react';
 import { toast } from 'sonner';
 
-const WEEK_DAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
+const WEEK_DAYS = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
 type Profile = {
   id: string;
   full_name: string | null;
   email: string;
-  role: "admin" | "gestore" | "maestro" | "atleta";
+  role: 'admin' | 'gestore' | 'maestro' | 'atleta';
   phone: string | null;
   avatar_url: string | null;
   birth_date?: string | null;
@@ -53,7 +53,7 @@ type AthleteProfileEditPageProps = {
 };
 
 export default function AthleteProfileEditPage({
-  profilePath = "/dashboard/atleta/profile",
+  profilePath = '/dashboard/atleta/profile',
 }: AthleteProfileEditPageProps) {
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
@@ -64,93 +64,100 @@ export default function AthleteProfileEditPage({
   const [uploadingCertificato, setUploadingCertificato] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showCertificatoModal, setShowCertificatoModal] = useState(false);
-  const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita" | null>(null);
+  const [activeDateField, setActiveDateField] = useState<
+    'certificato' | 'tesserato' | 'nascita' | null
+  >(null);
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [dateTexts, setDateTexts] = useState({
-    birth_date: "",
-    certificato_medico_scadenza: "",
-    tesserato_scadenza: "",
+    birth_date: '',
+    certificato_medico_scadenza: '',
+    tesserato_scadenza: '',
   });
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [certificatoLinkUrl, setCertificatoLinkUrl] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [certificatoLinkUrl, setCertificatoLinkUrl] = useState('');
   const [formData, setFormData] = useState({
-    full_name: "",
-    phone: "",
-    birth_date: "",
-    birth_city: "",
-    fiscal_code: "",
-    address: "",
-    city: "",
-    province: "",
-    postal_code: "",
-    notes: "",
-    certificato_medico_url: "",
-    certificato_medico_scadenza: "",
-    tesserato: "No" as "Sì" | "No" | "Agonista",
-    numero_tessera: "",
-    tesserato_scadenza: "",
+    full_name: '',
+    phone: '',
+    birth_date: '',
+    birth_city: '',
+    fiscal_code: '',
+    address: '',
+    city: '',
+    province: '',
+    postal_code: '',
+    notes: '',
+    certificato_medico_url: '',
+    certificato_medico_scadenza: '',
+    tesserato: 'No' as 'Sì' | 'No' | 'Agonista',
+    numero_tessera: '',
+    tesserato_scadenza: '',
   });
 
   const roleLabels = {
-    admin: { label: "Admin", icon: Crown, bgColor: "#023047", borderLeftColor: "#011a24" },
-    gestore: { label: "Gestore", icon: Home, bgColor: "#023047", borderLeftColor: "#011a24" },
-    maestro: { label: "Maestro", icon: Dumbbell, bgColor: "#05384c", borderLeftColor: "#022431" },
-    atleta: { label: "Atleta", icon: User, bgColor: "var(--secondary)", borderLeftColor: "#023047" },
+    admin: { label: 'Admin', icon: Crown, bgColor: '#023047', borderLeftColor: '#011a24' },
+    gestore: { label: 'Gestore', icon: Home, bgColor: '#023047', borderLeftColor: '#011a24' },
+    maestro: { label: 'Maestro', icon: Dumbbell, bgColor: '#05384c', borderLeftColor: '#022431' },
+    atleta: {
+      label: 'Atleta',
+      icon: User,
+      bgColor: 'var(--secondary)',
+      borderLeftColor: '#023047',
+    },
   };
 
   const loadProfile = useCallback(async () => {
     try {
       const {
         data: { user: authUser },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
 
       if (!authUser) {
-        router.push("/login");
+        router.push('/login');
         return;
       }
 
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authUser.id)
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
         .maybeSingle();
 
       if (error || !data) {
-        toast.error("Profilo non trovato");
+        toast.error('Profilo non trovato');
         router.push(profilePath);
         return;
       }
 
       setUser(data);
-      const metadata = data.metadata && typeof data.metadata === "object" ? data.metadata : {};
+      const metadata = data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
       setFormData({
-        full_name: data.full_name || "",
-        phone: data.phone || "",
-        birth_date: data.birth_date || data.date_of_birth || "",
-        birth_city: metadata.birth_city || "",
-        fiscal_code: metadata.fiscal_code || "",
-        address: metadata.address || "",
-        city: metadata.city || "",
-        province: metadata.province || "",
-        postal_code: metadata.postal_code || "",
-        notes: data.bio || "",
-        certificato_medico_url: metadata.certificato_medico_url || "",
-        certificato_medico_scadenza: metadata.certificato_medico_scadenza || "",
-        tesserato: metadata.tesserato || "No",
-        numero_tessera: metadata.numero_tessera || "",
-        tesserato_scadenza: metadata.tesserato_scadenza || "",
+        full_name: data.full_name || '',
+        phone: data.phone || '',
+        birth_date: data.birth_date || data.date_of_birth || '',
+        birth_city: metadata.birth_city || '',
+        fiscal_code: metadata.fiscal_code || '',
+        address: metadata.address || '',
+        city: metadata.city || '',
+        province: metadata.province || '',
+        postal_code: metadata.postal_code || '',
+        notes: data.bio || '',
+        certificato_medico_url: metadata.certificato_medico_url || '',
+        certificato_medico_scadenza: metadata.certificato_medico_scadenza || '',
+        tesserato: metadata.tesserato || 'No',
+        numero_tessera: metadata.numero_tessera || '',
+        tesserato_scadenza: metadata.tesserato_scadenza || '',
       });
       setDateTexts({
-        birth_date: isoToDisplay(data.birth_date || data.date_of_birth || ""),
-        certificato_medico_scadenza: isoToDisplay(metadata.certificato_medico_scadenza || ""),
-        tesserato_scadenza: isoToDisplay(metadata.tesserato_scadenza || ""),
+        birth_date: isoToDisplay(data.birth_date || data.date_of_birth || ''),
+        certificato_medico_scadenza: isoToDisplay(metadata.certificato_medico_scadenza || ''),
+        tesserato_scadenza: isoToDisplay(metadata.tesserato_scadenza || ''),
       });
     } catch (error) {
-      console.error("Error loading profile:", error);
-      toast.error("Errore nel caricamento del profilo");
+      console.error('Error loading profile:', error);
+      toast.error('Errore nel caricamento del profilo');
       router.push(profilePath);
     } finally {
       setLoading(false);
@@ -167,9 +174,8 @@ export default function AthleteProfileEditPage({
 
     setUpdating(true);
     try {
-      const existingMetadata = user.metadata && typeof user.metadata === "object"
-        ? user.metadata
-        : {};
+      const existingMetadata =
+        user.metadata && typeof user.metadata === 'object' ? user.metadata : {};
 
       const baseUpdatePayload = {
         full_name: formData.full_name || null,
@@ -177,48 +183,48 @@ export default function AthleteProfileEditPage({
         bio: formData.notes || null,
         metadata: {
           ...(existingMetadata as Record<string, unknown>),
-          birth_city: formData.birth_city || "",
-          fiscal_code: formData.fiscal_code || "",
-          address: formData.address || "",
-          city: formData.city || "",
-          province: formData.province || "",
-          postal_code: formData.postal_code || "",
-          certificato_medico_url: formData.certificato_medico_url || "",
-          certificato_medico_scadenza: formData.certificato_medico_scadenza || "",
-          tesserato: formData.tesserato || "No",
-          numero_tessera: formData.numero_tessera || "",
-          tesserato_scadenza: formData.tesserato_scadenza || "",
+          birth_city: formData.birth_city || '',
+          fiscal_code: formData.fiscal_code || '',
+          address: formData.address || '',
+          city: formData.city || '',
+          province: formData.province || '',
+          postal_code: formData.postal_code || '',
+          certificato_medico_url: formData.certificato_medico_url || '',
+          certificato_medico_scadenza: formData.certificato_medico_scadenza || '',
+          tesserato: formData.tesserato || 'No',
+          numero_tessera: formData.numero_tessera || '',
+          tesserato_scadenza: formData.tesserato_scadenza || '',
         },
       };
 
-      const hasBirthDateColumn = Object.prototype.hasOwnProperty.call(user, "birth_date");
-      const primaryDateColumn: "birth_date" | "date_of_birth" = hasBirthDateColumn
-        ? "birth_date"
-        : "date_of_birth";
-      const fallbackDateColumn: "birth_date" | "date_of_birth" =
-        primaryDateColumn === "birth_date" ? "date_of_birth" : "birth_date";
+      const hasBirthDateColumn = Object.prototype.hasOwnProperty.call(user, 'birth_date');
+      const primaryDateColumn: 'birth_date' | 'date_of_birth' = hasBirthDateColumn
+        ? 'birth_date'
+        : 'date_of_birth';
+      const fallbackDateColumn: 'birth_date' | 'date_of_birth' =
+        primaryDateColumn === 'birth_date' ? 'date_of_birth' : 'birth_date';
 
       let { error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
           ...baseUpdatePayload,
           [primaryDateColumn]: formData.birth_date || null,
         })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       const missingPrimaryDateColumn =
         !!error &&
-        typeof error.message === "string" &&
+        typeof error.message === 'string' &&
         error.message.toLowerCase().includes(primaryDateColumn);
 
       if (missingPrimaryDateColumn) {
         const retry = await supabase
-          .from("profiles")
+          .from('profiles')
           .update({
             ...baseUpdatePayload,
             [fallbackDateColumn]: formData.birth_date || null,
           })
-          .eq("id", user.id);
+          .eq('id', user.id);
         error = retry.error;
       }
 
@@ -226,8 +232,8 @@ export default function AthleteProfileEditPage({
 
       router.push(profilePath);
     } catch (err: unknown) {
-      console.error("Error updating profile:", err);
-      toast.error(err instanceof Error ? err.message : "Errore durante il salvataggio del profilo");
+      console.error('Error updating profile:', err);
+      toast.error(err instanceof Error ? err.message : 'Errore durante il salvataggio del profilo');
     } finally {
       setUpdating(false);
     }
@@ -242,7 +248,7 @@ export default function AthleteProfileEditPage({
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       toast.warning("Il file deve essere un'immagine");
       return;
     }
@@ -252,13 +258,13 @@ export default function AthleteProfileEditPage({
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
+      uploadFormData.append('file', file);
       if (user.avatar_url) {
-        uploadFormData.append("oldImageUrl", user.avatar_url);
+        uploadFormData.append('oldImageUrl', user.avatar_url);
       }
 
-      const uploadResponse = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const uploadResponse = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: uploadFormData,
       });
 
@@ -270,15 +276,15 @@ export default function AthleteProfileEditPage({
       const publicUrl = uploadPayload.url as string;
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setUser({ ...user, avatar_url: publicUrl });
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      console.error('Error uploading avatar:', error);
       toast.error("Errore durante l'upload dell'immagine");
     } finally {
       setUploadingAvatar(false);
@@ -291,7 +297,7 @@ export default function AthleteProfileEditPage({
     try {
       new URL(avatarUrl);
     } catch {
-      toast.warning("Inserisci un URL valido");
+      toast.warning('Inserisci un URL valido');
       return;
     }
 
@@ -300,16 +306,16 @@ export default function AthleteProfileEditPage({
 
     try {
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: avatarUrl })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setUser({ ...user, avatar_url: avatarUrl });
-      setAvatarUrl("");
+      setAvatarUrl('');
     } catch (error) {
-      console.error("Error updating avatar:", error);
+      console.error('Error updating avatar:', error);
       toast.error("Errore durante l'aggiornamento dell'immagine");
     } finally {
       setUploadingAvatar(false);
@@ -324,11 +330,11 @@ export default function AthleteProfileEditPage({
 
     try {
       const deleteFormData = new FormData();
-      deleteFormData.append("deleteOnly", "true");
-      deleteFormData.append("oldImageUrl", user.avatar_url);
+      deleteFormData.append('deleteOnly', 'true');
+      deleteFormData.append('oldImageUrl', user.avatar_url);
 
-      const deleteResponse = await fetch("/api/upload/staff-image", {
-        method: "POST",
+      const deleteResponse = await fetch('/api/upload/staff-image', {
+        method: 'POST',
         body: deleteFormData,
       });
 
@@ -338,16 +344,16 @@ export default function AthleteProfileEditPage({
       }
 
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ avatar_url: null })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setUser({ ...user, avatar_url: null });
-      setAvatarUrl("");
+      setAvatarUrl('');
     } catch (error) {
-      console.error("Error removing avatar:", error);
+      console.error('Error removing avatar:', error);
       toast.error("Errore durante la rimozione dell'avatar");
     } finally {
       setUploadingAvatar(false);
@@ -360,12 +366,12 @@ export default function AthleteProfileEditPage({
     try {
       new URL(certificatoLinkUrl);
     } catch {
-      toast.warning("Inserisci un URL valido");
+      toast.warning('Inserisci un URL valido');
       return;
     }
 
     setFormData((prev) => ({ ...prev, certificato_medico_url: certificatoLinkUrl }));
-    setCertificatoLinkUrl("");
+    setCertificatoLinkUrl('');
     setShowCertificatoModal(false);
   }
 
@@ -374,42 +380,44 @@ export default function AthleteProfileEditPage({
     if (!file || !user) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.warning("Il file deve essere inferiore a 10MB");
+      toast.warning('Il file deve essere inferiore a 10MB');
       return;
     }
 
-    if (file.type !== "application/pdf") {
-      toast.warning("Il file deve essere un PDF");
+    if (file.type !== 'application/pdf') {
+      toast.warning('Il file deve essere un PDF');
       return;
     }
 
     setUploadingCertificato(true);
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-      uploadFormData.append("targetUserId", user.id);
+      uploadFormData.append('file', file);
+      uploadFormData.append('targetUserId', user.id);
       if (formData.certificato_medico_url) {
-        uploadFormData.append("oldCertificateUrl", formData.certificato_medico_url);
+        uploadFormData.append('oldCertificateUrl', formData.certificato_medico_url);
       }
 
-      const uploadResponse = await fetch("/api/upload/certificate", {
-        method: "POST",
+      const uploadResponse = await fetch('/api/upload/certificate', {
+        method: 'POST',
         body: uploadFormData,
       });
 
       const uploadPayload = await uploadResponse.json().catch(() => ({}));
       if (!uploadResponse.ok || !uploadPayload?.url) {
-        throw new Error(uploadPayload?.error || "Errore durante il caricamento del certificato");
+        throw new Error(uploadPayload?.error || 'Errore durante il caricamento del certificato');
       }
 
       setFormData((prev) => ({ ...prev, certificato_medico_url: uploadPayload.url as string }));
-      toast.success("Certificato caricato con successo.");
+      toast.success('Certificato caricato con successo.');
     } catch (error) {
-      console.error("Error uploading certificate:", error);
-      toast.error(error instanceof Error ? error.message : "Errore durante il caricamento del certificato");
+      console.error('Error uploading certificate:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Errore durante il caricamento del certificato',
+      );
     } finally {
       setUploadingCertificato(false);
-      event.target.value = "";
+      event.target.value = '';
     }
   }
 
@@ -419,25 +427,27 @@ export default function AthleteProfileEditPage({
     setUploadingCertificato(true);
     try {
       const deleteFormData = new FormData();
-      deleteFormData.append("deleteOnly", "true");
-      deleteFormData.append("targetUserId", user?.id || "");
-      deleteFormData.append("oldCertificateUrl", formData.certificato_medico_url);
+      deleteFormData.append('deleteOnly', 'true');
+      deleteFormData.append('targetUserId', user?.id || '');
+      deleteFormData.append('oldCertificateUrl', formData.certificato_medico_url);
 
-      const deleteResponse = await fetch("/api/upload/certificate", {
-        method: "POST",
+      const deleteResponse = await fetch('/api/upload/certificate', {
+        method: 'POST',
         body: deleteFormData,
       });
 
       const deletePayload = await deleteResponse.json().catch(() => ({}));
       if (!deleteResponse.ok) {
-        throw new Error(deletePayload?.error || "Errore durante la rimozione del certificato");
+        throw new Error(deletePayload?.error || 'Errore durante la rimozione del certificato');
       }
 
-      setFormData((prev) => ({ ...prev, certificato_medico_url: "" }));
-      toast.success("Certificato rimosso.");
+      setFormData((prev) => ({ ...prev, certificato_medico_url: '' }));
+      toast.success('Certificato rimosso.');
     } catch (error) {
-      console.error("Error removing certificate:", error);
-      toast.error(error instanceof Error ? error.message : "Errore durante la rimozione del certificato");
+      console.error('Error removing certificate:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Errore durante la rimozione del certificato',
+      );
     } finally {
       setUploadingCertificato(false);
     }
@@ -466,17 +476,22 @@ export default function AthleteProfileEditPage({
   }
 
   function isSameCalendarDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
-  function toggleDatePicker(field: "certificato" | "tesserato" | "nascita") {
+  function toggleDatePicker(field: 'certificato' | 'tesserato' | 'nascita') {
     if (activeDateField === field) {
       setActiveDateField(null);
       return;
     }
-    const existing = field === "certificato"
-      ? formData.certificato_medico_scadenza
-      : field === "tesserato"
+    const existing =
+      field === 'certificato'
+        ? formData.certificato_medico_scadenza
+        : field === 'tesserato'
         ? formData.tesserato_scadenza
         : formData.birth_date;
     const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
@@ -490,13 +505,13 @@ export default function AthleteProfileEditPage({
 
   function selectCalendarDay(day: Date) {
     if (!activeDateField) return;
-    const iso = normalizeDate(day).toISOString().split("T")[0];
+    const iso = normalizeDate(day).toISOString().split('T')[0];
     const display = isoToDisplay(iso);
 
-    if (activeDateField === "certificato") {
+    if (activeDateField === 'certificato') {
       setFormData((prev) => ({ ...prev, certificato_medico_scadenza: iso }));
       setDateTexts((prev) => ({ ...prev, certificato_medico_scadenza: display }));
-    } else if (activeDateField === "tesserato") {
+    } else if (activeDateField === 'tesserato') {
       setFormData((prev) => ({ ...prev, tesserato_scadenza: iso }));
       setDateTexts((prev) => ({ ...prev, tesserato_scadenza: display }));
     } else {
@@ -508,107 +523,109 @@ export default function AthleteProfileEditPage({
   }
 
   function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  function renderDateCalendarPanel(field: "certificato" | "tesserato" | "nascita") {
+  function renderDateCalendarPanel(field: 'certificato' | 'tesserato' | 'nascita') {
     const isOpen = activeDateField === field;
-    const selectedIso = field === "certificato" ? formData.certificato_medico_scadenza
-      : field === "tesserato" ? formData.tesserato_scadenza
-      : formData.birth_date;
+    const selectedIso =
+      field === 'certificato'
+        ? formData.certificato_medico_scadenza
+        : field === 'tesserato'
+        ? formData.tesserato_scadenza
+        : formData.birth_date;
     const selectedDate = selectedIso ? normalizeDate(new Date(selectedIso)) : null;
     return (
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            key="calendar-panel"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white"
-                          : isCurrentMonth
-                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
-                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(-1)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                aria-label="Mese precedente"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-sm font-semibold text-gray-900 capitalize">
+                {getCalendarMonthLabel(calendarViewDate)}
+              </p>
+              <button
+                type="button"
+                onClick={() => changeCalendarMonth(1)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                aria-label="Mese successivo"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+              {WEEK_DAYS.map((day) => (
+                <span key={day} className="py-1">
+                  {day}
+                </span>
+              ))}
+            </div>
+            <div className="calendar-grid grid grid-cols-7 gap-1">
+              {calendarDays.map(({ date, isCurrentMonth }) => {
+                const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
+                const isTodayDate = isSameCalendarDay(date, new Date());
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    onClick={() => selectCalendarDay(date)}
+                    className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                      isSelected
+                        ? 'bg-secondary text-white'
+                        : isCurrentMonth
+                        ? 'text-gray-800 border border-gray-200 hover:bg-gray-100'
+                        : 'text-gray-400 border border-gray-100 hover:bg-gray-50'
+                    } ${!isSelected && isTodayDate ? 'ring-1 ring-secondary/40' : ''}`}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   function isoToDisplay(iso: string): string {
-    if (!iso) return "";
-    const parts = iso.split("-");
-    if (parts.length !== 3) return "";
+    if (!iso) return '';
+    const parts = iso.split('-');
+    if (parts.length !== 3) return '';
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
   function displayToIso(text: string): string {
     const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return "";
+    if (!match) return '';
     return `${match[3]}-${match[2]}-${match[1]}`;
   }
 
   function handleDateTextChange(
-    field: "birth_date" | "certificato_medico_scadenza" | "tesserato_scadenza",
-    value: string
+    field: 'birth_date' | 'certificato_medico_scadenza' | 'tesserato_scadenza',
+    value: string,
   ) {
     setDateTexts((prev) => ({ ...prev, [field]: value }));
     const iso = displayToIso(value);
 
     if (iso) {
       setFormData((prev) => ({ ...prev, [field]: iso }));
-    } else if (value === "") {
-      setFormData((prev) => ({ ...prev, [field]: "" }));
+    } else if (value === '') {
+      setFormData((prev) => ({ ...prev, [field]: '' }));
     }
   }
 
@@ -625,9 +642,9 @@ export default function AthleteProfileEditPage({
 
       if (error) throw error;
 
-      toast.success("Email di reset password inviata con successo.");
+      toast.success('Email di reset password inviata con successo.');
     } catch (err: unknown) {
-      console.error("Error resetting password:", err);
+      console.error('Error resetting password:', err);
       toast.error(err instanceof Error ? err.message : "Errore durante l'invio del reset password");
     } finally {
       setResettingPassword(false);
@@ -637,9 +654,9 @@ export default function AthleteProfileEditPage({
   function getInitials(name: string | null, email: string) {
     if (name) {
       return name
-        .split(" ")
+        .split(' ')
         .map((n) => n[0])
-        .join("")
+        .join('')
         .toUpperCase()
         .slice(0, 2);
     }
@@ -673,7 +690,7 @@ export default function AthleteProfileEditPage({
           <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold text-white truncate">
-              {formData.full_name || user.full_name || "Nome non impostato"}
+              {formData.full_name || user.full_name || 'Nome non impostato'}
             </h2>
           </div>
         </div>
@@ -687,7 +704,9 @@ export default function AthleteProfileEditPage({
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome Completo</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Nome Completo
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -700,7 +719,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Email
+                </label>
                 <div className="flex-1">
                   <input
                     type="email"
@@ -712,7 +733,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Telefono
+                </label>
                 <div className="flex-1">
                   <input
                     type="tel"
@@ -725,32 +748,36 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Data di Nascita
+                </label>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       placeholder="GG/MM/AAAA"
                       value={dateTexts.birth_date}
-                      onChange={(e) => handleDateTextChange("birth_date", e.target.value)}
+                      onChange={(e) => handleDateTextChange('birth_date', e.target.value)}
                       maxLength={10}
                       className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                     <button
                       type="button"
-                      onClick={() => toggleDatePicker("nascita")}
+                      onClick={() => toggleDatePicker('nascita')}
                       className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
                       aria-label="Apri calendario"
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </button>
                   </div>
-                  {renderDateCalendarPanel("nascita")}
+                  {renderDateCalendarPanel('nascita')}
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Citta di Nascita</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Citta di Nascita
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -763,12 +790,16 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Codice Fiscale
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
                     value={formData.fiscal_code}
-                    onChange={(e) => setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })
+                    }
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
                     placeholder="RSSMRA80A01H501U"
                     maxLength={16}
@@ -777,7 +808,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Indirizzo
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -790,7 +823,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Citta / Provincia / CAP</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Citta / Provincia / CAP
+                </label>
                 <div className="flex-1 grid grid-cols-4 gap-1 sm:grid-cols-[minmax(0,1fr)_64px_92px] sm:gap-2">
                   <input
                     type="text"
@@ -802,7 +837,9 @@ export default function AthleteProfileEditPage({
                   <input
                     type="text"
                     value={formData.province}
-                    onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, province: e.target.value.toUpperCase() })
+                    }
                     className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
                     placeholder="MI"
                     maxLength={2}
@@ -819,7 +856,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Note
+                </label>
                 <div className="flex-1">
                   <textarea
                     value={formData.notes}
@@ -849,7 +888,7 @@ export default function AthleteProfileEditPage({
                   ) : user.avatar_url ? (
                     <img
                       src={user.avatar_url}
-                      alt={user.full_name || "Avatar"}
+                      alt={user.full_name || 'Avatar'}
                       className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
                     />
                   ) : (
@@ -860,13 +899,13 @@ export default function AthleteProfileEditPage({
                     </div>
                   )}
                 </div>
-                <div className={`w-full ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
+                <div className={`w-full ${user.avatar_url ? 'flex items-center gap-2' : ''}`}>
                   <button
                     type="button"
                     onClick={() => setShowAvatarModal(true)}
                     disabled={uploadingAvatar}
                     className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      user.avatar_url ? "flex-1" : "w-full"
+                      user.avatar_url ? 'flex-1' : 'w-full'
                     }`}
                   >
                     Cambia Avatar
@@ -889,12 +928,16 @@ export default function AthleteProfileEditPage({
 
           <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-1">
             <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                Informazioni Corsi
+              </h2>
             </div>
             <div className="px-6 py-6">
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Certificato Medico
+                  </label>
                   <div className="flex-1 space-y-3">
                     {formData.certificato_medico_url ? (
                       <div className="flex w-full items-stretch gap-2">
@@ -924,49 +967,55 @@ export default function AthleteProfileEditPage({
                         className="w-full inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-lg border border-secondary bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {uploadingCertificato ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                        {uploadingCertificato ? "Caricamento..." : "Carica PDF"}
+                        {uploadingCertificato ? 'Caricamento...' : 'Carica PDF'}
                       </button>
                     )}
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Scadenza Certificato
+                  </label>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="GG/MM/AAAA"
                         value={dateTexts.certificato_medico_scadenza}
-                        onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
+                        onChange={(e) =>
+                          handleDateTextChange('certificato_medico_scadenza', e.target.value)
+                        }
                         maxLength={10}
                         className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                       <button
                         type="button"
-                        onClick={() => toggleDatePicker("certificato")}
+                        onClick={() => toggleDatePicker('certificato')}
                         className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
                         aria-label="Apri calendario"
                       >
                         <CalendarIcon className="h-4 w-4" />
                       </button>
                     </div>
-                    {renderDateCalendarPanel("certificato")}
+                    {renderDateCalendarPanel('certificato')}
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Tesserato
+                  </label>
                   <div className="flex-1 grid grid-cols-3 gap-1 sm:gap-2">
-                    {(["Sì", "No", "Agonista"] as const).map((option) => (
+                    {(['Sì', 'No', 'Agonista'] as const).map((option) => (
                       <button
                         key={option}
                         type="button"
                         onClick={() => setFormData({ ...formData, tesserato: option })}
                         className={`w-full inline-flex items-center justify-center px-5 py-2 text-sm rounded-lg border transition-all ${
                           formData.tesserato === option
-                            ? "bg-secondary text-white border-secondary"
-                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                            ? 'bg-secondary text-white border-secondary'
+                            : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                         }`}
                       >
                         {option}
@@ -976,7 +1025,9 @@ export default function AthleteProfileEditPage({
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Numero Tessera
+                  </label>
                   <div className="flex-1">
                     <input
                       type="text"
@@ -989,33 +1040,34 @@ export default function AthleteProfileEditPage({
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Scadenza Tesseramento
+                  </label>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="GG/MM/AAAA"
                         value={dateTexts.tesserato_scadenza}
-                        onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
+                        onChange={(e) => handleDateTextChange('tesserato_scadenza', e.target.value)}
                         maxLength={10}
                         className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                       <button
                         type="button"
-                        onClick={() => toggleDatePicker("tesserato")}
+                        onClick={() => toggleDatePicker('tesserato')}
                         className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
                         aria-label="Apri calendario"
                       >
                         <CalendarIcon className="h-4 w-4" />
                       </button>
                     </div>
-                    {renderDateCalendarPanel("tesserato")}
+                    {renderDateCalendarPanel('tesserato')}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
 
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
@@ -1025,7 +1077,9 @@ export default function AthleteProfileEditPage({
           <div className="px-6 py-6">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  ID Utente
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -1037,7 +1091,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Ruolo
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -1049,16 +1105,18 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Data Registrazione
+                </label>
                 <div className="flex-1">
                   <input
                     type="text"
-                    value={new Date(user.created_at).toLocaleDateString("it-IT", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
+                    value={new Date(user.created_at).toLocaleDateString('it-IT', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
                     })}
                     readOnly
                     className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
@@ -1076,7 +1134,7 @@ export default function AthleteProfileEditPage({
             disabled={resettingPassword}
             className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {resettingPassword ? "Invio..." : "Reset Password"}
+            {resettingPassword ? 'Invio...' : 'Reset Password'}
           </button>
 
           <button
@@ -1084,7 +1142,7 @@ export default function AthleteProfileEditPage({
             disabled={updating}
             className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
           >
-            {updating ? "Salvataggio..." : "Salva Modifiche"}
+            {updating ? 'Salvataggio...' : 'Salva Modifiche'}
           </button>
         </div>
       </form>
@@ -1104,9 +1162,11 @@ export default function AthleteProfileEditPage({
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Carica un&apos;immagine</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Carica un&apos;immagine
+                </label>
                 <button
-                  onClick={() => document.getElementById("avatar-upload")?.click()}
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all"
                 >
                   <Upload className="h-5 w-5" />
@@ -1132,7 +1192,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Inserisci URL immagine</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Inserisci URL immagine
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="url"
@@ -1140,7 +1202,7 @@ export default function AthleteProfileEditPage({
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
                     className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
-                    onKeyDown={(e) => e.key === "Enter" && handleAvatarUrl()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
                   />
                   <button
                     onClick={handleAvatarUrl}
@@ -1150,7 +1212,9 @@ export default function AthleteProfileEditPage({
                     <LinkIcon className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Incolla l&apos;URL di un&apos;immagine gia caricata online</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Incolla l&apos;URL di un&apos;immagine gia caricata online
+                </p>
               </div>
             </div>
           </div>
@@ -1186,7 +1250,7 @@ export default function AthleteProfileEditPage({
                   type="button"
                   onClick={() => {
                     setShowCertificatoModal(false);
-                    requestAnimationFrame(() => document.getElementById("cert-upload")?.click());
+                    requestAnimationFrame(() => document.getElementById('cert-upload')?.click());
                   }}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all"
                 >
@@ -1206,7 +1270,9 @@ export default function AthleteProfileEditPage({
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Inserisci URL del certificato</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Inserisci URL del certificato
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="url"
@@ -1214,7 +1280,7 @@ export default function AthleteProfileEditPage({
                     onChange={(e) => setCertificatoLinkUrl(e.target.value)}
                     placeholder="https://esempio.com/certificato.pdf"
                     className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
-                    onKeyDown={(e) => e.key === "Enter" && handleCertificatoUrl()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCertificatoUrl()}
                   />
                   <button
                     type="button"
@@ -1225,7 +1291,9 @@ export default function AthleteProfileEditPage({
                     <LinkIcon className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Incolla l&apos;URL di un PDF gia caricato online</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Incolla l&apos;URL di un PDF gia caricato online
+                </p>
               </div>
             </div>
           </div>

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { Plus, User, Loader2, Search } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import { Plus, User, Loader2, Search } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type StaffMember = {
   id: string;
@@ -20,7 +20,7 @@ export default function AdminStaffPage() {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadStaff();
@@ -29,13 +29,13 @@ export default function AdminStaffPage() {
   async function loadStaff() {
     try {
       const { data, error } = await supabase
-        .from("staff")
-        .select("*")
-        .order("order_index", { ascending: true });
+        .from('staff')
+        .select('*')
+        .order('order_index', { ascending: true });
 
       if (error) throw error;
       setStaff(data || []);
-    } catch (error) {
+    } catch {
       // Handle error silently
     } finally {
       setLoading(false);
@@ -95,16 +95,18 @@ export default function AdminStaffPage() {
         <div className="text-center py-20 rounded-lg bg-white">
           <User className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">
-            {searchQuery ? "Nessun risultato trovato" : "Nessun membro dello staff"}
+            {searchQuery ? 'Nessun risultato trovato' : 'Nessun membro dello staff'}
           </h3>
           <p className="text-secondary/60">
-            {searchQuery ? "Prova a modificare la ricerca" : "Inizia aggiungendo il primo membro dello staff"}
+            {searchQuery
+              ? 'Prova a modificare la ricerca'
+              : 'Inizia aggiungendo il primo membro dello staff'}
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           {sortedStaff.map((member) => {
-            const cardBg = member.active ? "var(--secondary)" : "#9ca3af";
+            const cardBg = member.active ? 'var(--secondary)' : '#9ca3af';
 
             return (
               <div
@@ -126,7 +128,13 @@ export default function AdminStaffPage() {
                       />
                     ) : (
                       <span className="text-sm font-bold text-white leading-none">
-                        {member.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                        {member.full_name
+                          .trim()
+                          .split(' ')
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join('')
+                          .toUpperCase()}
                       </span>
                     )}
                   </div>

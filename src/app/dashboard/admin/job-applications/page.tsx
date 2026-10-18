@@ -1,40 +1,34 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import {
-  FileText,
-  Users,
-  Dumbbell,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import { FileText, Users, Dumbbell, Search, Loader2 } from 'lucide-react';
 
 interface JobApplication {
   id: string;
   full_name: string;
   email: string;
-  role: "maestro" | "preparatore";
+  role: 'maestro' | 'preparatore';
   message: string | null;
   cv_url: string | null;
-  status: "pending" | "reviewed" | "accepted" | "rejected";
+  status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
   created_at: string;
 }
 
 export default function JobApplicationsPage() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "reviewed" | "accepted" | "rejected">("all");
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"date" | "name" | "role" | "status" | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [filter] = useState<'all' | 'pending' | 'reviewed' | 'accepted' | 'rejected'>('all');
+  const [search, setSearch] = useState('');
+  const [sortBy] = useState<'date' | 'name' | 'role' | 'status' | null>(null);
+  const [sortOrder] = useState<'asc' | 'desc'>('asc');
 
   async function loadApplications() {
     setLoading(true);
     const { data, error } = await supabase
-      .from("recruitment_applications")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('recruitment_applications')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (!error && data) {
       setApplications(data);
@@ -46,9 +40,10 @@ export default function JobApplicationsPage() {
     loadApplications();
   }, []);
 
-  const filteredApplications = applications.filter(app => {
-    const matchesFilter = filter === "all" || app.status === filter;
-    const matchesSearch = search === "" ||
+  const filteredApplications = applications.filter((app) => {
+    const matchesFilter = filter === 'all' || app.status === filter;
+    const matchesSearch =
+      search === '' ||
       app.full_name.toLowerCase().includes(search.toLowerCase()) ||
       app.email.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
@@ -60,82 +55,45 @@ export default function JobApplicationsPage() {
 
     let comparison = 0;
     switch (sortBy) {
-      case "date":
+      case 'date':
         comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         break;
-      case "name":
+      case 'name':
         comparison = a.full_name.localeCompare(b.full_name);
         break;
-      case "role":
+      case 'role':
         comparison = a.role.localeCompare(b.role);
         break;
-      case "status":
+      case 'status':
         const statusOrder = { pending: 1, reviewed: 2, accepted: 3, rejected: 4 };
         comparison = statusOrder[a.status] - statusOrder[b.status];
         break;
     }
 
-    return sortOrder === "asc" ? comparison : -comparison;
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
-
-  const handleSort = (column: "date" | "name" | "role" | "status") => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder("asc");
-    }
-  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString("it-IT", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
   };
 
-  function exportToCSV() {
-    const csv = [
-      ["Data", "Nome", "Email", "Ruolo", "Stato"].join(","),
-      ...sortedApplications.map((a) => [
-        formatDate(a.created_at),
-        `"${a.full_name.replace(/"/g, '""')}"`,
-        a.email,
-        a.role === "maestro" ? "Maestro" : "Preparatore",
-        a.status === "pending" ? "In Attesa" : a.status === "reviewed" ? "Revisionata" : a.status === "accepted" ? "Accettata" : "Rifiutata",
-      ].join(","))
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `candidature-${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
-  }
-
-  const stats = {
-    total: applications.length,
-    pending: applications.filter(a => a.status === "pending").length,
-    reviewed: applications.filter(a => a.status === "reviewed").length,
-    accepted: applications.filter(a => a.status === "accepted").length,
-    rejected: applications.filter(a => a.status === "rejected").length,
-  };
-
-  const getStatusLabel = (status: JobApplication["status"]) => {
+  const getStatusLabel = (status: JobApplication['status']) => {
     switch (status) {
-      case "pending":
-        return "";
-      case "reviewed":
-        return "Revisionata";
-      case "accepted":
-        return "Accettata";
-      case "rejected":
-        return "Rifiutata";
+      case 'pending':
+        return '';
+      case 'reviewed':
+        return 'Revisionata';
+      case 'accepted':
+        return 'Accettata';
+      case 'rejected':
+        return 'Rifiutata';
       default:
-        return "";
+        return '';
     }
   };
 
@@ -168,8 +126,8 @@ export default function JobApplicationsPage() {
       ) : (
         <div className="space-y-2">
           {sortedApplications.map((app) => {
-            const roleColor = app.role === "maestro" ? "var(--secondary)" : "#023047";
-            const RoleIcon = app.role === "maestro" ? Users : Dumbbell;
+            const roleColor = app.role === 'maestro' ? 'var(--secondary)' : '#023047';
+            const RoleIcon = app.role === 'maestro' ? Users : Dumbbell;
 
             return (
               <div
@@ -194,7 +152,7 @@ export default function JobApplicationsPage() {
                     </p>
                   </div>
 
-                  {app.status !== "pending" && (
+                  {app.status !== 'pending' && (
                     <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden md:block">
                       {getStatusLabel(app.status)}
                     </span>
@@ -205,7 +163,6 @@ export default function JobApplicationsPage() {
           })}
         </div>
       )}
-
     </div>
   );
 }

@@ -1,10 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  ArrowDown,
-  ArrowUp,
   AlertCircle,
   Bell,
   CalendarClock,
@@ -15,67 +13,58 @@ import {
   Swords,
   SlidersHorizontal,
   Trophy,
-  User,
   Users,
   Video,
   XCircle,
-} from "lucide-react";
-import {
-  formatLongItalianDate,
-  formatShortItalianDate,
-} from "@/lib/utils/formatItalianDate";
-import {
-  useNotifications,
-  type DashboardNotification,
-} from "@/lib/hooks/useNotifications";
-import {
-  getMessageNotificationLink,
-  resolveDashboardLinkForRole,
-} from "@/lib/notifications/links";
-import { supabase } from "@/lib/supabase/client";
+} from 'lucide-react';
+import { formatLongItalianDate, formatShortItalianDate } from '@/lib/utils/formatItalianDate';
+import { useNotifications, type DashboardNotification } from '@/lib/hooks/useNotifications';
+import { getMessageNotificationLink, resolveNotificationLink } from '@/lib/notifications/links';
+import { supabase } from '@/lib/supabase/client';
+
+import { getSessionUser } from '@/lib/auth/clientSession';
 import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from "@/components/ui";
+} from '@/components/ui';
 
 const NOTIFICATION_MODAL_TYPE_LABELS: Record<string, string> = {
-  booking: "Prenotazione",
-  arena_challenge: "Sfida Arena",
-  arena_challenge_booked: "Sfida Arena + Campo",
-  tournament: "Torneo",
-  message: "Messaggio",
-  course: "Corso",
-  success: "Successo",
-  warning: "Avviso",
-  error: "Errore",
+  booking: 'Prenotazione',
+  arena_challenge: 'Sfida Arena',
+  arena_challenge_booked: 'Sfida Arena + Campo',
+  tournament: 'Torneo',
+  message: 'Messaggio',
+  course: 'Corso',
+  success: 'Successo',
+  warning: 'Avviso',
+  error: 'Errore',
 };
 
 const USER_NAME_STOPWORDS = new Set([
-  "il",
-  "lo",
-  "la",
-  "i",
-  "gli",
-  "le",
-  "un",
-  "una",
-  "nuovo",
-  "nuova",
-  "nuove",
-  "notifica",
-  "prenotazione",
-  "torneo",
-  "messaggio",
-  "corso",
-  "successo",
-  "avviso",
-  "errore",
-  "campo",
+  'il',
+  'lo',
+  'la',
+  'i',
+  'gli',
+  'le',
+  'un',
+  'una',
+  'nuovo',
+  'nuova',
+  'nuove',
+  'notifica',
+  'prenotazione',
+  'torneo',
+  'messaggio',
+  'corso',
+  'successo',
+  'avviso',
+  'errore',
+  'campo',
 ]);
 
 interface NotificationsListProps {
@@ -88,33 +77,33 @@ interface NotificationsListProps {
 }
 
 function getNotificationIcon(type: string, title?: string, message?: string, white?: boolean) {
-  const cls = white ? "h-6 w-6 text-white" : "h-5 w-5 text-secondary/60";
+  const cls = white ? 'h-6 w-6 text-white' : 'h-5 w-5 text-secondary/60';
   const sw = white ? 2.5 : 2;
-  const text = `${title || ""} ${message || ""}`.toLowerCase();
-  if (type === "video" || text.includes("video")) {
+  const text = `${title || ''} ${message || ''}`.toLowerCase();
+  if (type === 'video' || text.includes('video')) {
     return <Video className={cls} strokeWidth={sw} />;
   }
 
   switch (type) {
-    case "booking": {
-      if (text.includes("lezione")) return <Users className={cls} strokeWidth={sw} />;
+    case 'booking': {
+      if (text.includes('lezione')) return <Users className={cls} strokeWidth={sw} />;
       return <CalendarClock className={cls} strokeWidth={sw} />;
     }
-    case "arena_challenge":
+    case 'arena_challenge':
       return <Swords className={cls} strokeWidth={sw} />;
-    case "arena_challenge_booked":
+    case 'arena_challenge_booked':
       return <Swords className={cls} strokeWidth={sw} />;
-    case "tournament":
+    case 'tournament':
       return <Trophy className={cls} strokeWidth={sw} />;
-    case "message":
+    case 'message':
       return <MessageSquare className={cls} strokeWidth={sw} />;
-    case "course":
+    case 'course':
       return <Users className={cls} strokeWidth={sw} />;
-    case "success":
+    case 'success':
       return <CheckCircle className={cls} strokeWidth={sw} />;
-    case "warning":
+    case 'warning':
       return <AlertCircle className={cls} strokeWidth={sw} />;
-    case "error":
+    case 'error':
       return <XCircle className={cls} strokeWidth={sw} />;
     default:
       return <Info className={cls} strokeWidth={sw} />;
@@ -126,33 +115,33 @@ export default function NotificationsList({
   showHeader = true,
   showSearch = false,
   showFilterButton = true,
-  showTableHeader = false,
   maxVisibleRows,
 }: NotificationsListProps) {
   const router = useRouter();
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications(limit);
   const [selected, setSelected] = useState<DashboardNotification | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [userFilter, setUserFilter] = useState("");
+  const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [userFilter, setUserFilter] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const notificationTypes = Array.from(new Set(notifications.map((n) => n.type))).sort();
-  const hasActiveFilters = readFilter !== "all" || typeFilter !== "all" || userFilter.trim().length > 0;
+  const hasActiveFilters =
+    readFilter !== 'all' || typeFilter !== 'all' || userFilter.trim().length > 0;
 
   useEffect(() => {
     async function loadRole() {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
       if (!user) return;
 
       const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
         .single();
 
       if (profile?.role) {
@@ -166,15 +155,17 @@ export default function NotificationsList({
   const filteredNotifications = notifications.filter((n) => {
     const query = search.trim().toLowerCase();
     const userQuery = userFilter.trim().toLowerCase();
-    const searchableText = `${n.title} ${n.message} ${formatShortItalianDate(n.created_at)}`.toLowerCase();
+    const searchableText = `${n.title} ${n.message} ${formatShortItalianDate(
+      n.created_at,
+    )}`.toLowerCase();
     if (query && !searchableText.includes(query)) return false;
     if (userQuery) {
       const userText = `${n.title} ${n.message}`.toLowerCase();
       if (!userText.includes(userQuery)) return false;
     }
-    if (readFilter === "unread" && n.is_read) return false;
-    if (readFilter === "read" && !n.is_read) return false;
-    if (typeFilter !== "all" && n.type !== typeFilter) return false;
+    if (readFilter === 'unread' && n.is_read) return false;
+    if (readFilter === 'read' && !n.is_read) return false;
+    if (typeFilter !== 'all' && n.type !== typeFilter) return false;
     return true;
   });
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
@@ -189,8 +180,10 @@ export default function NotificationsList({
   }
 
   function buildBookingSearchLink(message: string): string | null {
-    const bookingPattern = /campo\s+(.+?)\s+per\s+il\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
-    const batchBookingPattern = /sul\s+(.+?)\s+a partire dal\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
+    const bookingPattern =
+      /campo\s+(.+?)\s+per\s+il\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
+    const batchBookingPattern =
+      /sul\s+(.+?)\s+a partire dal\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
 
     const bookingMatch = message.match(bookingPattern) || message.match(batchBookingPattern);
     if (!bookingMatch) {
@@ -206,44 +199,44 @@ export default function NotificationsList({
   }
 
   function getFallbackSectionLink(notification: DashboardNotification): string {
-    const normalizedRole = String(currentUserRole || "").toLowerCase();
+    const normalizedRole = String(currentUserRole || '').toLowerCase();
 
-    if (notification.type === "message") {
+    if (notification.type === 'message') {
       return getMessageNotificationLink(currentUserRole);
     }
 
-    if (notification.type === "booking") {
-      if (normalizedRole === "atleta") return "/dashboard/atleta/bookings";
-      if (normalizedRole === "maestro") return "/dashboard/maestro/bookings";
-      return "/dashboard/admin/bookings";
+    if (notification.type === 'booking') {
+      if (normalizedRole === 'atleta') return '/dashboard/atleta/bookings';
+      if (normalizedRole === 'maestro') return '/dashboard/maestro/bookings';
+      return '/dashboard/admin/bookings';
     }
 
-    if (notification.type === "tournament") {
-      if (normalizedRole === "atleta") return "/dashboard/atleta/tornei";
-      if (normalizedRole === "maestro") return "/dashboard/maestro/tornei";
-      return "/dashboard/admin/tornei";
+    if (notification.type === 'tournament') {
+      if (normalizedRole === 'atleta') return '/dashboard/atleta/tornei';
+      if (normalizedRole === 'maestro') return '/dashboard/maestro/tornei';
+      return '/dashboard/admin/tornei';
     }
 
-    if (normalizedRole === "atleta") return "/dashboard/atleta";
-    if (normalizedRole === "maestro") return "/dashboard/maestro";
-    return "/dashboard/admin";
+    if (normalizedRole === 'atleta') return '/dashboard/atleta';
+    if (normalizedRole === 'maestro') return '/dashboard/maestro';
+    return '/dashboard/admin';
   }
 
   function resolveNotificationTarget(notification: DashboardNotification): string {
-    if (notification.type === "message" && currentUserRole) {
+    if (notification.type === 'message' && currentUserRole) {
       return getMessageNotificationLink(currentUserRole);
     }
 
     let targetLink = notification.action_url || notification.link || null;
 
-    if (notification.type === "booking" && targetLink === "/dashboard/admin/bookings") {
+    if (notification.type === 'booking' && targetLink === '/dashboard/admin/bookings') {
       const bookingSearchLink = buildBookingSearchLink(notification.message);
       if (bookingSearchLink) {
         targetLink = bookingSearchLink;
       }
     }
 
-    const resolved = resolveDashboardLinkForRole(targetLink, currentUserRole);
+    const resolved = resolveNotificationLink(targetLink);
     return resolved || getFallbackSectionLink(notification);
   }
 
@@ -262,16 +255,16 @@ export default function NotificationsList({
     let match: RegExpExecArray | null;
     while ((match = namePattern.exec(text)) !== null) {
       const candidate = match[1].trim();
-      const firstWord = candidate.split(/\s+/)[0]?.toLowerCase() || "";
+      const firstWord = candidate.split(/\s+/)[0]?.toLowerCase() || '';
       if (USER_NAME_STOPWORDS.has(firstWord)) continue;
       names.add(candidate);
     }
 
     if (names.size === 0) {
-      return "Sistema";
+      return 'Sistema';
     }
 
-    return Array.from(names).slice(0, 3).join(", ");
+    return Array.from(names).slice(0, 3).join(', ');
   }
 
   return (
@@ -309,8 +302,8 @@ export default function NotificationsList({
               onClick={() => setIsFilterModalOpen(true)}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
                 hasActiveFilters
-                  ? "border-black/10 bg-secondary text-white hover:opacity-90"
-                  : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                  ? 'border-black/10 bg-secondary text-white hover:opacity-90'
+                  : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
               }`}
               aria-label="Apri filtri notifiche"
               title="Filtri"
@@ -334,33 +327,33 @@ export default function NotificationsList({
       ) : (
         <div>
           <ul
-            className={maxVisibleRows ? "overflow-y-auto scrollbar-hide space-y-2" : "space-y-2"}
-            style={maxVisibleRows ? { maxHeight: `${maxVisibleRows * 78}px`, scrollbarWidth: "none", msOverflowStyle: "none" } : undefined}
+            className={maxVisibleRows ? 'overflow-y-auto scrollbar-hide space-y-2' : 'space-y-2'}
+            style={
+              maxVisibleRows
+                ? {
+                    maxHeight: `${maxVisibleRows * 78}px`,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                  }
+                : undefined
+            }
           >
             {sortedNotifications.map((n) => {
               const typeColorMap: Record<string, string> = {
-                booking: "var(--secondary)",
-                arena_challenge: "var(--secondary)",
-                arena_challenge_booked: "var(--secondary)",
-                tournament: "#6d28d9",
-                message: "#0369a1",
-                course: "var(--color-frozen-lake-900)",
-                success: "#15803d",
-                warning: "#b45309",
-                error: "#b91c1c",
+                booking: 'var(--secondary)',
+                arena_challenge: 'var(--secondary)',
+                arena_challenge_booked: 'var(--secondary)',
+                tournament: '#6d28d9',
+                message: '#0369a1',
+                course: 'var(--color-frozen-lake-900)',
+                success: '#15803d',
+                warning: '#b45309',
+                error: '#b91c1c',
               };
-              const typeLabelMap: Record<string, string> = {
-                booking: "Prenotazione",
-                arena_challenge: "Sfida Arena",
-                arena_challenge_booked: "Sfida Arena + Campo",
-                tournament: "Torneo",
-                message: "Messaggio",
-                success: "Successo",
-                warning: "Avviso",
-                error: "Errore",
-              };
-              const isLezione = n.type === "booking" && `${n.title || ""} ${n.message || ""}`.toLowerCase().includes("lezione");
-              const bg = isLezione ? "#023047" : (typeColorMap[n.type] ?? "var(--secondary)");
+              const isLezione =
+                n.type === 'booking' &&
+                `${n.title || ''} ${n.message || ''}`.toLowerCase().includes('lezione');
+              const bg = isLezione ? '#023047' : typeColorMap[n.type] ?? 'var(--secondary)';
               const notifDate = new Date(n.created_at);
               const users = extractInterestedUsers(n);
               const isUnread = !n.is_read;
@@ -370,8 +363,8 @@ export default function NotificationsList({
                     type="button"
                     className={`w-full text-left rounded-lg border hover:transition-all ${
                       isUnread
-                        ? "text-white hover:opacity-95"
-                        : "bg-white border-black/10 hover:border-black/20"
+                        ? 'text-white hover:opacity-95'
+                        : 'bg-white border-black/10 hover:border-black/20'
                     }`}
                     style={isUnread ? { background: bg, borderColor: bg } : undefined}
                     onClick={() => handleClick(n)}
@@ -379,20 +372,37 @@ export default function NotificationsList({
                     <div className="flex items-center gap-4 py-3 px-3">
                       <div
                         className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
-                        style={{ background: isUnread ? "rgba(255,255,255,0.16)" : bg }}
+                        style={{ background: isUnread ? 'rgba(255,255,255,0.16)' : bg }}
                       >
                         {getNotificationIcon(n.type, n.title, n.message, true)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className={`font-semibold text-sm truncate ${isUnread ? "text-white" : "text-secondary"}`}>{n.title}</p>
+                          <p
+                            className={`font-semibold text-sm truncate ${
+                              isUnread ? 'text-white' : 'text-secondary'
+                            }`}
+                          >
+                            {n.title}
+                          </p>
                         </div>
-                        <p className={`text-xs mt-0.5 truncate ${isUnread ? "text-white/80" : "text-secondary/60"}`}>
-                          {notifDate.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "").replace(/([a-z])/i, (c) => c.toUpperCase())}
-                          {users !== "Sistema" ? ` · ${users}` : ""}
+                        <p
+                          className={`text-xs mt-0.5 truncate ${
+                            isUnread ? 'text-white/80' : 'text-secondary/60'
+                          }`}
+                        >
+                          {notifDate
+                            .toLocaleDateString('it-IT', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                            .replace('.', '')
+                            .replace(/([a-z])/i, (c) => c.toUpperCase())}
+                          {users !== 'Sistema' ? ` · ${users}` : ''}
                         </p>
                       </div>
-                                          </div>
+                    </div>
                   </button>
                 </li>
               );
@@ -402,14 +412,22 @@ export default function NotificationsList({
       )}
 
       <Modal open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-black/10 !bg-white dark:!bg-white dark:!border-black/10">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+        <ModalContent
+          size="md"
+          showBuiltinClose={false}
+          className="overflow-hidden rounded-lg !border-black/10 !bg-white"
+        >
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="text-white text-lg">Dettaglio Notifica</ModalTitle>
           </ModalHeader>
 
-          <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+          <ModalBody className="px-0 py-0 bg-white">
             {selected && (
-              <div className="text-sm bg-white dark:!bg-white divide-y divide-black/10">
+              <div className="text-sm bg-white divide-y divide-black/10">
                 <div className="px-4 py-3 bg-white">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900">{selected.title}</p>
@@ -418,21 +436,27 @@ export default function NotificationsList({
 
                 <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Data</span>
-                  <span className="text-xs text-gray-600">{formatLongItalianDate(selected.created_at)}</span>
+                  <span className="text-xs text-gray-600">
+                    {formatLongItalianDate(selected.created_at)}
+                  </span>
                 </div>
                 <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Tipo</span>
-                  <span className="text-xs text-gray-600">{NOTIFICATION_MODAL_TYPE_LABELS[selected.type] || selected.type}</span>
+                  <span className="text-xs text-gray-600">
+                    {NOTIFICATION_MODAL_TYPE_LABELS[selected.type] || selected.type}
+                  </span>
                 </div>
                 <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Messaggio</span>
-                  <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
+                  <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {selected.message}
+                  </p>
                 </div>
               </div>
             )}
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-black/10 bg-white dark:!bg-white dark:!border-black/10">
+          <ModalFooter className="p-0 border-t border-black/10 bg-white">
             <button
               type="button"
               onClick={goToNotificationSection}
@@ -448,15 +472,22 @@ export default function NotificationsList({
         <ModalContent
           size="md"
           showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-black/10 !bg-white dark:!bg-white dark:!border-black/10"
+          className="overflow-hidden rounded-lg !border-black/10 !bg-white"
         >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="text-white text-lg">Filtra Notifiche</ModalTitle>
           </ModalHeader>
 
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+          <ModalBody className="px-4 py-4 bg-white space-y-4">
             <div className="space-y-1">
-              <label htmlFor="notifications-user-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="notifications-user-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Utente
               </label>
               <input
@@ -470,13 +501,16 @@ export default function NotificationsList({
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="notifications-read-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="notifications-read-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Stato
               </label>
               <select
                 id="notifications-read-filter"
                 value={readFilter}
-                onChange={(e) => setReadFilter(e.target.value as "all" | "unread" | "read")}
+                onChange={(e) => setReadFilter(e.target.value as 'all' | 'unread' | 'read')}
                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="all">Tutte</option>
@@ -486,7 +520,10 @@ export default function NotificationsList({
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="notifications-type-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+              <label
+                htmlFor="notifications-type-filter"
+                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
+              >
                 Tipo
               </label>
               <select
@@ -505,13 +542,13 @@ export default function NotificationsList({
             </div>
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-black/10 bg-white dark:!bg-white dark:!border-black/10">
+          <ModalFooter className="p-0 border-t border-black/10 bg-white">
             <button
               type="button"
               onClick={() => {
-                setReadFilter("all");
-                setTypeFilter("all");
-                setUserFilter("");
+                setReadFilter('all');
+                setTypeFilter('all');
+                setUserFilter('');
               }}
               className="w-1/2 py-3 border-r border-black/10 text-secondary font-semibold hover:bg-gray-50 transition-colors"
             >

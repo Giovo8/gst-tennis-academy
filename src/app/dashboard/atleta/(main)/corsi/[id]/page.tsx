@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Loader2, GraduationCap } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { Loader2, GraduationCap } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
+import { getSessionUser } from '@/lib/auth/clientSession';
 type Course = {
   id: string;
   name: string;
@@ -29,12 +30,23 @@ type Payment = {
 };
 
 const DAY_INDEX: Record<string, number> = {
-  dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
+  dom: 0,
+  lun: 1,
+  mar: 2,
+  mer: 3,
+  gio: 4,
+  ven: 5,
+  sab: 6,
 };
 
 const DAYS: Record<string, string> = {
-  lun: "Lunedì", mar: "Martedì", mer: "Mercoledì", gio: "Giovedì",
-  ven: "Venerdì", sab: "Sabato", dom: "Domenica",
+  lun: 'Lunedì',
+  mar: 'Martedì',
+  mer: 'Mercoledì',
+  gio: 'Giovedì',
+  ven: 'Venerdì',
+  sab: 'Sabato',
+  dom: 'Domenica',
 };
 
 function computeLessonDates(course: Course): Date[] {
@@ -51,9 +63,9 @@ function computeLessonDates(course: Course): Date[] {
 }
 
 const methodLabel = (m: string | null) => {
-  if (m === "cash") return "Contanti";
-  if (m === "bank_transfer") return "Bonifico";
-  return m ?? "—";
+  if (m === 'cash') return 'Contanti';
+  if (m === 'bank_transfer') return 'Bonifico';
+  return m ?? '—';
 };
 
 export default function AtletaCorsoDetailPage() {
@@ -65,7 +77,6 @@ export default function AtletaCorsoDetailPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [enrollmentFee, setEnrollmentFee] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!courseId) return;
@@ -74,36 +85,46 @@ export default function AtletaCorsoDetailPage() {
 
   async function load() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-    setUserId(user.id);
+    const {
+      data: { user },
+    } = await getSessionUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    const [{ data: courseData }, { data: attendanceData }, { data: paymentsData }, { data: enrollmentData }] =
-      await Promise.all([
-        supabase
-          .from("courses")
-          .select("id, name, description, schedule_time, schedule_days, start_date, end_date, instructor_name, price_per_month")
-          .eq("id", courseId)
-          .single(),
-        supabase
-          .from("lesson_attendance")
-          .select("lesson_date, present")
-          .eq("course_id", courseId)
-          .eq("user_id", user.id),
-        supabase
-          .from("payments")
-          .select("id, amount, payment_method, status, paid_at, created_at, metadata")
-          .eq("user_id", user.id)
-          .eq("reference_id", courseId)
-          .eq("payment_type", "course")
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("course_enrollments")
-          .select("fee")
-          .eq("course_id", courseId)
-          .eq("user_id", user.id)
-          .single(),
-      ]);
+    const [
+      { data: courseData },
+      { data: attendanceData },
+      { data: paymentsData },
+      { data: enrollmentData },
+    ] = await Promise.all([
+      supabase
+        .from('courses')
+        .select(
+          'id, name, description, schedule_time, schedule_days, start_date, end_date, instructor_name, price_per_month',
+        )
+        .eq('id', courseId)
+        .single(),
+      supabase
+        .from('lesson_attendance')
+        .select('lesson_date, present')
+        .eq('course_id', courseId)
+        .eq('user_id', user.id),
+      supabase
+        .from('payments')
+        .select('id, amount, payment_method, status, paid_at, created_at, metadata')
+        .eq('user_id', user.id)
+        .eq('reference_id', courseId)
+        .eq('payment_type', 'course')
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('course_enrollments')
+        .select('fee')
+        .eq('course_id', courseId)
+        .eq('user_id', user.id)
+        .single(),
+    ]);
 
     if (courseData) setCourse(courseData);
     if (attendanceData) {
@@ -130,11 +151,13 @@ export default function AtletaCorsoDetailPage() {
   if (!course) return null;
 
   const lessonDates = computeLessonDates(course);
-  const presentCount = lessonDates.filter((d) => attendance[d.toISOString().split("T")[0]] === true).length;
-  const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
-  const maestros = (course.instructor_name ?? "").split(", ").filter(Boolean);
+  const presentCount = lessonDates.filter(
+    (d) => attendance[d.toISOString().split('T')[0]] === true,
+  ).length;
+  const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(', ');
+  const maestros = (course.instructor_name ?? '').split(', ').filter(Boolean);
   const totalPaid = payments
-    .filter((p) => p.status === "completed")
+    .filter((p) => p.status === 'completed')
     .reduce((sum, p) => sum + Number(p.amount), 0);
   const totalDue = enrollmentFee != null ? enrollmentFee - totalPaid : null;
 
@@ -143,10 +166,13 @@ export default function AtletaCorsoDetailPage() {
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/atleta/corsi" className="hover:text-secondary/80 transition-colors">
+          <Link
+            href="/dashboard/atleta/corsi"
+            className="hover:text-secondary/80 transition-colors"
+          >
             I Miei Corsi
           </Link>
-          {" › "}
+          {' › '}
           <span>Dettagli Corso</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">Dettagli Corso</h1>
@@ -155,7 +181,7 @@ export default function AtletaCorsoDetailPage() {
       {/* Header card */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "#05384c", borderColor: "#05384c", borderLeftColor: "#023047" }}
+        style={{ backgroundColor: '#05384c', borderColor: '#05384c', borderLeftColor: '#023047' }}
       >
         <div className="flex items-start gap-6">
           <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -173,36 +199,58 @@ export default function AtletaCorsoDetailPage() {
         <div className="px-6 py-6 divide-y divide-gray-100">
           {course.description && (
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-4">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
-              <p className="text-secondary font-semibold whitespace-pre-wrap">{course.description}</p>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Descrizione
+              </label>
+              <p className="text-secondary font-semibold whitespace-pre-wrap">
+                {course.description}
+              </p>
             </div>
           )}
           {days && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 py-4">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Giorni
+              </label>
               <p className="text-secondary font-semibold">{days}</p>
             </div>
           )}
           {course.schedule_time && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 py-4">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Orario
+              </label>
               <p className="text-secondary font-semibold">{course.schedule_time}</p>
             </div>
           )}
           {course.start_date && course.end_date && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 py-4">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Periodo</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Periodo
+              </label>
               <p className="text-secondary font-semibold">
-                {new Date(course.start_date).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
-                {" – "}
-                {new Date(course.end_date).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+                {new Date(course.start_date).toLocaleDateString('it-IT', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+                {' – '}
+                {new Date(course.end_date).toLocaleDateString('it-IT', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
               </p>
             </div>
           )}
           {lessonDates.length > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pt-4">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Presenze</label>
-              <p className="text-secondary font-semibold">{presentCount} / {lessonDates.length}</p>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Presenze
+              </label>
+              <p className="text-secondary font-semibold">
+                {presentCount} / {lessonDates.length}
+              </p>
             </div>
           )}
         </div>
@@ -216,12 +264,18 @@ export default function AtletaCorsoDetailPage() {
           </div>
           <ul className="flex flex-col gap-2 px-4 py-4">
             {maestros.map((name, i) => {
-              const initials = name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+              const initials = name
+                .trim()
+                .split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
               return (
                 <li key={i}>
                   <div
                     className="flex items-center gap-4 py-3 px-3 rounded-lg"
-                    style={{ background: "#023047" }}
+                    style={{ background: '#023047' }}
                   >
                     <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                       <span className="text-sm font-bold text-white leading-none">{initials}</span>
@@ -246,15 +300,22 @@ export default function AtletaCorsoDetailPage() {
           <div className="px-6 py-4">
             <ul className="flex flex-col gap-2">
               {lessonDates.map((d, i) => {
-                const dateStr = d.toISOString().split("T")[0];
-                const label = d.toLocaleDateString("it-IT", {
-                  weekday: "long", day: "numeric", month: "long", year: "numeric",
-                }).replace(/^./, (c) => c.toUpperCase());
+                const dateStr = d.toISOString().split('T')[0];
+                const label = d
+                  .toLocaleDateString('it-IT', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                  .replace(/^./, (c) => c.toUpperCase());
                 const hasRecord = attendance[dateStr] !== undefined;
                 const isPresent = attendance[dateStr] === true;
                 const bg = hasRecord
-                  ? isPresent ? "#023047" : "var(--color-frozen-lake-900)"
-                  : "var(--secondary)";
+                  ? isPresent
+                    ? '#023047'
+                    : 'var(--color-frozen-lake-900)'
+                  : 'var(--secondary)';
                 return (
                   <li key={i}>
                     <div
@@ -269,7 +330,7 @@ export default function AtletaCorsoDetailPage() {
                       </div>
                       {hasRecord && (
                         <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
-                          {isPresent ? "PRESENTE" : "ASSENTE"}
+                          {isPresent ? 'PRESENTE' : 'ASSENTE'}
                         </span>
                       )}
                     </div>
@@ -290,19 +351,25 @@ export default function AtletaCorsoDetailPage() {
         {/* Riepilogo */}
         <div className="px-6 py-5 divide-y divide-gray-100 border-b border-gray-100">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-4">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Quota</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Quota
+            </label>
             <p className="text-secondary font-semibold">
-              {enrollmentFee != null ? `€${enrollmentFee.toFixed(2)}` : "—"}
+              {enrollmentFee != null ? `€${enrollmentFee.toFixed(2)}` : '—'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 py-4">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Importo pagato</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Importo pagato
+            </label>
             <p className="text-secondary font-semibold">€{totalPaid.toFixed(2)}</p>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pt-4">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Importo dovuto</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Importo dovuto
+            </label>
             <p className="text-secondary font-semibold">
-              {totalDue != null ? `€${totalDue.toFixed(2)}` : "—"}
+              {totalDue != null ? `€${totalDue.toFixed(2)}` : '—'}
             </p>
           </div>
         </div>
@@ -316,23 +383,27 @@ export default function AtletaCorsoDetailPage() {
           <div className="px-6 py-4">
             <ul className="flex flex-col gap-2">
               {payments.map((p, i) => {
-                const date = new Date(p.paid_at ?? p.created_at).toLocaleDateString("it-IT", {
-                  day: "numeric", month: "long", year: "numeric",
+                const date = new Date(p.paid_at ?? p.created_at).toLocaleDateString('it-IT', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
                 });
                 return (
                   <li key={p.id}>
                     <div
                       className="flex items-center gap-4 py-3 px-3 rounded-lg"
-                      style={{ background: "#023047" }}
+                      style={{ background: '#023047' }}
                     >
                       <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                         <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm">€{Number(p.amount).toFixed(2)}</p>
+                        <p className="font-semibold text-white text-sm">
+                          €{Number(p.amount).toFixed(2)}
+                        </p>
                         <p className="text-xs text-white/50 mt-0.5">
                           {date} · {methodLabel(p.payment_method)}
-                          {p.metadata?.note ? ` · ${p.metadata.note}` : ""}
+                          {p.metadata?.note ? ` · ${p.metadata.note}` : ''}
                         </p>
                       </div>
                     </div>

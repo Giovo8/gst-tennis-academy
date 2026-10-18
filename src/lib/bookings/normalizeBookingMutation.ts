@@ -1,4 +1,4 @@
-import { BOOKING_STATUS } from "@/lib/constants/app";
+import { BOOKING_STATUS } from '@/lib/constants/app';
 
 type BookingMutationFlags = {
   status: string;
@@ -6,14 +6,14 @@ type BookingMutationFlags = {
   manager_confirmed: true;
 };
 
-export type NormalizedBookingMutation<T extends Record<string, unknown>> = Omit<
+type NormalizedBookingMutation<T extends Record<string, unknown>> = Omit<
   T,
   keyof BookingMutationFlags
 > &
   BookingMutationFlags;
 
 export function normalizeBookingMutation<
-  T extends Record<string, unknown> & { status?: string | null }
+  T extends Record<string, unknown> & { status?: string | null },
 >(bookingData: T): NormalizedBookingMutation<T> {
   const normalizedStatus =
     bookingData.status === BOOKING_STATUS.CANCELLED ||

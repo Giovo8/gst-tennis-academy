@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, Users, Calendar, RotateCw } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import type { PlayerNum, SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
@@ -59,15 +59,13 @@ export default function EliminationBracket({
   bestOf = 3,
   onMatchUpdate,
   onBracketGenerated,
-  onDeleteMatches,
   isAdmin: isAdminProp,
   highlightUserId = null,
-  canEditOwnMatches = false
+  canEditOwnMatches = false,
 }: EliminationBracketProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [isAdminDetected, setIsAdminDetected] = useState(false);
   const isAdmin = isAdminProp ?? isAdminDetected;
 
@@ -79,7 +77,9 @@ export default function EliminationBracket({
   const checkAdminRole = async () => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -93,11 +93,17 @@ export default function EliminationBracket({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => {
+  const handleScoreSubmit = async (
+    matchId: string,
+    sets: SetScore[],
+    retiredPlayer: PlayerNum | null,
+  ) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         throw new Error('Non autenticato');
       }
@@ -106,14 +112,14 @@ export default function EliminationBracket({
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ sets, retired_player: retiredPlayer })
+        body: JSON.stringify({ sets, retired_player: retiredPlayer }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Errore nell\'aggiornamento del punteggio');
+        throw new Error(data.error || "Errore nell'aggiornamento del punteggio");
       }
 
       await loadMatches();
@@ -143,15 +149,21 @@ export default function EliminationBracket({
   };
 
   const generateBracket = async () => {
-    if (!confirm('Sei sicuro di voler rigenerare il bracket? Questa operazione eliminerà tutti i match esistenti e i risultati.')) {
+    if (
+      !confirm(
+        'Sei sicuro di voler rigenerare il bracket? Questa operazione eliminerà tutti i match esistenti e i risultati.',
+      )
+    ) {
       return;
     }
-    
+
     setGenerating(true);
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         toast.error('Sessione non valida');
         setGenerating(false);
@@ -161,15 +173,15 @@ export default function EliminationBracket({
       const res = await fetch(`/api/tournaments/${tournamentId}/generate-bracket`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       const data = await res.json();
 
       if (res.ok) {
         // Aspetta un attimo prima di ricaricare
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         await loadMatches(); // Ricarica i match
         if (onBracketGenerated) onBracketGenerated(); // Cambia al tab bracket
         if (onMatchUpdate) onMatchUpdate();
@@ -187,45 +199,6 @@ export default function EliminationBracket({
       toast.error('Errore nella generazione del bracket');
     } finally {
       setGenerating(false);
-    }
-  };
-
-  const handleDeleteMatches = async () => {
-    if (!confirm('⚠️ ATTENZIONE: Sei sicuro di voler eliminare tutti i match del bracket?\n\nQuesta azione eliminerà tutti i risultati e dovrai rigenerare il bracket.')) {
-      return;
-    }
-    
-    setDeleting(true);
-    try {
-      const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        toast.error('Sessione non valida');
-        return;
-      }
-
-      const res = await fetch(`/api/tournaments/${tournamentId}/delete-matches`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(data.message || 'Match eliminati con successo!');
-        await loadMatches(); // Ricarica (dovrebbe essere vuoto)
-        if (onMatchUpdate) onMatchUpdate();
-      } else {
-        toast.error(data.error || 'Errore nell\'eliminazione dei match');
-      }
-    } catch (error) {
-      console.error('Error deleting matches:', error);
-      toast.error('Errore nell\'eliminazione dei match');
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -261,7 +234,7 @@ export default function EliminationBracket({
 
   // Organizza le partite per round
   const matchesByRound: Record<number, Match[]> = {};
-  matches.forEach(match => {
+  matches.forEach((match) => {
     if (!matchesByRound[match.round_number]) {
       matchesByRound[match.round_number] = [];
     }
@@ -269,23 +242,28 @@ export default function EliminationBracket({
   });
 
   // Ordina i round in ordine CRESCENTE (1, 2, 3... verso la finale)
-  const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
+  const rounds = Object.keys(matchesByRound)
+    .map(Number)
+    .sort((a, b) => a - b);
 
   return (
     <div className="space-y-6">
       {/* Visualizzazione bracket */}
-      <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div
+        className="overflow-x-auto scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         <div className="flex gap-4 sm:gap-6 md:gap-8 pb-4" style={{ minWidth: 'fit-content' }}>
-          {rounds.map(roundNum => {
+          {rounds.map((roundNum) => {
             const roundMatches = matchesByRound[roundNum] || [];
             return (
               <div key={roundNum} className="space-y-3 sm:space-y-4" style={{ minWidth: '240px' }}>
                 <h4 className="text-center text-sm font-semibold text-secondary">
                   {roundMatches[0]?.round_name || `Round ${roundNum}`}
                 </h4>
-                
+
                 <div className="space-y-3">
-                  {roundMatches.map(match => (
+                  {roundMatches.map((match) => (
                     <BracketMatchCard
                       key={match.id}
                       match={match}

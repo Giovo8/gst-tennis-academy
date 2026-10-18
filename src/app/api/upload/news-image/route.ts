@@ -1,66 +1,76 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { optimizeImage } from "@/lib/images/optimize";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { optimizeImage } from '@/lib/images/optimize';
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from '@/lib/auth/routeAuth';
 
-const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
-async function fetchExternalImage(imageUrl: string): Promise<{ buffer: ArrayBuffer; contentType: string; ext: string }> {
+async function fetchExternalImage(
+  imageUrl: string,
+): Promise<{ buffer: ArrayBuffer; contentType: string; ext: string }> {
   let parsed: URL;
   try {
     parsed = new URL(imageUrl);
   } catch {
-    throw new Error("URL non valido");
+    throw new Error('URL non valido');
   }
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    throw new Error("Solo URL HTTP/HTTPS sono ammessi");
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('Solo URL HTTP/HTTPS sono ammessi');
   }
-  // Block private/local IP ranges (SSRF protection)
-  const hostname = parsed.hostname.toLowerCase();
+  // Blocca host locali e reti private (protezione SSRF), incluso il metadata
+  // service dei cloud (169.254.x) e l'intero intervallo 172.16.0.0/12
+  const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const privateIpv4 = /^(127\.|10\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
   if (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname.startsWith("192.168.") ||
-    hostname.startsWith("10.") ||
-    hostname.startsWith("172.16.") ||
-    hostname === "::1" ||
-    hostname === "0.0.0.0"
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.internal') ||
+    privateIpv4.test(hostname) ||
+    hostname === '::1' ||
+    (hostname.includes(':') && /^(fc|fd|fe80|::ffff:)/.test(hostname))
   ) {
-    throw new Error("URL non consentito");
+    throw new Error('URL non consentito');
   }
 
   const res = await fetch(imageUrl, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; GST-Academy-Bot/1.0)" },
-    redirect: "follow",
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GST-Academy-Bot/1.0)' },
+    // Niente redirect automatici: un redirect potrebbe puntare a un host interno
+    redirect: 'error',
     signal: AbortSignal.timeout(10000),
   });
 
   if (!res.ok) throw new Error(`Impossibile scaricare l'immagine (HTTP ${res.status})`);
 
-  const contentType = res.headers.get("content-type")?.split(";")[0].trim() || "image/jpeg";
+  const contentType = res.headers.get('content-type')?.split(';')[0].trim() || 'image/jpeg';
   if (!ALLOWED_CONTENT_TYPES.includes(contentType)) {
     throw new Error("Il link non punta a un'immagine valida");
   }
 
   const buffer = await res.arrayBuffer();
-  if (buffer.byteLength > 5 * 1024 * 1024) throw new Error("Immagine troppo grande (max 5MB)");
+  if (buffer.byteLength > 5 * 1024 * 1024) throw new Error('Immagine troppo grande (max 5MB)');
 
   const extMap: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/jpg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
   };
-  const ext = extMap[contentType] || "jpg";
+  const ext = extMap[contentType] || 'jpg';
   return { buffer, contentType, ext };
 }
 
 export async function POST(request: NextRequest) {
+  // Solo admin/gestore caricano immagini delle news (prima la route era anonima)
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
+
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    const externalUrl = formData.get("externalUrl") as string | null;
-    const oldImageUrl = formData.get("oldImageUrl") as string | null;
+    const file = formData.get('file') as File | null;
+    const externalUrl = formData.get('externalUrl') as string | null;
+    const oldImageUrl = formData.get('oldImageUrl') as string | null;
 
     let fileBuffer: ArrayBuffer;
     let contentType: string;
@@ -74,65 +84,67 @@ export async function POST(request: NextRequest) {
         contentType = result.contentType;
         fileExt = result.ext;
       } catch (fetchError: unknown) {
-        const msg = fetchError instanceof Error ? fetchError.message : "Errore download immagine";
+        const msg = fetchError instanceof Error ? fetchError.message : 'Errore download immagine';
         return NextResponse.json({ error: msg }, { status: 400 });
       }
     } else if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+        return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
       }
-      if (!file.type.startsWith("image/")) {
-        return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+      if (!file.type.startsWith('image/')) {
+        return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
       }
       fileBuffer = await file.arrayBuffer();
-      contentType = file.type || "image/jpeg";
-      fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      contentType = file.type || 'image/jpeg';
+      fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     } else {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
     if (oldImageUrl) {
       try {
-        const oldPath = oldImageUrl.split("/avatars/").pop();
+        const oldPath = oldImageUrl.split('/avatars/').pop();
         if (oldPath) {
-          await supabaseServer.storage.from("avatars").remove([oldPath]);
+          await supabaseServer.storage.from('avatars').remove([oldPath]);
         }
       } catch (deleteError) {
-        console.warn("Warning: Could not delete old image:", deleteError);
+        console.warn('Warning: Could not delete old image:', deleteError);
       }
     }
 
     const optimized = await optimizeImage(fileBuffer, contentType, fileExt);
 
-    const fileName = `news/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${optimized.ext}`;
+    const fileName = `news/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${
+      optimized.ext
+    }`;
 
     const { error: uploadError } = await supabaseServer.storage
-      .from("avatars")
+      .from('avatars')
       .upload(fileName, optimized.buffer, {
         contentType: optimized.contentType,
         // Nome file immutabile (timestamp+random, upsert:false) → cache 1 anno
-        cacheControl: "31536000",
+        cacheControl: '31536000',
         upsert: false,
       });
 
     if (uploadError) {
       return NextResponse.json(
-        { error: `Upload failed: ${uploadError.message || "Unknown error"}` },
-        { status: 500 }
+        { error: `Upload failed: ${uploadError.message || 'Unknown error'}` },
+        { status: 500 },
       );
     }
 
     const {
       data: { publicUrl },
-    } = supabaseServer.storage.from("avatars").getPublicUrl(fileName);
+    } = supabaseServer.storage.from('avatars').getPublicUrl(fileName);
 
     return NextResponse.json({ url: publicUrl });
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? `Server error: ${error.message}` : "Internal server error",
+        error: error instanceof Error ? `Server error: ${error.message}` : 'Internal server error',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

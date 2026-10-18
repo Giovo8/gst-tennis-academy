@@ -1,7 +1,6 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Reveal from "@/components/landing/Reveal";
+import Reveal from '@/components/landing/Reveal';
 
 export default function CTASection() {
   return (
@@ -19,7 +18,10 @@ export default function CTASection() {
           </Reveal>
 
           {/* Buttons */}
-          <Reveal delay={0.15} className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+          <Reveal
+            delay={0.15}
+            className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4"
+          >
             <a
               href="https://wa.me/393762351777"
               target="_blank"
@@ -40,4 +42,3 @@ export default function CTASection() {
     </section>
   );
 }
-

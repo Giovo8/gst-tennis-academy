@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import { VALIDATION_RULES } from "@/lib/constants/app";
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { VALIDATION_RULES } from '@/lib/constants/app';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -17,34 +17,36 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [formData, setFormData] = useState({
-    password: "",
-    confirmPassword: "",
+    password: '',
+    confirmPassword: '',
   });
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
 
     async function bootstrapRecoverySession() {
-      const code = searchParams.get("code");
-      const tokenHash = searchParams.get("token_hash");
-      const type = searchParams.get("type");
+      const code = searchParams.get('code');
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
 
       // For query-based links, always exchange on server callback first.
       // This avoids client-side race conditions where session is not persisted yet.
       if (code || (tokenHash && type)) {
         const callbackUrl = code
           ? `/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset-password`
-          : `/auth/callback?token_hash=${encodeURIComponent(tokenHash!)}&type=${encodeURIComponent(type!)}&next=/auth/reset-password`;
+          : `/auth/callback?token_hash=${encodeURIComponent(tokenHash!)}&type=${encodeURIComponent(
+              type!,
+            )}&next=/auth/reset-password`;
         router.replace(callbackUrl);
         return;
       }
 
       // Handle hash-based links (e.g. #access_token=...&refresh_token=...)
-      if (typeof window !== "undefined" && window.location.hash) {
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
 
         if (accessToken && refreshToken) {
           await supabase.auth.setSession({
@@ -59,11 +61,11 @@ function ResetPasswordForm() {
 
       if (sessionError || !data.session) {
         if (code) {
-          setError("Link di reset non valido per questo dispositivo. Richiedi un nuovo link.");
+          setError('Link di reset non valido per questo dispositivo. Richiedi un nuovo link.');
           setSessionReady(false);
           return;
         }
-        setError("Sessione reset non valida o scaduta. Richiedi un nuovo link.");
+        setError('Sessione reset non valida o scaduta. Richiedi un nuovo link.');
         setSessionReady(false);
         return;
       }
@@ -78,7 +80,7 @@ function ResetPasswordForm() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       if (session) {
-        setError("");
+        setError('');
         setSessionReady(true);
       }
     });
@@ -94,26 +96,26 @@ function ResetPasswordForm() {
       return `La password deve contenere almeno ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} caratteri`;
     }
     if (!/[A-Z]/.test(password)) {
-      return "La password deve contenere almeno una lettera maiuscola";
+      return 'La password deve contenere almeno una lettera maiuscola';
     }
     if (!/[a-z]/.test(password)) {
-      return "La password deve contenere almeno una lettera minuscola";
+      return 'La password deve contenere almeno una lettera minuscola';
     }
     if (!/[0-9]/.test(password)) {
-      return "La password deve contenere almeno un numero";
+      return 'La password deve contenere almeno un numero';
     }
     if (!/[^A-Za-z0-9]/.test(password)) {
-      return "La password deve contenere almeno un carattere speciale";
+      return 'La password deve contenere almeno un carattere speciale';
     }
     return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError('');
 
     if (!sessionReady) {
-      setError("Sessione reset non valida o scaduta. Richiedi un nuovo link.");
+      setError('Sessione reset non valida o scaduta. Richiedi un nuovo link.');
       return;
     }
 
@@ -124,7 +126,7 @@ function ResetPasswordForm() {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Le password non coincidono");
+      setError('Le password non coincidono');
       return;
     }
 
@@ -138,8 +140,8 @@ function ResetPasswordForm() {
       if (error) throw error;
 
       setSuccess(true);
-      setTimeout(() => router.push("/login"), 3000);
-    } catch (err: any) {
+      setTimeout(() => router.push('/login'), 3000);
+    } catch (err) {
       setError(err.message || "Errore durante l'aggiornamento della password");
     } finally {
       setLoading(false);
@@ -152,16 +154,23 @@ function ResetPasswordForm() {
         <div className="sticky top-0 z-50 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-center h-16 sm:h-20">
-              <img src="/images/logo-tennis-96.png" alt="GST Tennis Academy" className="h-10 w-10 sm:h-12 sm:w-12" />
+              <img
+                src="/images/logo-tennis-96.png"
+                alt="GST Tennis Academy"
+                className="h-10 w-10 sm:h-12 sm:w-12"
+              />
             </div>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="w-full max-w-md text-center">
             <CheckCircle2 className="mx-auto h-16 w-16 text-secondary mb-6" />
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-3">Password Aggiornata</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-3">
+              Password Aggiornata
+            </h2>
             <p className="text-base text-secondary opacity-70 mb-8">
-              La tua password è stata aggiornata con successo. Verrai reindirizzato al login tra pochi secondi.
+              La tua password è stata aggiornata con successo. Verrai reindirizzato al login tra
+              pochi secondi.
             </p>
             <Link
               href="/login"
@@ -181,7 +190,11 @@ function ResetPasswordForm() {
       <div className="sticky top-0 z-50 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-16 sm:h-20">
-            <img src="/images/logo-tennis.png" alt="GST Tennis Academy" className="h-10 w-10 sm:h-12 sm:w-12" />
+            <img
+              src="/images/logo-tennis.png"
+              alt="GST Tennis Academy"
+              className="h-10 w-10 sm:h-12 sm:w-12"
+            />
           </div>
         </div>
       </div>
@@ -190,7 +203,9 @@ function ResetPasswordForm() {
       <div className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 sm:mb-10 text-center">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-3">Nuova Password</h2>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-3">
+              Nuova Password
+            </h2>
             <p className="text-base sm:text-lg text-secondary opacity-70">
               Scegli una nuova password sicura
             </p>
@@ -199,13 +214,16 @@ function ResetPasswordForm() {
           <form className="space-y-6 sm:space-y-8" onSubmit={handleSubmit}>
             {/* Nuova Password */}
             <div>
-              <label htmlFor="password" className="block text-sm sm:text-base font-semibold text-secondary mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm sm:text-base font-semibold text-secondary mb-2"
+              >
                 Nuova Password
               </label>
               <div className="relative">
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   required
                   className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none transition-all pr-12"
                   placeholder="Minimo 8 caratteri"
@@ -217,7 +235,7 @@ function ResetPasswordForm() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/60 hover:text-secondary transition-colors p-2"
-                  aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+                  aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -229,13 +247,16 @@ function ResetPasswordForm() {
 
             {/* Conferma Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm sm:text-base font-semibold text-secondary mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm sm:text-base font-semibold text-secondary mb-2"
+              >
                 Conferma Password
               </label>
               <div className="relative">
                 <input
                   id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
                   className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none transition-all pr-12"
                   placeholder="Ripeti la password"
@@ -247,7 +268,7 @@ function ResetPasswordForm() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/60 hover:text-secondary transition-colors p-2"
-                  aria-label={showConfirmPassword ? "Nascondi password" : "Mostra password"}
+                  aria-label={showConfirmPassword ? 'Nascondi password' : 'Mostra password'}
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -270,20 +291,34 @@ function ResetPasswordForm() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Aggiornamento in corso...
                 </span>
               ) : (
-                "Aggiorna Password"
+                'Aggiorna Password'
               )}
             </button>
           </form>
 
           {/* Login Link */}
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-secondary opacity-70 hover:opacity-100 transition-opacity font-medium">
+            <Link
+              href="/login"
+              className="text-sm text-secondary opacity-70 hover:opacity-100 transition-opacity font-medium"
+            >
               Torna al Login
             </Link>
           </div>
@@ -295,11 +330,13 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="mx-auto h-12 w-12 text-secondary animate-spin" />
-      </main>
-    }>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-white flex items-center justify-center">
+          <Loader2 className="mx-auto h-12 w-12 text-secondary animate-spin" />
+        </main>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   );

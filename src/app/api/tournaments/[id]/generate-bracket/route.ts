@@ -1,213 +1,211 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
 
 /**
  * API per generare il bracket di un torneo ad eliminazione diretta
- * 
+ *
  * POST /api/tournaments/[id]/generate-bracket
  * Genera automaticamente tutti i match del torneo in base ai partecipanti
  */
 
 async function getUserProfile(req: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-    
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
     if (!token) {
       return { user: null, profile: null };
     }
-    
+
     const { data: userData, error } = await supabaseServer.auth.getUser(token);
-    
+
     if (error || !userData?.user) {
       return { user: null, profile: null };
     }
-    
+
     const { data: profile } = await supabaseServer
-      .from("profiles")
-      .select("id, role, full_name")
-      .eq("id", userData.user.id)
+      .from('profiles')
+      .select('id, role, full_name')
+      .eq('id', userData.user.id)
       .single();
-    
+
     return { user: userData.user, profile };
-  } catch (error) {
+  } catch {
     return { user: null, profile: null };
   }
 }
 
 export async function POST(
   req: Request,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
     const { profile } = await getUserProfile(req);
-    
-    if (!profile || !["gestore", "admin"].includes(String(profile.role).toLowerCase())) {
+
+    if (!profile || !['gestore', 'admin'].includes(String(profile.role).toLowerCase())) {
       return NextResponse.json(
-        { error: "Non hai i permessi per generare bracket" },
-        { status: 403 }
+        { error: 'Non hai i permessi per generare bracket' },
+        { status: 403 },
       );
     }
-    
+
     // Await params if it's a Promise (Next.js 15+)
     const params = context.params instanceof Promise ? await context.params : context.params;
     const tournamentId = params.id;
-    
+
     // Carica il torneo
     const { data: tournament, error: tournamentError } = await supabaseServer
-      .from("tournaments")
-      .select("*")
-      .eq("id", tournamentId)
+      .from('tournaments')
+      .select('*')
+      .eq('id', tournamentId)
       .single();
-    
+
     if (tournamentError || !tournament) {
-      return NextResponse.json(
-        { error: "Torneo non trovato" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Torneo non trovato' }, { status: 404 });
     }
-    
+
     // Verifica che sia un torneo ad eliminazione diretta
     if (tournament.tournament_type !== 'eliminazione_diretta') {
       return NextResponse.json(
-        { error: "Questo endpoint è solo per tornei ad eliminazione diretta" },
-        { status: 400 }
+        { error: 'Questo endpoint è solo per tornei ad eliminazione diretta' },
+        { status: 400 },
       );
     }
-    
+
     // Verifica che il torneo sia in fase eliminazione
     if (tournament.current_phase !== 'eliminazione') {
       return NextResponse.json(
-        { error: `Il torneo deve essere in fase eliminazione. Fase attuale: ${tournament.current_phase}` },
-        { status: 400 }
+        {
+          error: `Il torneo deve essere in fase eliminazione. Fase attuale: ${tournament.current_phase}`,
+        },
+        { status: 400 },
       );
     }
-    
+
     // Carica i partecipanti
     const { data: participants, error: participantsError } = await supabaseServer
-      .from("tournament_participants")
-      .select("*")
-      .eq("tournament_id", tournamentId)
-      .order("seed", { ascending: true });
-    
+      .from('tournament_participants')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('seed', { ascending: true });
+
     if (participantsError) {
       return NextResponse.json(
-        { error: "Errore nel caricamento dei partecipanti" },
-        { status: 500 }
+        { error: 'Errore nel caricamento dei partecipanti' },
+        { status: 500 },
       );
     }
-    
+
     if (!participants || participants.length < 2) {
       return NextResponse.json(
-        { error: "Numero insufficiente di partecipanti (minimo: 2)" },
-        { status: 400 }
+        { error: 'Numero insufficiente di partecipanti (minimo: 2)' },
+        { status: 400 },
       );
     }
-    
+
     // Elimina match esistenti se presenti (permetti rigenerazione)
     const { count: existingMatches } = await supabaseServer
-      .from("tournament_matches")
-      .select("*", { count: "exact", head: true })
-      .eq("tournament_id", tournamentId);
-    
+      .from('tournament_matches')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId);
+
     if (existingMatches && existingMatches > 0) {
       // Elimina i match esistenti prima di rigenerare
       const { error: deleteError } = await supabaseServer
-        .from("tournament_matches")
+        .from('tournament_matches')
         .delete()
-        .eq("tournament_id", tournamentId);
-      
+        .eq('tournament_id', tournamentId);
+
       if (deleteError) {
         return NextResponse.json(
           { error: "Errore nell'eliminazione dei match esistenti: " + deleteError.message },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
-    
+
     // Genera il bracket
     const matches = generateEliminationBracket(participants, tournamentId);
-    
+
     // Inserisci i match nel database
     const { data: insertedMatches, error: insertError } = await supabaseServer
-      .from("tournament_matches")
+      .from('tournament_matches')
       .insert(matches)
       .select();
-    
+
     if (insertError) {
-      console.error("Error inserting matches:", insertError);
+      console.error('Error inserting matches:', insertError);
       return NextResponse.json(
-        { error: "Errore nella creazione dei match: " + insertError.message },
-        { status: 500 }
+        { error: 'Errore nella creazione dei match: ' + insertError.message },
+        { status: 500 },
       );
     }
-    
+
     // Propaga automaticamente i vincitori dei BYE ai turni successivi
-    await propagateByes(tournamentId, insertedMatches || []);
-    
+    await propagateByes(tournamentId);
+
     return NextResponse.json({
-      message: "Bracket generato con successo!",
+      message: 'Bracket generato con successo!',
       matches_created: insertedMatches?.length || 0,
-      rounds: Math.ceil(Math.log2(participants.length))
+      rounds: Math.ceil(Math.log2(participants.length)),
     });
-    
-  } catch (error: any) {
-    console.error("Error in POST /api/tournaments/[id]/generate-bracket:", error);
+  } catch (error) {
+    console.error('Error in POST /api/tournaments/[id]/generate-bracket:', error);
     return NextResponse.json(
-      { error: error.message || "Errore interno del server" },
-      { status: 500 }
+      { error: error.message || 'Errore interno del server' },
+      { status: 500 },
     );
   }
 }
 
 /**
  * Genera il bracket completo per un torneo ad eliminazione diretta
- * 
+ *
  * @param participants Array dei partecipanti ordinati per seed
  * @param tournamentId ID del torneo
  * @returns Array di match da inserire nel database
  */
 function generateEliminationBracket(participants: any[], tournamentId: string) {
   const numParticipants = participants.length;
-  
+
   // Calcola la potenza di 2 più vicina (arrotondata per eccesso)
   const bracketSize = Math.pow(2, Math.ceil(Math.log2(numParticipants)));
-  
+
   // Nomi dei turni in base al numero di partecipanti
   const getRoundName = (roundNum: number, totalRounds: number): string => {
     const roundsFromEnd = totalRounds - roundNum + 1;
-    
-    if (roundsFromEnd === 1) return "Finale";
-    if (roundsFromEnd === 2) return "Semifinali";
-    if (roundsFromEnd === 3) return "Quarti di Finale";
-    if (roundsFromEnd === 4) return "Ottavi di Finale";
-    if (roundsFromEnd === 5) return "Sedicesimi di Finale";
-    if (roundsFromEnd === 6) return "Trentaduesimi di Finale";
-    
+
+    if (roundsFromEnd === 1) return 'Finale';
+    if (roundsFromEnd === 2) return 'Semifinali';
+    if (roundsFromEnd === 3) return 'Quarti di Finale';
+    if (roundsFromEnd === 4) return 'Ottavi di Finale';
+    if (roundsFromEnd === 5) return 'Sedicesimi di Finale';
+    if (roundsFromEnd === 6) return 'Trentaduesimi di Finale';
+
     return `Round ${roundNum}`;
   };
-  
+
   const totalRounds = Math.log2(bracketSize);
   const matches: any[] = [];
-  
+
   // Genera il primo turno con i partecipanti reali
   const firstRoundMatches = bracketSize / 2;
   let matchNumber = 1;
-  
+
   // Seeding classico: 1 vs bracketSize, 2 vs bracketSize-1, etc.
   const seedPairs: Array<[number, number]> = [];
   for (let i = 1; i <= bracketSize / 2; i++) {
     seedPairs.push([i, bracketSize - i + 1]);
   }
-  
+
   // Genera i match del primo turno
   for (let i = 0; i < firstRoundMatches; i++) {
     const [seed1, seed2] = seedPairs[i];
-    
+
     // Trova i partecipanti corrispondenti (seed parte da 1)
-    const player1 = participants.find(p => (p.seed || 0) === seed1);
-    const player2 = participants.find(p => (p.seed || 0) === seed2);
-    
+    const player1 = participants.find((p) => (p.seed || 0) === seed1);
+    const player2 = participants.find((p) => (p.seed || 0) === seed2);
+
     // Se non esiste un partecipante per quel seed, il match è BYE
     const match = {
       tournament_id: tournamentId,
@@ -226,9 +224,9 @@ function generateEliminationBracket(participants: any[], tournamentId: string) {
       winner_id: null,
       scheduled_at: null,
       status: 'programmata',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
-    
+
     // Se uno dei due giocatori manca, è un BYE automatico
     if (!player1 && player2) {
       match.winner_id = player2.id;
@@ -241,15 +239,15 @@ function generateEliminationBracket(participants: any[], tournamentId: string) {
       match.status = 'completata';
       match.player1_score = 1;
     }
-    
+
     matches.push(match);
     matchNumber++;
   }
-  
+
   // Genera i turni successivi (vuoti, verranno popolati man mano che i match vengono completati)
   for (let round = 2; round <= totalRounds; round++) {
     const matchesInRound = bracketSize / Math.pow(2, round);
-    
+
     for (let i = 0; i < matchesInRound; i++) {
       matches.push({
         tournament_id: tournamentId,
@@ -268,100 +266,105 @@ function generateEliminationBracket(participants: any[], tournamentId: string) {
         winner_id: null,
         scheduled_at: null,
         status: 'programmata',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       });
       matchNumber++;
     }
   }
-  
+
   return matches;
 }
 
 /**
  * Propaga automaticamente i vincitori dei BYE ai turni successivi
  */
-async function propagateByes(tournamentId: string, matches: any[]) {
+async function propagateByes(tournamentId: string) {
   let hasChanges = true;
   let iteration = 0;
   const maxIterations = 10; // Previeni loop infiniti
-  
+
   while (hasChanges && iteration < maxIterations) {
     hasChanges = false;
     iteration++;
-    
+
     // Ricarica tutti i match aggiornati
     const { data: currentMatches } = await supabaseServer
-      .from("tournament_matches")
-      .select("*")
-      .eq("tournament_id", tournamentId)
-      .order("round_number", { ascending: true })
-      .order("match_number", { ascending: true });
-    
+      .from('tournament_matches')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('round_number', { ascending: true })
+      .order('match_number', { ascending: true });
+
     if (!currentMatches) continue;
-    
+
     // Organizza per round
     const matchesByRound: Record<number, any[]> = {};
-    currentMatches.forEach(match => {
+    currentMatches.forEach((match) => {
       if (!matchesByRound[match.round_number]) {
         matchesByRound[match.round_number] = [];
       }
       matchesByRound[match.round_number].push(match);
     });
-    
+
     // Processa ogni round
-    for (const roundNum of Object.keys(matchesByRound).map(Number).sort((a, b) => a - b)) {
+    for (const roundNum of Object.keys(matchesByRound)
+      .map(Number)
+      .sort((a, b) => a - b)) {
       const roundMatches = matchesByRound[roundNum];
-      
+
       for (let matchIndex = 0; matchIndex < roundMatches.length; matchIndex++) {
         const match = roundMatches[matchIndex];
-        
+
         // Se il match ha un vincitore e il turno successivo esiste
         if (match.winner_id && matchesByRound[roundNum + 1]) {
           const nextRoundMatches = matchesByRound[roundNum + 1];
           const nextMatchIndex = Math.floor(matchIndex / 2);
           const nextMatch = nextRoundMatches[nextMatchIndex];
-          
+
           if (nextMatch) {
             // Determina se il vincitore va come player1 o player2
             const isPlayer1 = matchIndex % 2 === 0;
             const playerField = isPlayer1 ? 'player1_id' : 'player2_id';
-            
+
             // Se il campo è vuoto, aggiorna
             if (!nextMatch[playerField]) {
               await supabaseServer
-                .from("tournament_matches")
+                .from('tournament_matches')
                 .update({ [playerField]: match.winner_id })
-                .eq("id", nextMatch.id);
-              
+                .eq('id', nextMatch.id);
+
               hasChanges = true;
             }
           }
         }
       }
     }
-    
+
     // Secondo passaggio: controlla se ci sono match con un solo giocatore (BYE automatico)
-    for (const roundNum of Object.keys(matchesByRound).map(Number).sort((a, b) => a - b)) {
+    for (const roundNum of Object.keys(matchesByRound)
+      .map(Number)
+      .sort((a, b) => a - b)) {
       const roundMatches = matchesByRound[roundNum];
-      
+
       for (const match of roundMatches) {
         // Se il match ha esattamente un giocatore e non ha ancora un vincitore
-        if (!match.winner_id && 
-            ((match.player1_id && !match.player2_id) || (!match.player1_id && match.player2_id))) {
-          
+        if (
+          !match.winner_id &&
+          ((match.player1_id && !match.player2_id) || (!match.player1_id && match.player2_id))
+        ) {
           const winnerId = match.player1_id || match.player2_id;
           const winnerField = match.player1_id ? 'player1_score' : 'player2_score';
-          
+
           await supabaseServer
-            .from("tournament_matches")
-            .update({ 
+            .from('tournament_matches')
+            .update({
               winner_id: winnerId,
               match_status: 'completed',
               status: 'completata',
-              [winnerField]: 1
+              [winnerField]: 1,
             })
-            .eq("id", match.id);
-          
+            .eq('id', match.id);
+
           hasChanges = true;
         }
       }

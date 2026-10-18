@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
+import { Trophy, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
-import { getAvatarUrl } from '@/lib/utils';
-import Avatar from "@/components/ui/Avatar";
+import Avatar from '@/components/ui/Avatar';
 
 interface Participant {
   id: string;
@@ -76,7 +75,7 @@ export default function ChampionshipStandingsView({
   defaultView = 'participants',
   hideInternalTabs = false,
   highlightUserId = null,
-  canEditOwnMatches = false
+  canEditOwnMatches = false,
 }: ChampionshipStandingsViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>(defaultView);
   const [matches, setMatches] = useState<Match[]>(() => MATCHES_CACHE.get(tournamentId) ?? []);
@@ -112,7 +111,7 @@ export default function ChampionshipStandingsView({
 
       // Crea una mappa dei participants per ID
       const participantsMap = new Map();
-      participants.forEach(p => {
+      participants.forEach((p) => {
         participantsMap.set(p.id, p);
       });
 
@@ -120,7 +119,7 @@ export default function ChampionshipStandingsView({
       const enrichedMatches = (data || []).map((match: any) => ({
         ...match,
         player1: participantsMap.get(match.player1_id),
-        player2: participantsMap.get(match.player2_id)
+        player2: participantsMap.get(match.player2_id),
       }));
 
       MATCHES_CACHE.set(tournamentId, enrichedMatches);
@@ -136,7 +135,7 @@ export default function ChampionshipStandingsView({
     const standingsMap = new Map<string, Standing>();
 
     // Initialize standings for all participants
-    participants.forEach(participant => {
+    participants.forEach((participant) => {
       standingsMap.set(participant.id, {
         participant,
         position: 0,
@@ -150,14 +149,14 @@ export default function ChampionshipStandingsView({
         gamesWon: 0,
         gamesLost: 0,
         gamesDiff: 0,
-        points: 0
+        points: 0,
       });
     });
 
     // Calculate stats from completed matches
     matches
-      .filter(m => m.status === 'completata' && m.winner_id)
-      .forEach(match => {
+      .filter((m) => m.status === 'completata' && m.winner_id)
+      .forEach((match) => {
         const player1Stats = standingsMap.get(match.player1_id);
         const player2Stats = standingsMap.get(match.player2_id);
 
@@ -174,7 +173,7 @@ export default function ChampionshipStandingsView({
         player1Stats.setsLost += won2;
         player2Stats.setsWon += won2;
         player2Stats.setsLost += won1;
-        sets.forEach(set => {
+        sets.forEach((set) => {
           player1Stats.gamesWon += set.player1_score;
           player1Stats.gamesLost += set.player2_score;
           player2Stats.gamesWon += set.player2_score;
@@ -194,7 +193,7 @@ export default function ChampionshipStandingsView({
       });
 
     // Calculate differentials
-    standingsMap.forEach(standing => {
+    standingsMap.forEach((standing) => {
       standing.setsDiff = standing.setsWon - standing.setsLost;
       standing.gamesDiff = standing.gamesWon - standing.gamesLost;
     });
@@ -218,7 +217,7 @@ export default function ChampionshipStandingsView({
   const standings = useMemo(
     () => (matches.length > 0 ? calculateStandings() : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [matches, participants]
+    [matches, participants],
   );
 
   const handleGenerateChampionship = async () => {
@@ -229,8 +228,10 @@ export default function ChampionshipStandingsView({
     setGenerating(true);
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         throw new Error('Non autenticato');
       }
@@ -238,8 +239,8 @@ export default function ChampionshipStandingsView({
       const res = await fetch(`/api/tournaments/${tournamentId}/generate-championship`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       const data = await res.json();
@@ -259,11 +260,17 @@ export default function ChampionshipStandingsView({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => {
+  const handleScoreSubmit = async (
+    matchId: string,
+    sets: SetScore[],
+    retiredPlayer: PlayerNum | null,
+  ) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         throw new Error('Non autenticato');
       }
@@ -272,14 +279,14 @@ export default function ChampionshipStandingsView({
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ sets, retired_player: retiredPlayer })
+        body: JSON.stringify({ sets, retired_player: retiredPlayer }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Errore nell\'aggiornamento del punteggio');
+        throw new Error(data.error || "Errore nell'aggiornamento del punteggio");
       }
 
       await loadMatches();
@@ -292,28 +299,31 @@ export default function ChampionshipStandingsView({
 
   const getRounds = () => {
     const rounds = new Set<number>();
-    matches.forEach(m => {
+    matches.forEach((m) => {
       if (m.round_number) rounds.add(m.round_number);
     });
     return Array.from(rounds).sort((a, b) => a - b);
   };
 
   const isMyMatch = (m: Match) =>
-    !!highlightUserId && (m.player1?.user_id === highlightUserId || m.player2?.user_id === highlightUserId);
+    !!highlightUserId &&
+    (m.player1?.user_id === highlightUserId || m.player2?.user_id === highlightUserId);
   const hasMyMatches = matches.some(isMyMatch);
 
   const rounds = getRounds();
   const filteredMatches = onlyMine
     ? matches.filter(isMyMatch)
     : selectedRound
-      ? matches.filter(m => m.round_number === selectedRound)
-      : matches;
+    ? matches.filter((m) => m.round_number === selectedRound)
+    : matches;
 
   if (matches.length === 0 && !loading) {
     return (
       <div className="rounded-lg border border-black/10 bg-white p-6 text-center">
         <Calendar className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
-        <h3 className="text-lg font-semibold text-secondary mb-2">Calendario non ancora generato</h3>
+        <h3 className="text-lg font-semibold text-secondary mb-2">
+          Calendario non ancora generato
+        </h3>
         <p className="text-sm text-secondary/70 mb-6">
           Genera il calendario per iniziare il campionato.
         </p>
@@ -402,15 +412,16 @@ export default function ChampionshipStandingsView({
               </div>
 
               {/* Data Rows */}
-              {participants.map((participant: any, index: number) => {
-                const fullName = participant.profiles?.full_name || participant.player_name || 'Sconosciuto';
+              {participants.map((participant: any) => {
+                const fullName =
+                  participant.profiles?.full_name || participant.player_name || 'Sconosciuto';
                 const avatarUrl = participant.profiles?.avatar_url;
 
                 return (
                   <div
                     key={participant.id}
                     className="bg-white rounded-lg px-5 py-4 border border-black/10 hover:border-gray-300 transition-all border-l-4"
-                    style={{ borderLeftColor: "#0f4c7c" }}
+                    style={{ borderLeftColor: '#0f4c7c' }}
                   >
                     <div className="flex items-center gap-4">
                       {/* Avatar */}
@@ -426,9 +437,7 @@ export default function ChampionshipStandingsView({
 
                       {/* Player Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-secondary truncate">
-                          {fullName}
-                        </div>
+                        <div className="font-bold text-secondary truncate">{fullName}</div>
                         <div className="text-xs text-secondary/60 truncate md:hidden">
                           {participant.profiles?.email || participant.user_id}
                         </div>
@@ -456,55 +465,69 @@ export default function ChampionshipStandingsView({
             <div
               ref={tabsRef}
               className="flex gap-2 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
-              onMouseDown={e => {
+              onMouseDown={(e) => {
                 isDragging.current = true;
                 dragStartX.current = e.clientX;
                 scrollStartX.current = tabsRef.current?.scrollLeft ?? 0;
               }}
-              onMouseMove={e => {
+              onMouseMove={(e) => {
                 if (!isDragging.current || !tabsRef.current) return;
-                tabsRef.current.scrollLeft = scrollStartX.current - (e.clientX - dragStartX.current);
+                tabsRef.current.scrollLeft =
+                  scrollStartX.current - (e.clientX - dragStartX.current);
               }}
-              onMouseUp={() => { isDragging.current = false; }}
-              onMouseLeave={() => { isDragging.current = false; }}
+              onMouseUp={() => {
+                isDragging.current = false;
+              }}
+              onMouseLeave={() => {
+                isDragging.current = false;
+              }}
             >
+              <button
+                onClick={() => {
+                  setSelectedRound(null);
+                  setOnlyMine(false);
+                }}
+                className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                  selectedRound === null && !onlyMine
+                    ? 'border-[#023047] bg-[#023047] text-white'
+                    : 'border-secondary bg-secondary text-white hover:opacity-90'
+                }`}
+              >
+                Tutte
+              </button>
+              {hasMyMatches && (
                 <button
-                  onClick={() => { setSelectedRound(null); setOnlyMine(false); }}
-                  className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                    selectedRound === null && !onlyMine
+                  onClick={() => {
+                    setSelectedRound(null);
+                    setOnlyMine(true);
+                  }}
+                  aria-label="Mostra solo le mie partite"
+                  title="Mostra solo le mie partite"
+                  className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors flex items-center justify-center ${
+                    onlyMine
                       ? 'border-[#023047] bg-[#023047] text-white'
                       : 'border-secondary bg-secondary text-white hover:opacity-90'
                   }`}
                 >
-                  Tutte
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-white" />
                 </button>
-                {hasMyMatches && (
-                  <button
-                    onClick={() => { setSelectedRound(null); setOnlyMine(true); }}
-                    aria-label="Mostra solo le mie partite"
-                    title="Mostra solo le mie partite"
-                    className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors flex items-center justify-center ${
-                      onlyMine
-                        ? 'border-[#023047] bg-[#023047] text-white'
-                        : 'border-secondary bg-secondary text-white hover:opacity-90'
-                    }`}
-                  >
-                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-white" />
-                  </button>
-                )}
-                {rounds.map(round => (
-                  <button
-                    key={round}
-                    onClick={() => { setSelectedRound(round); setOnlyMine(false); }}
-                    className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                      selectedRound === round && !onlyMine
-                        ? 'border-[#023047] bg-[#023047] text-white'
-                        : 'border-secondary bg-secondary text-white hover:opacity-90'
-                    }`}
-                  >
-                    {round}
-                  </button>
-                ))}
+              )}
+              {rounds.map((round) => (
+                <button
+                  key={round}
+                  onClick={() => {
+                    setSelectedRound(round);
+                    setOnlyMine(false);
+                  }}
+                  className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                    selectedRound === round && !onlyMine
+                      ? 'border-[#023047] bg-[#023047] text-white'
+                      : 'border-secondary bg-secondary text-white hover:opacity-90'
+                  }`}
+                >
+                  {round}
+                </button>
+              ))}
             </div>
           )}
 
@@ -520,7 +543,7 @@ export default function ChampionshipStandingsView({
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredMatches.map(match => (
+              {filteredMatches.map((match) => (
                 <BracketMatchCard
                   key={match.id}
                   match={match}
@@ -550,7 +573,10 @@ export default function ChampionshipStandingsView({
           ) : (
             <ul className="flex flex-col gap-2">
               {standings.map((standing, index) => {
-                const fullName = standing.participant.profiles?.full_name || standing.participant.player_name || 'Sconosciuto';
+                const fullName =
+                  standing.participant.profiles?.full_name ||
+                  standing.participant.player_name ||
+                  'Sconosciuto';
                 const pos = standing.position;
                 let rowBg = 'var(--secondary)';
                 if (pos === 1) rowBg = 'var(--secondary-hover)';
@@ -565,7 +591,9 @@ export default function ChampionshipStandingsView({
                     >
                       {/* Posizione */}
                       <div className="flex-shrink-0 flex items-center justify-center bg-white/10 rounded-lg w-10 h-10">
-                        <span className="text-base font-bold text-white leading-none tabular-nums">{pos}</span>
+                        <span className="text-base font-bold text-white leading-none tabular-nums">
+                          {pos}
+                        </span>
                       </div>
 
                       {/* Nome */}
@@ -586,25 +614,34 @@ export default function ChampionshipStandingsView({
                       <div className="flex items-center gap-4 flex-shrink-0">
                         <div className="text-center hidden sm:block">
                           <p className="text-xs text-white/50 uppercase tracking-wide">PG</p>
-                          <p className="text-sm font-bold tabular-nums text-white">{standing.matchesPlayed}</p>
+                          <p className="text-sm font-bold tabular-nums text-white">
+                            {standing.matchesPlayed}
+                          </p>
                         </div>
                         <div className="text-center hidden sm:block">
                           <p className="text-xs text-white/50 uppercase tracking-wide">V</p>
-                          <p className="text-sm font-bold tabular-nums text-white">{standing.matchesWon}</p>
+                          <p className="text-sm font-bold tabular-nums text-white">
+                            {standing.matchesWon}
+                          </p>
                         </div>
                         <div className="text-center hidden sm:block">
                           <p className="text-xs text-white/50 uppercase tracking-wide">P</p>
-                          <p className="text-sm font-bold tabular-nums text-white">{standing.matchesLost}</p>
+                          <p className="text-sm font-bold tabular-nums text-white">
+                            {standing.matchesLost}
+                          </p>
                         </div>
                         <div className="text-center hidden sm:block">
                           <p className="text-xs text-white/50 uppercase tracking-wide">Set</p>
                           <p className="text-sm font-bold tabular-nums text-white">
-                            {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
+                            {standing.setsDiff > 0 ? '+' : ''}
+                            {standing.setsDiff}
                           </p>
                         </div>
                         <div className="text-center">
                           <p className="text-xs text-white/50 uppercase tracking-wide">Pt</p>
-                          <p className="text-xl font-bold text-white tabular-nums">{standing.points}</p>
+                          <p className="text-xl font-bold text-white tabular-nums">
+                            {standing.points}
+                          </p>
                         </div>
                       </div>
                     </div>

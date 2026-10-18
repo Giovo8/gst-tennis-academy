@@ -1,40 +1,33 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef, useMemo, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import {
-  Calendar,
-  Loader2,
-  AlertCircle,
-  CheckCircle,
-  User,
-  Users,
-  Swords,
-  Lock,
-  X,
-} from "lucide-react";
+import { useEffect, useState, useRef, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalTitle,
-  ModalDescription,
   ModalBody,
   ModalFooter,
-} from "@/components/ui";
-import { getCourts } from "@/lib/courts/getCourts";
-import { DEFAULT_COURTS } from "@/lib/courts/constants";
-import ParticipantsCard from "@/components/bookings/ParticipantsCard";
-import CoachCard from "@/components/bookings/CoachCard";
-import DateNavigator from "@/components/bookings/DateNavigator";
-import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
-import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
-import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
-import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
-import TournamentMatchCard from "@/components/bookings/TournamentMatchCard";
-import { useBookableTournaments } from "@/lib/hooks/useBookableTournaments";
-import { TOURNAMENT_BOOKING_TYPE, type BookableTournamentMatch } from "@/lib/bookings/tournamentBookings";
+} from '@/components/ui';
+import { getCourts } from '@/lib/courts/getCourts';
+import { DEFAULT_COURTS } from '@/lib/courts/constants';
+import ParticipantsCard from '@/components/bookings/ParticipantsCard';
+import CoachCard from '@/components/bookings/CoachCard';
+import DateNavigator from '@/components/bookings/DateNavigator';
+import { isBookableCoachProfile, type UserRole } from '@/lib/roles';
+import { resolveCourseCourtsForDate } from '@/lib/bookings/courseConflicts';
+import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
+import { MATCH_FORMATS, type MatchFormat } from '@/lib/bookings/bookingTypes';
+import TournamentMatchCard from '@/components/bookings/TournamentMatchCard';
+import { useBookableTournaments } from '@/lib/hooks/useBookableTournaments';
+import {
+  TOURNAMENT_BOOKING_TYPE,
+  TOURNAMENT_BOOKING_BACKGROUND,
+  type BookableTournamentMatch,
+} from '@/lib/bookings/tournamentBookings';
 
 interface Coach {
   id: string;
@@ -90,45 +83,54 @@ interface ExistingBooking {
 }
 
 const BOOKING_TYPES = [
-  { value: "campo", label: "Campo", shortLabel: "Campo", icon: "🎾" },
-  { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata", icon: "👤" },
+  { value: 'campo', label: 'Campo', shortLabel: 'Campo', icon: '🎾' },
+  { value: 'lezione_privata', label: 'Lezione Privata', shortLabel: 'Privata', icon: '👤' },
 ];
 
-const TOURNAMENT_BOOKING_OPTION = { value: TOURNAMENT_BOOKING_TYPE, label: "Torneo", shortLabel: "Torneo", icon: "🏆" };
+const TOURNAMENT_BOOKING_OPTION = {
+  value: TOURNAMENT_BOOKING_TYPE,
+  label: 'Torneo',
+  shortLabel: 'Torneo',
+  icon: '🏆',
+};
 
 type NewAdminBookingPageProps = {
   basePath?: string;
 };
 
-function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBookingPageProps) {
+function NewAdminBookingPageInner({ basePath = '/dashboard/admin' }: NewAdminBookingPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50";
+  const bookingCardClassName = 'bg-white border border-black/10 rounded-lg overflow-hidden';
+  const bookingCardHeaderClassName = 'px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50';
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
+  const [previousGuests, setPreviousGuests] = useState<
+    { fullName: string; email?: string; phone?: string }[]
+  >([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
 
   // Form state
-  const [bookingType, setBookingType] = useState("campo");
+  const [bookingType, setBookingType] = useState('campo');
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedCourt, setSelectedCourt] = useState("");
-  const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
+  const [selectedCourt, setSelectedCourt] = useState('');
+  const [matchFormat, setMatchFormat] = useState<MatchFormat>('singolo');
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
-  const [selectedCoaches, setSelectedCoaches] = useState<string[]>([])
-  const [notes, setNotes] = useState("");
+  const [selectedCoaches, setSelectedCoaches] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
 
   // Torneo: visibile solo se c'è almeno un torneo in corso (admin/gestore vedono tutte le partite)
   const { tournaments } = useBookableTournaments();
-  const [selectedTournamentMatch, setSelectedTournamentMatch] = useState<BookableTournamentMatch | null>(null);
+  const [selectedTournamentMatch, setSelectedTournamentMatch] =
+    useState<BookableTournamentMatch | null>(null);
   const isTournamentBooking = bookingType === TOURNAMENT_BOOKING_TYPE;
-  const bookingTypes = tournaments.length > 0 ? [...BOOKING_TYPES, TOURNAMENT_BOOKING_OPTION] : BOOKING_TYPES;
+  const bookingTypes =
+    tournaments.length > 0 ? [...BOOKING_TYPES, TOURNAMENT_BOOKING_OPTION] : BOOKING_TYPES;
 
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -138,14 +140,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const pendingSlotsSelection = useRef<string[]>([]);
   const urlParamsApplied = useRef<boolean>(false);
-  
-  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
 
-  const getPrimaryParticipant = (booking: ExistingBooking | null) =>
-    booking?.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
-
-  const getBookingDisplayName = (booking: ExistingBooking) =>
-    getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } =
+    useDragScroll();
 
   const getParticipantNames = (booking: ExistingBooking): string[] => {
     const names =
@@ -161,55 +158,49 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const getParticipantIdentityKey = (booking: ExistingBooking) => {
     if (booking.participants && booking.participants.length > 0) {
       return booking.participants
-        .map((participant) => participant.user_id || `guest:${participant.full_name.trim().toLowerCase()}`)
-        .join("|");
+        .map(
+          (participant) =>
+            participant.user_id || `guest:${participant.full_name.trim().toLowerCase()}`,
+        )
+        .join('|');
     }
 
-    return booking.user_id || "";
+    return booking.user_id || '';
   };
 
   const selectedEntryParticipants = useMemo(
     () => (selectedEntry ? getParticipantNames(selectedEntry) : []),
-    [selectedEntry]
+    [selectedEntry],
   );
 
-  function getBookingTypeIcon(booking: ExistingBooking) {
-    if (booking.isBlock) return <Lock className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.isCourse) return <Calendar className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.type === "lezione_privata") return <User className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.type === "lezione_gruppo") return <Users className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.type === "arena") return <Swords className="h-5 w-5 text-secondary flex-shrink-0" />;
-    return <Calendar className="h-5 w-5 text-secondary flex-shrink-0" />;
-  }
-
   function getBookingLabel(booking: ExistingBooking): string {
-    if (booking.isBlock) return "Blocco Campo";
-    if (booking.isCourse) return booking.courseName || "Corso";
-    if (booking.type === "lezione_privata") return "Lezione Privata";
-    if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
-    if (booking.type === "torneo") return "Torneo";
-    if (booking.type === "arena") return "Match Arena";
-    return "Campo";
+    if (booking.isBlock) return 'Blocco Campo';
+    if (booking.isCourse) return booking.courseName || 'Corso';
+    if (booking.type === 'lezione_privata') return 'Lezione Privata';
+    if (booking.type === 'lezione_gruppo') return 'Lezione Gruppo';
+    if (booking.type === 'torneo') return 'Torneo';
+    if (booking.type === 'arena') return 'Match Arena';
+    return 'Campo';
   }
 
   function formatEntryTimeRange(booking: ExistingBooking): string {
-    const start = new Date(booking.start_time).toLocaleTimeString("it-IT", {
-      hour: "2-digit",
-      minute: "2-digit"
+    const start = new Date(booking.start_time).toLocaleTimeString('it-IT', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
-    const end = new Date(booking.end_time).toLocaleTimeString("it-IT", {
-      hour: "2-digit",
-      minute: "2-digit"
+    const end = new Date(booking.end_time).toLocaleTimeString('it-IT', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
     return `${start} - ${end}`;
   }
 
   function getEntryStatusLabel(booking: ExistingBooking): string {
-    if (booking.isBlock) return "Campo bloccato";
-    if (booking.isCourse) return "Corso";
-    if (booking.status === "confirmed") return "Confermata";
-    if (booking.status === "pending") return "In attesa";
-    if (booking.status === "cancelled") return "Annullata";
+    if (booking.isBlock) return 'Campo bloccato';
+    if (booking.isCourse) return 'Corso';
+    if (booking.status === 'confirmed') return 'Confermata';
+    if (booking.status === 'pending') return 'In attesa';
+    if (booking.status === 'cancelled') return 'Annullata';
     return booking.status;
   }
 
@@ -232,18 +223,22 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   }
 
   const maxAthletesAllowed =
-    bookingType === "lezione_privata"
+    bookingType === 'lezione_privata'
       ? 4
-      : bookingType === "campo" && matchFormat === "singolo"
-        ? 2
-        : 4;
+      : bookingType === 'campo' && matchFormat === 'singolo'
+      ? 2
+      : 4;
 
   // Validation
-  const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
+  const canSubmit =
+    selectedDate &&
+    selectedCourt &&
+    selectedSlots.length > 0 &&
     (isTournamentBooking
       ? Boolean(selectedTournamentMatch)
       : selectedAthletes.length > 0 &&
-        ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoaches.length > 0)));
+        (bookingType === 'campo' ||
+          (bookingType === 'lezione_privata' && selectedCoaches.length > 0)));
 
   // Load courts and users on mount
   useEffect(() => {
@@ -324,8 +319,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
     // Filter only available slots
     const slotsToSelect = pendingSlotsSelection.current;
-    const availableSlots = slotsToSelect.filter(time => {
-      const slot = slots.find(s => s.time === time);
+    const availableSlots = slotsToSelect.filter((time) => {
+      const slot = slots.find((s) => s.time === time);
       return slot && slot.available;
     });
 
@@ -356,10 +351,10 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       // Load coaches
       const { data: coachData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, role, metadata")
-        .in("role", ["maestro", "gestore"])
-        .order("full_name");
+        .from('profiles')
+        .select('id, full_name, email, role, metadata')
+        .in('role', ['maestro', 'gestore'])
+        .order('full_name');
 
       if (coachData) {
         const eligibleCoaches = coachData
@@ -371,19 +366,19 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       // Load athletes
       const { data: athleteData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone, role")
-        .eq("role", "atleta")
-        .order("full_name");
+        .from('profiles')
+        .select('id, full_name, email, phone, role')
+        .eq('role', 'atleta')
+        .order('full_name');
 
       if (athleteData) setAthletes(athleteData);
 
       // Load previous guests (ospiti non registrati usati in prenotazioni precedenti)
       const { data: guestsData } = await supabase
-        .from("booking_participants")
-        .select("full_name, email, phone")
-        .eq("is_registered", false)
-        .order("full_name");
+        .from('booking_participants')
+        .select('full_name, email, phone')
+        .eq('is_registered', false)
+        .order('full_name');
 
       if (guestsData) {
         const seen = new Set<string>();
@@ -392,17 +387,20 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
             const key = g.full_name.trim().toLowerCase();
             if (!seen.has(key)) {
               seen.add(key);
-              acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
+              acc.push({
+                fullName: g.full_name.trim(),
+                email: g.email ?? undefined,
+                phone: g.phone ?? undefined,
+              });
             }
             return acc;
           },
-          []
+          [],
         );
         setPreviousGuests(deduped);
       }
-
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error('Error loading data:', error);
     } finally {
       setCourtsLoading(false);
     }
@@ -413,17 +411,17 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
     setLoadingSlots(true);
 
-    const dateStr = selectedDate.toISOString().split("T")[0];
+    const dateStr = selectedDate.toISOString().split('T')[0];
 
     // Get existing bookings for this court and date
     const { data: bookings } = await supabase
-      .from("bookings")
-      .select("id, user_id, coach_id, start_time, end_time, type, status")
-      .eq("court", selectedCourt)
-      .neq("status", "cancelled")
-      .neq("status", "rejected")
-      .lt("start_time", `${dateStr}T23:59:59.999Z`)
-      .gt("end_time", `${dateStr}T00:00:00.000Z`);
+      .from('bookings')
+      .select('id, user_id, coach_id, start_time, end_time, type, status')
+      .eq('court', selectedCourt)
+      .neq('status', 'cancelled')
+      .neq('status', 'rejected')
+      .lt('start_time', `${dateStr}T23:59:59.999Z`)
+      .gt('end_time', `${dateStr}T00:00:00.000Z`);
 
     // Get court blocks for this court and date
     const startOfDay = new Date(selectedDate);
@@ -433,21 +431,23 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
     const [{ data: courtBlocks }, { data: courseData }] = await Promise.all([
       supabase
-        .from("court_blocks")
-        .select("id, start_time, end_time, reason")
-        .eq("court_id", selectedCourt)
-        .eq("is_disabled", false)
-        .lt("start_time", `${dateStr}T23:59:59.999Z`)
-        .gt("end_time", `${dateStr}T00:00:00.000Z`),
+        .from('court_blocks')
+        .select('id, start_time, end_time, reason')
+        .eq('court_id', selectedCourt)
+        .eq('is_disabled', false)
+        .lt('start_time', `${dateStr}T23:59:59.999Z`)
+        .gt('end_time', `${dateStr}T00:00:00.000Z`),
       supabase
-        .from("courses")
-        .select("id, name, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides")
-        .eq("is_active", true),
+        .from('courses')
+        .select(
+          'id, name, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides',
+        )
+        .eq('is_active', true),
     ]);
 
     // Filter courses within date range
-    const _dayName = (["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()];
-    const activeCourses = (courseData || []).filter(c => {
+    const _dayName = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'][selectedDate.getDay()];
+    const activeCourses = (courseData || []).filter((c) => {
       if (c.start_date && c.start_date > dateStr) return false;
       if (c.end_date && c.end_date < dateStr) return false;
       if (c.cancelled_dates && c.cancelled_dates.includes(dateStr)) return false;
@@ -457,15 +457,21 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     });
 
     // Build course fake-bookings for timeline
-    const coursesAsBookings: ExistingBooking[] = activeCourses.flatMap(course => {
+    const coursesAsBookings: ExistingBooking[] = activeCourses.flatMap((course) => {
       let timeStr: string | null = course.schedule_time ?? null;
       const courtsForDay = resolveCourseCourtsForDate(course, dateStr, _dayName);
       if (!courtsForDay.includes(selectedCourt)) return [];
       // lesson_time_overrides: per-date time override has highest priority
-      if (course.lesson_time_overrides && (course.lesson_time_overrides as Record<string, string>)[dateStr]) {
+      if (
+        course.lesson_time_overrides &&
+        (course.lesson_time_overrides as Record<string, string>)[dateStr]
+      ) {
         timeStr = (course.lesson_time_overrides as Record<string, string>)[dateStr];
       } else if (course.schedule_periods && course.schedule_periods.length > 0) {
-        const mp = course.schedule_periods.find((p: { days: string[]; time: string | null; court: string | null }) => p.days.includes(_dayName));
+        const mp = course.schedule_periods.find(
+          (p: { days: string[]; time: string | null; court: string | null }) =>
+            p.days.includes(_dayName),
+        );
         if (mp) timeStr = mp.time ?? null;
       }
       if (!timeStr) return [];
@@ -475,103 +481,116 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       courseStart.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0);
       const courseEnd = new Date(selectedDate);
       courseEnd.setHours(parseInt(m[3]), parseInt(m[4]), 0, 0);
-      return [{ id: course.id, start_time: courseStart.toISOString(), end_time: courseEnd.toISOString(), type: "corso", status: "confirmed", isCourse: true, courseName: course.name }];
+      return [
+        {
+          id: course.id,
+          start_time: courseStart.toISOString(),
+          end_time: courseEnd.toISOString(),
+          type: 'corso',
+          status: 'confirmed',
+          isCourse: true,
+          courseName: course.name,
+        },
+      ];
     });
 
     // Fetch profiles for bookings
-    const userIds = [...new Set([
-      ...(bookings?.map(b => b.user_id) || []),
-      ...(bookings?.map(b => b.coach_id).filter(Boolean) || [])
-    ])];
+    const userIds = [
+      ...new Set([
+        ...(bookings?.map((b) => b.user_id) || []),
+        ...(bookings?.map((b) => b.coach_id).filter(Boolean) || []),
+      ]),
+    ];
 
     const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .in("id", userIds);
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', userIds);
 
     const bookingIds = bookings?.map((booking) => booking.id) || [];
     let bookingParticipantsData = null;
 
     if (bookingIds.length > 0) {
       const participantsQuery = await supabase
-        .from("booking_participants")
-        .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-        .in("booking_id", bookingIds)
-        .order("booking_id", { ascending: true })
-        .order("order_index", { ascending: true });
+        .from('booking_participants')
+        .select('id, booking_id, full_name, email, phone, is_registered, user_id, order_index')
+        .in('booking_id', bookingIds)
+        .order('booking_id', { ascending: true })
+        .order('order_index', { ascending: true });
 
       bookingParticipantsData = participantsQuery.data;
 
-      if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+      if (participantsQuery.error?.message?.toLowerCase().includes('phone')) {
         const fallbackParticipantsQuery = await supabase
-          .from("booking_participants")
-          .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
-          .in("booking_id", bookingIds)
-          .order("booking_id", { ascending: true })
-          .order("order_index", { ascending: true });
+          .from('booking_participants')
+          .select('id, booking_id, full_name, email, is_registered, user_id, order_index')
+          .in('booking_id', bookingIds)
+          .order('booking_id', { ascending: true })
+          .order('order_index', { ascending: true });
 
         bookingParticipantsData = fallbackParticipantsQuery.data;
       }
     }
 
-    const profilesMap = new Map(
-      profilesData?.map(p => [p.id, p]) || []
-    );
+    const profilesMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
 
-    const participantsMap = new Map<string, ExistingBooking["participants"]>();
+    const participantsMap = new Map<string, ExistingBooking['participants']>();
     (bookingParticipantsData || []).forEach((participant: any) => {
       const existing = participantsMap.get(participant.booking_id) || [];
       existing.push(participant);
       participantsMap.set(participant.booking_id, existing);
     });
 
-    const enrichedBookings = bookings?.map(booking => ({
-      ...booking,
-      user_profile: profilesMap.get(booking.user_id) || null,
-      coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null,
-      participants: participantsMap.get(booking.id) || []
-    })) || [];
+    const enrichedBookings =
+      bookings?.map((booking) => ({
+        ...booking,
+        user_profile: profilesMap.get(booking.user_id) || null,
+        coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null,
+        participants: participantsMap.get(booking.id) || [],
+      })) || [];
 
     // Add court blocks as fake bookings for visualization
-    const blocksAsBookings = courtBlocks?.map(block => ({
-      id: block.id,
-      start_time: block.start_time,
-      end_time: block.end_time,
-      type: "blocco",
-      status: "blocked",
-      user_profile: null,
-      coach_profile: null,
-      reason: block.reason,
-      isBlock: true
-    })) || [];
+    const blocksAsBookings =
+      courtBlocks?.map((block) => ({
+        id: block.id,
+        start_time: block.start_time,
+        end_time: block.end_time,
+        type: 'blocco',
+        status: 'blocked',
+        user_profile: null,
+        coach_profile: null,
+        reason: block.reason,
+        isBlock: true,
+      })) || [];
 
     // Merge consecutive bookings of the same person
     const mergeConsecutiveBookings = (bookings: ExistingBooking[]) => {
       if (bookings.length === 0) return [];
-      
+
       // Sort by start time
-      const sorted = [...bookings].sort((a, b) => 
-        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+      const sorted = [...bookings].sort(
+        (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
       );
-      
+
       const merged: ExistingBooking[] = [];
       let current = sorted[0];
-      
+
       for (let i = 1; i < sorted.length; i++) {
         const next = sorted[i];
-        
+
         // Check if same user, same type, and consecutive times
         const currentEnd = new Date(current.end_time);
         const nextStart = new Date(next.start_time);
-        const sameParticipant = getParticipantIdentityKey(current) === getParticipantIdentityKey(next);
+        const sameParticipant =
+          getParticipantIdentityKey(current) === getParticipantIdentityKey(next);
         const sameType = current.type === next.type;
         const consecutive = currentEnd.getTime() === nextStart.getTime();
-        
+
         if (sameParticipant && sameType && consecutive && !current.isBlock && !next.isBlock) {
           // Merge: extend current end time
           current = {
             ...current,
-            end_time: next.end_time
+            end_time: next.end_time,
           };
         } else {
           // Not mergeable, push current and move to next
@@ -579,7 +598,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           current = next;
         }
       }
-      
+
       // Push the last one
       merged.push(current);
       return merged;
@@ -592,45 +611,45 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
     // Build occupied half-hour slots set (bookings + court blocks)
     const occupiedSlots = new Set<string>();
-    
+
     // Mark slots occupied by bookings
-    bookings?.forEach(b => {
+    bookings?.forEach((b) => {
       const start = new Date(b.start_time);
       const end = new Date(b.end_time);
-      
+
       // Mark all 30-minute slots as occupied
       const current = new Date(start);
       while (current < end) {
-        const hours = current.getHours().toString().padStart(2, "0");
-        const minutes = current.getMinutes().toString().padStart(2, "0");
+        const hours = current.getHours().toString().padStart(2, '0');
+        const minutes = current.getMinutes().toString().padStart(2, '0');
         occupiedSlots.add(`${hours}:${minutes}`);
         current.setMinutes(current.getMinutes() + 30);
       }
     });
 
     // Mark slots occupied by court blocks
-    courtBlocks?.forEach(block => {
+    courtBlocks?.forEach((block) => {
       const start = new Date(block.start_time);
       const end = new Date(block.end_time);
-      
+
       // Mark all 30-minute slots as occupied
       const current = new Date(start);
       while (current < end) {
-        const hours = current.getHours().toString().padStart(2, "0");
-        const minutes = current.getMinutes().toString().padStart(2, "0");
+        const hours = current.getHours().toString().padStart(2, '0');
+        const minutes = current.getMinutes().toString().padStart(2, '0');
         occupiedSlots.add(`${hours}:${minutes}`);
         current.setMinutes(current.getMinutes() + 30);
       }
     });
 
     // Mark slots occupied by courses
-    coursesAsBookings.forEach(course => {
+    coursesAsBookings.forEach((course) => {
       const start = new Date(course.start_time);
       const end = new Date(course.end_time);
       const current = new Date(start);
       while (current < end) {
-        const hours = current.getHours().toString().padStart(2, "0");
-        const minutes = current.getMinutes().toString().padStart(2, "0");
+        const hours = current.getHours().toString().padStart(2, '0');
+        const minutes = current.getMinutes().toString().padStart(2, '0');
         occupiedSlots.add(`${hours}:${minutes}`);
         current.setMinutes(current.getMinutes() + 30);
       }
@@ -644,12 +663,12 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     for (let hour = 7; hour <= 22; hour++) {
       for (const minute of [0, 30]) {
         if (hour === 22 && minute === 30) break;
-        
-        const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-        
+
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
         // Slot disponibile se non è già occupato
         let available = !occupiedSlots.has(time);
-        
+
         // If today, check if slot is in the past
         if (isToday) {
           const slotTime = new Date(selectedDate);
@@ -669,32 +688,36 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
   async function handleSubmit() {
     if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
-      setError("Completa tutti i campi obbligatori");
+      setError('Completa tutti i campi obbligatori');
       return;
     }
 
     if (isTournamentBooking && !selectedTournamentMatch) {
-      setError("Seleziona la partita del torneo da giocare");
+      setError('Seleziona la partita del torneo da giocare');
       return;
     }
 
     if (!isTournamentBooking && selectedAthletes.length === 0) {
-      setError("Completa tutti i campi obbligatori");
+      setError('Completa tutti i campi obbligatori');
       return;
     }
 
-    if (!isTournamentBooking && maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
+    if (
+      !isTournamentBooking &&
+      maxAthletesAllowed !== null &&
+      selectedAthletes.length > maxAthletesAllowed
+    ) {
       setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       return;
     }
 
-      if (bookingType === "lezione_privata" && selectedCoaches.length === 0) {
-      setError("Seleziona almeno un maestro per le lezioni");
+    if (bookingType === 'lezione_privata' && selectedCoaches.length === 0) {
+      setError('Seleziona almeno un maestro per le lezioni');
       return;
     }
 
     setSubmitting(true);
-    setError("");
+    setError('');
 
     try {
       // Recupera il token dell'utente per chiamare l'API protetta
@@ -702,18 +725,19 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       const token = sessionData?.session?.access_token;
 
       if (!token) {
-        throw new Error("Sessione scaduta, effettua di nuovo il login.");
+        throw new Error('Sessione scaduta, effettua di nuovo il login.');
       }
 
       // Torneo: i partecipanti sono i due giocatori della partita (il server li ricalcola comunque).
-      const bookingParticipants: SelectedAthlete[] = isTournamentBooking && selectedTournamentMatch
-        ? [selectedTournamentMatch.player1, selectedTournamentMatch.player2].map((player) => ({
-            userId: player.user_id ?? undefined,
-            fullName: player.full_name,
-            email: player.email ?? undefined,
-            isRegistered: Boolean(player.user_id),
-          }))
-        : selectedAthletes;
+      const bookingParticipants: SelectedAthlete[] =
+        isTournamentBooking && selectedTournamentMatch
+          ? [selectedTournamentMatch.player1, selectedTournamentMatch.player2].map((player) => ({
+              userId: player.user_id ?? undefined,
+              fullName: player.full_name,
+              email: player.email ?? undefined,
+              isRegistered: Boolean(player.user_id),
+            }))
+          : selectedAthletes;
 
       // Determina l'user_id: primo atleta registrato oppure l'admin stesso
       const registeredAthlete = bookingParticipants.find((a) => a.isRegistered && a.userId);
@@ -723,11 +747,11 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       }
 
       const orderedSlots = [...selectedSlots].sort((a, b) => {
-        const [hA, mA] = a.split(":").map(Number);
-        const [hB, mB] = b.split(":").map(Number);
+        const [hA, mA] = a.split(':').map(Number);
+        const [hB, mB] = b.split(':').map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
       });
-      const [hours, minutes] = orderedSlots[0].split(":").map(Number);
+      const [hours, minutes] = orderedSlots[0].split(':').map(Number);
       const startTime = new Date(selectedDate);
       startTime.setHours(hours, minutes, 0, 0);
 
@@ -743,7 +767,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         tournament_match_id: isTournamentBooking ? selectedTournamentMatch?.id ?? null : null,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: "confirmed",
+        status: 'confirmed',
         notes: notes || null,
         participants: bookingParticipants.map((athlete) => ({
           user_id: athlete.userId || null,
@@ -754,33 +778,32 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         })),
       };
 
-      const response = await fetch("/api/bookings", {
-        method: "POST",
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(bookingData),
       });
 
       if (!response.ok) {
-        let errorMessage = "Errore nella creazione della prenotazione";
+        let errorMessage = 'Errore nella creazione della prenotazione';
         try {
           const errorData = await response.json();
-          errorMessage =
-            errorData.error || errorData.message || errorMessage;
+          errorMessage = errorData.error || errorData.message || errorMessage;
         } catch {
           // ignore JSON parse errors and use default message
         }
         throw new Error(errorMessage);
       }
 
-      setSuccess("Prenotazione creata con successo!");
+      setSuccess('Prenotazione creata con successo!');
       setTimeout(() => {
         router.push(`${basePath}/bookings`);
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || "Errore nella creazione della prenotazione");
+    } catch (err) {
+      setError(err.message || 'Errore nella creazione della prenotazione');
     } finally {
       setSubmitting(false);
     }
@@ -789,9 +812,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   // Genera slot ogni mezz'ora dalle 07:00 alle 22:00 per la logica
   const TIME_SLOTS = [];
   for (let hour = 7; hour <= 22; hour++) {
-    TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:00`);
+    TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:00`);
     if (hour < 22) {
-      TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
+      TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:30`);
     }
   }
 
@@ -811,15 +834,15 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       }
 
       const allSlots = [...prev, time].sort((a, b) => {
-        const [hA, mA] = a.split(":").map(Number);
-        const [hB, mB] = b.split(":").map(Number);
+        const [hA, mA] = a.split(':').map(Number);
+        const [hB, mB] = b.split(':').map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
       });
 
       // verifica se sono consecutivi (ogni slot è 30 minuti)
       for (let i = 1; i < allSlots.length; i++) {
-        const [hPrev, mPrev] = allSlots[i - 1].split(":").map(Number);
-        const [hCurr, mCurr] = allSlots[i].split(":").map(Number);
+        const [hPrev, mPrev] = allSlots[i - 1].split(':').map(Number);
+        const [hCurr, mCurr] = allSlots[i].split(':').map(Number);
         const prevMinutes = hPrev * 60 + mPrev;
         const currMinutes = hCurr * 60 + mCurr;
         if (currMinutes - prevMinutes !== 30) {
@@ -834,7 +857,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   // Verifica disponibilità slot
   const isSlotAvailable = (time: string): boolean => {
     if (!selectedCourt) return true;
-    const slot = slots.find(s => s.time === time);
+    const slot = slots.find((s) => s.time === time);
     return slot ? slot.available : false;
   };
 
@@ -852,7 +875,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
         </div>
       )}
-      
+
       {success && (
         <div>
           <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
@@ -874,7 +897,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           {/* Card Dettagli prenotazione */}
           <div className={bookingCardClassName}>
             <div className={bookingCardHeaderClassName}>
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                Dettagli prenotazione
+              </h2>
             </div>
             {courtsLoading ? (
               <div className="flex flex-col items-center justify-center py-16">
@@ -885,7 +910,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
               <div className="space-y-6 p-4 sm:p-6">
                 {/* Tipo prenotazione */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Tipo prenotazione
+                  </label>
                   <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                     {bookingTypes.map((type) => (
                       <button
@@ -906,9 +933,11 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 </div>
 
                 {/* Modalità campo */}
-                {bookingType === "campo" && (
+                {bookingType === 'campo' && (
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                      Modalità
+                    </label>
                     <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                       {MATCH_FORMATS.map((formatOption) => (
                         <button
@@ -930,7 +959,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
                 {/* Campo */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Campo
+                  </label>
                   <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
                     {courts.map((court) => (
                       <button
@@ -952,7 +983,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
             )}
           </div>
 
-          {selectedCourt === "Campo 4" && (
+          {selectedCourt === 'Campo 4' && (
             <div className="w-full">
               <div className="w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-secondary text-center cursor-default select-none">
                 Il Campo 4 ha superficie sintetica
@@ -961,7 +992,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           )}
 
           {/* Card Maestro - solo per lezione privata */}
-          {bookingType === "lezione_privata" && (
+          {bookingType === 'lezione_privata' && (
             <CoachCard
               coaches={coaches}
               selectedCoaches={selectedCoaches}
@@ -992,8 +1023,12 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
           {/* Card Orari disponibili */}
           <div className={bookingCardClassName}>
-            <div className={`${bookingCardHeaderClassName} flex items-center justify-between gap-4`}>
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
+            <div
+              className={`${bookingCardHeaderClassName} flex items-center justify-between gap-4`}
+            >
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                Orari disponibili
+              </h2>
             </div>
             <div className="p-4 sm:p-6">
               {loadingSlots ? (
@@ -1028,60 +1063,67 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                     </div>
 
                     {/* Griglia slot selezionabili */}
-                    <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                    <div
+                      className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative"
+                      style={{ minHeight: '70px' }}
+                    >
                       {/* Prenotazioni esistenti come blocchi sovrapposti */}
-                      {existingBookings.filter((booking) => booking.status !== "cancelled").map((booking) => {
-                        const start = new Date(booking.start_time);
-                        const end = new Date(booking.end_time);
-                        const startHour = start.getHours();
-                        const startMinute = start.getMinutes();
-                        const endHour = end.getHours();
-                        const endMinute = end.getMinutes();
+                      {existingBookings
+                        .filter((booking) => booking.status !== 'cancelled')
+                        .map((booking) => {
+                          const start = new Date(booking.start_time);
+                          const end = new Date(booking.end_time);
+                          const startHour = start.getHours();
+                          const startMinute = start.getMinutes();
+                          const endHour = end.getHours();
+                          const endMinute = end.getMinutes();
 
-                        const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
-                        const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
-                        const duration = endSlot - startSlot;
+                          const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
+                          const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
+                          const duration = endSlot - startSlot;
 
-                        const getBookingStyle = () => {
-                          if (booking.isBlock) {
-                            return { background: "var(--color-frozen-lake-900)" };
-                          }
-                          if (booking.isCourse) {
-                            return { background: "var(--color-frozen-lake-900)" };
-                          }
-                          if (booking.status === "cancelled") {
-                            return { background: "#6b7280" };
-                          }
-                          switch (booking.type) {
-                            case "lezione_privata":
-                            case "lezione_gruppo":
-                              return { background: "#023047" };
-                            case "campo":
-                              return { background: "var(--secondary)" };
-                            case "arena":
-                              return { background: "var(--color-frozen-lake-600)" };
-                            default:
-                              return { background: "var(--secondary-light)" };
-                          }
-                        };
+                          const getBookingStyle = () => {
+                            if (booking.isBlock) {
+                              return { background: 'var(--color-frozen-lake-900)' };
+                            }
+                            if (booking.isCourse) {
+                              return { background: 'var(--color-frozen-lake-900)' };
+                            }
+                            if (booking.status === 'cancelled') {
+                              return { background: '#6b7280' };
+                            }
+                            switch (booking.type) {
+                              case 'lezione_privata':
+                              case 'lezione_gruppo':
+                                return { background: '#023047' };
+                              case 'campo':
+                                return { background: 'var(--secondary)' };
+                              case 'arena':
+                                return { background: 'var(--color-frozen-lake-600)' };
+                              case TOURNAMENT_BOOKING_TYPE:
+                                return { background: TOURNAMENT_BOOKING_BACKGROUND };
+                              default:
+                                return { background: 'var(--secondary-light)' };
+                            }
+                          };
 
-                        return (
-                          <div
-                            key={booking.id}
-                            onClick={() => openEntryModal(booking)}
-                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-pointer hover:opacity-90 transition-opacity"
-                            style={{
-                              ...getBookingStyle(),
-                              left: `${(startSlot / 32) * 100}%`,
-                              width: `calc(${(duration / 32) * 100}% - 4px)`,
-                              top: '4px',
-                              bottom: '4px',
-                              marginLeft: '2px'
-                            }}
-                            title="Clicca per vedere i dettagli"
-                          />
-                        );
-                      })}
+                          return (
+                            <div
+                              key={booking.id}
+                              onClick={() => openEntryModal(booking)}
+                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{
+                                ...getBookingStyle(),
+                                left: `${(startSlot / 32) * 100}%`,
+                                width: `calc(${(duration / 32) * 100}% - 4px)`,
+                                top: '4px',
+                                bottom: '4px',
+                                marginLeft: '2px',
+                              }}
+                              title="Clicca per vedere i dettagli"
+                            />
+                          );
+                        })}
 
                       {/* Slot cliccabili */}
                       {Array.from({ length: 16 }, (_, hourIndex) => {
@@ -1105,7 +1147,13 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                                   : 'bg-gray-100 cursor-not-allowed'
                               }`}
                               onClick={() => toggleSlotSelection(time1, available1)}
-                              title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                              title={`${time1} - ${
+                                available1
+                                  ? isSelected1
+                                    ? 'Selezionato'
+                                    : 'Disponibile'
+                                  : 'Occupato'
+                              }`}
                             >
                               <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                             </div>
@@ -1113,7 +1161,10 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                         }
 
                         return (
-                          <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                          <div
+                            key={hour}
+                            className="border-r border-gray-200 last:border-r-0 relative flex"
+                          >
                             <div
                               className={`flex-1 relative transition-colors cursor-pointer ${
                                 isSelected1
@@ -1123,7 +1174,13 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                                   : 'bg-gray-100 cursor-not-allowed'
                               }`}
                               onClick={() => toggleSlotSelection(time1, available1)}
-                              title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                              title={`${time1} - ${
+                                available1
+                                  ? isSelected1
+                                    ? 'Selezionato'
+                                    : 'Disponibile'
+                                  : 'Occupato'
+                              }`}
                             />
                             <div
                               className={`flex-1 relative transition-colors cursor-pointer ${
@@ -1134,7 +1191,13 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                                   : 'bg-gray-100 cursor-not-allowed'
                               }`}
                               onClick={() => toggleSlotSelection(time2, available2)}
-                              title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                              title={`${time2} - ${
+                                available2
+                                  ? isSelected2
+                                    ? 'Selezionato'
+                                    : 'Disponibile'
+                                  : 'Occupato'
+                              }`}
                             />
                             <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                           </div>
@@ -1185,39 +1248,51 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       <div className="h-8" />
 
       <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
-        <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+        <ModalContent
+          size="md"
+          showBuiltinClose={false}
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
+        >
+          <ModalHeader
+            withCloseButton
+            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
+            className="px-4 py-3 bg-secondary border-b border-secondary"
+          >
             <ModalTitle className="text-white text-base sm:text-lg">
               {selectedEntry?.isBlock
-                ? "Blocco Campo"
+                ? 'Blocco Campo'
                 : selectedEntry
-                ? selectedEntry.type === "campo"
-                  ? "Prenotazione Campo"
+                ? selectedEntry.type === 'campo'
+                  ? 'Prenotazione Campo'
                   : getBookingLabel(selectedEntry)
-                : "Dettaglio Prenotazione"}
+                : 'Dettaglio Prenotazione'}
             </ModalTitle>
           </ModalHeader>
 
-          <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+          <ModalBody className="px-0 py-0 bg-white">
             {selectedEntry && (
-              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+              <div className="text-sm bg-white divide-y divide-gray-200">
                 <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Campo</span>
                   <span className="text-xs text-gray-600">{selectedCourt}</span>
                 </div>
                 <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Orario</span>
-                  <span className="text-xs text-gray-600">{formatEntryTimeRange(selectedEntry)}</span>
+                  <span className="text-xs text-gray-600">
+                    {formatEntryTimeRange(selectedEntry)}
+                  </span>
                 </div>
                 <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                   <span className="text-xs font-semibold text-gray-900">Stato</span>
-                  <span className="text-xs text-gray-600">{getEntryStatusLabel(selectedEntry)}</span>
+                  <span className="text-xs text-gray-600">
+                    {getEntryStatusLabel(selectedEntry)}
+                  </span>
                 </div>
 
                 {!selectedEntry.isBlock && selectedEntryParticipants.length > 0 && (
                   <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                     <span className="text-xs font-semibold text-gray-900">
-                      {selectedEntryParticipants.length > 1 ? "Partecipanti" : "Partecipante"}
+                      {selectedEntryParticipants.length > 1 ? 'Partecipanti' : 'Partecipante'}
                     </span>
                     <div className="text-xs text-gray-600 space-y-1">
                       {selectedEntryParticipants.map((name, idx) => (
@@ -1230,7 +1305,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 {!selectedEntry.isBlock && selectedEntry.coach_profile?.full_name && (
                   <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
                     <span className="text-xs font-semibold text-gray-900">Coach</span>
-                    <span className="text-xs text-gray-600">{selectedEntry.coach_profile.full_name}</span>
+                    <span className="text-xs text-gray-600">
+                      {selectedEntry.coach_profile.full_name}
+                    </span>
                   </div>
                 )}
 
@@ -1244,7 +1321,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
             )}
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
             <button
               type="button"
               onClick={goToEntryDetails}
@@ -1265,11 +1342,13 @@ export default function NewAdminBookingPage() {
 
 export function NewAdminBookingPageWithBasePath(props: NewAdminBookingPageProps) {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+        </div>
+      }
+    >
       <NewAdminBookingPageInner basePath={props.basePath} />
     </Suspense>
   );

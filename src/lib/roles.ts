@@ -1,51 +1,51 @@
-export type UserRole = "atleta" | "maestro" | "gestore" | "admin";
+export type UserRole = 'atleta' | 'maestro' | 'gestore' | 'admin';
 
-export type RoleAwareProfile = {
+type RoleAwareProfile = {
   role?: string | null;
   metadata?: unknown;
   is_bookable_coach?: boolean | null;
 };
 
 export const roleLabels: Record<UserRole, string> = {
-  atleta: "Atleta",
-  maestro: "Coach",
-  gestore: "Gestore",
-  admin: "Admin",
+  atleta: 'Atleta',
+  maestro: 'Coach',
+  gestore: 'Gestore',
+  admin: 'Admin',
 };
 
 export const roleDestinations: Record<UserRole, string> = {
-  atleta: "/dashboard/atleta",
-  maestro: "/dashboard/maestro",
-  gestore: "/dashboard/admin",
-  admin: "/dashboard/admin",
+  atleta: '/dashboard/atleta',
+  maestro: '/dashboard/maestro',
+  gestore: '/dashboard/admin',
+  admin: '/dashboard/admin',
 };
 
 export function getDestinationForRole(role: UserRole) {
-  return roleDestinations[role] ?? "/login";
+  return roleDestinations[role] ?? '/login';
 }
 
 export function isAdmin(role: UserRole | null | undefined): boolean {
-  return role === "admin" || role === "gestore";
+  return role === 'admin' || role === 'gestore';
 }
 
 /** Alias for isAdmin — checks admin or gestore */
 export const isAdminOrGestore = isAdmin;
 
 export function isCoach(role: UserRole | null | undefined): boolean {
-  return role === "maestro" || isAdmin(role);
+  return role === 'maestro' || isAdmin(role);
 }
 
 export function isStaffRole(role: string | null | undefined): boolean {
-  const normalized = String(role || "").toLowerCase();
-  return normalized === "admin" || normalized === "gestore" || normalized === "maestro";
+  const normalized = String(role || '').toLowerCase();
+  return normalized === 'admin' || normalized === 'gestore' || normalized === 'maestro';
 }
 
 export function canManageUsers(role: UserRole | null | undefined): boolean {
-  return role === "admin" || role === "gestore" || role === "maestro";
+  return role === 'admin' || role === 'gestore' || role === 'maestro';
 }
 
 export function getSecondaryRoles(metadata: unknown): string[] {
-  if (!metadata || typeof metadata !== "object") return [];
+  if (!metadata || typeof metadata !== 'object') return [];
 
   const secondaryRoles = (metadata as { secondary_roles?: unknown }).secondary_roles;
   if (!Array.isArray(secondaryRoles)) return [];
@@ -56,15 +56,13 @@ export function getSecondaryRoles(metadata: unknown): string[] {
 export function isBookableCoachProfile(profile: RoleAwareProfile | null | undefined): boolean {
   if (!profile) return false;
 
-  if (typeof profile.is_bookable_coach === "boolean") {
+  if (typeof profile.is_bookable_coach === 'boolean') {
     return profile.is_bookable_coach;
   }
 
-  const role = String(profile.role || "").toLowerCase();
-  if (role === "maestro") return true;
-  if (role !== "gestore") return false;
+  const role = String(profile.role || '').toLowerCase();
+  if (role === 'maestro') return true;
+  if (role !== 'gestore') return false;
 
-  return getSecondaryRoles(profile.metadata).includes("maestro");
+  return getSecondaryRoles(profile.metadata).includes('maestro');
 }
-
-

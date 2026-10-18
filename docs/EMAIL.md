@@ -4,10 +4,10 @@ Le email transazionali sono inviate tramite **Resend**. Tutto il codice email ri
 
 ## Configurazione
 
-| Variabile | Descrizione |
-|---|---|
+| Variabile        | Descrizione                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `RESEND_API_KEY` | API key Resend. **Se assente, l'invio viene saltato silenziosamente** (un solo warning a log, poi nessun errore) |
-| `EMAIL_FROM` | Mittente. Se non impostata: `GST Tennis Academy <onboarding@resend.dev>` |
+| `EMAIL_FROM`     | Mittente. Se non impostata: `GST Tennis Academy <onboarding@resend.dev>`                                         |
 
 `RESEND_API_KEY` è un segreto: mai usare il prefisso `NEXT_PUBLIC_`. Entrambe le variabili sono lette tramite lo schema Zod di `src/lib/config/env.ts` (`env.resendApiKey`, `env.emailFrom`).
 
@@ -20,26 +20,26 @@ Le email transazionali sono inviate tramite **Resend**. Tutto il codice email ri
 
 ## Moduli
 
-| File | Contenuto |
-|---|---|
-| `src/lib/email/resend-client.ts` | Singleton client + mittente |
-| `src/lib/email/booking-notifications.ts` | Email prenotazioni (creazione ed eliminazione) |
-| `src/lib/email/booking-email-copy.ts` | Testi per tipo prenotazione (`campo`, `lezione`, `lezione_privata`, `lezione_gruppo`) e azione (`created`/`deleted`) |
-| `src/lib/email/signup-notifications.ts` | Notifica di nuova registrazione |
-| `src/lib/email/email-utils.ts` | `normalizeEmail()`, `escapeHtml()` (anti-XSS nei template), `getGestoreRecipients()` (tutti i profili con ruolo `gestore`) |
-| `src/lib/email/email-log.ts` | Persistenza esiti in `email_logs` |
+| File                                     | Contenuto                                                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/email/resend-client.ts`         | Singleton client + mittente                                                                                                |
+| `src/lib/email/booking-notifications.ts` | Email prenotazioni (creazione ed eliminazione)                                                                             |
+| `src/lib/email/booking-email-copy.ts`    | Testi per tipo prenotazione (`campo`, `lezione`, `lezione_privata`, `lezione_gruppo`) e azione (`created`/`deleted`)       |
+| `src/lib/email/signup-notifications.ts`  | Notifica di nuova registrazione                                                                                            |
+| `src/lib/email/email-utils.ts`           | `normalizeEmail()`, `escapeHtml()` (anti-XSS nei template), `getGestoreRecipients()` (tutti i profili con ruolo `gestore`) |
+| `src/lib/email/email-log.ts`             | Persistenza esiti in `email_logs`                                                                                          |
 
 ## Email inviate
 
 Template HTML inline (header con logo, tabella dettagli, CTA verso la dashboard del destinatario) + versione testuale. Date e orari formattati in `it-IT`, timezone `Europe/Rome`. Tutti i valori dinamici passano da `escapeHtml()`.
 
-| Funzione | Quando | Destinatari |
-|---|---|---|
-| `sendBookingCreatedEmailToGestore` | Prenotazione creata da un atleta (`bookingService.ts`, `POST /api/bookings`, `POST /api/bookings/batch`) | Atleta + primo gestore (segreteria), con gli altri gestori e l'eventuale maestro (lezione privata) in CC |
-| `sendBookingCreatedEmailToAthlete` | Prenotazione creata da gestore/admin per conto dell'atleta | Atleta/i (email di conferma) |
-| `sendBookingCreatedEmailToMaestro` | Lezione privata creata da gestore/admin | Maestro assegnato |
-| `sendBookingDeletedEmailToRecipients` | Prenotazione eliminata/annullata | Atleta + segreteria (CC come sopra), con indicazione di chi ha eliminato |
-| `sendSignupEmailToGestori` | Nuova registrazione (`POST /api/auth/signup`) | Tutti i gestori; opzionalmente anche l'atleta stesso (`notifyAthlete`) |
+| Funzione                              | Quando                                                                                                   | Destinatari                                                                                              |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `sendBookingCreatedEmailToGestore`    | Prenotazione creata da un atleta (`bookingService.ts`, `POST /api/bookings`, `POST /api/bookings/batch`) | Atleta + primo gestore (segreteria), con gli altri gestori e l'eventuale maestro (lezione privata) in CC |
+| `sendBookingCreatedEmailToAthlete`    | Prenotazione creata da gestore/admin per conto dell'atleta                                               | Atleta/i (email di conferma)                                                                             |
+| `sendBookingCreatedEmailToMaestro`    | Lezione privata creata da gestore/admin                                                                  | Maestro assegnato                                                                                        |
+| `sendBookingDeletedEmailToRecipients` | Prenotazione eliminata/annullata                                                                         | Atleta + segreteria (CC come sopra), con indicazione di chi ha eliminato                                 |
+| `sendSignupEmailToGestori`            | Nuova registrazione (`POST /api/auth/signup`)                                                            | Tutti i gestori; opzionalmente anche l'atleta stesso (`notifyAthlete`)                                   |
 
 Note:
 
@@ -58,4 +58,4 @@ Note:
 
 - Webhook Resend (bounce/delivery tracking): la variabile `RESEND_WEBHOOK_SECRET` citata in vecchi file non è mai stata implementata.
 - Scheduler/digest email: nessun cron di invio; la route `/api/email/scheduler` non esiste.
-- Campagne email: le tabelle `email_campaigns`/`email_templates`/`email_settings` esistono a DB ma non sono usate dal codice di invio.
+- Campagne email: le vecchie tabelle `email_campaigns`, `email_templates`, `email_settings` ed `email_unsubscribes` non sono mai state usate e vengono rimosse dalla migrazione 087.

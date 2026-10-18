@@ -6,16 +6,16 @@ async function getUserProfile(req: Request) {
   const authHeader = req.headers.get('authorization') ?? null;
   const token = authHeader?.replace('Bearer ', '') ?? null;
   if (!token) return null;
-  
+
   const { data: userData, error: userErr } = await supabaseServer.auth.getUser(token);
   if (userErr || !userData?.user) return null;
-  
+
   const { data: profile } = await supabaseServer
     .from('profiles')
     .select('id, role')
     .eq('id', userData.user.id)
     .single();
-  
+
   return profile;
 }
 
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     }
 
     const roleLower = String(profile.role).toLowerCase();
-    
+
     // Athletes can see coaches for booking, maestros/admin/gestore can see everyone
     if (!['admin', 'gestore', 'maestro', 'atleta'].includes(roleLower)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -47,22 +47,22 @@ export async function GET(req: Request) {
 
     // Filter based on role
     let filteredUsers = users || [];
-    
+
     if (roleLower === 'atleta') {
       // Athletes can only see coach profiles (maestro + gestore con ruolo secondario maestro)
-      filteredUsers = filteredUsers.filter(user => {
+      filteredUsers = filteredUsers.filter((user) => {
         return isBookableCoachProfile(user);
       });
     } else {
       // Maestros, admin, and gestore can see all relevant roles
-      filteredUsers = filteredUsers.filter(user => {
+      filteredUsers = filteredUsers.filter((user) => {
         const role = String(user.role || '').toLowerCase();
         return ['atleta', 'maestro', 'admin', 'gestore'].includes(role);
       });
     }
 
     const usersResponse = filteredUsers.map((user: any) => {
-      const { metadata, ...safeUser } = user;
+      const { ...safeUser } = user;
       return {
         ...safeUser,
         is_bookable_coach: isBookableCoachProfile(user),
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ users: usersResponse });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in users API:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

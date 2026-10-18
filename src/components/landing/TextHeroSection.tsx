@@ -1,16 +1,18 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import HeroTitle from "@/components/landing/HeroTitle";
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+import { getSessionUser } from '@/lib/auth/clientSession';
+import HeroTitle from '@/components/landing/HeroTitle';
 
 export default function TextHeroSection() {
   const router = useRouter();
 
   const handleBookingClick = async (e: React.MouseEvent) => {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await getSessionUser();
 
     if (!user) {
       router.push('/login?redirect=/dashboard/bookings');
@@ -33,31 +35,6 @@ export default function TextHeroSection() {
     }
   };
 
-  const handleTournamentClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.push('/login?redirect=/dashboard/tornei');
-      return;
-    }
-
-    // Get user role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    const role = profile?.role || 'atleta';
-
-    if (role === 'admin' || role === 'gestore') {
-      router.push('/dashboard/admin/tornei');
-    } else {
-      router.push('/dashboard/atleta/tornei');
-    }
-  };
-
   return (
     <section className="pt-24 sm:pt-24 md:pt-24 pb-0 sm:pb-8 md:pb-10 lg:pb-0 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
@@ -66,7 +43,9 @@ export default function TextHeroSection() {
           <p className="text-lg sm:text-xl md:text-2xl text-gray-500 text-balance max-w-sm sm:max-w-5xl mb-12 sm:mb-14">
             {/* Mobile: tre righe (servizi / maestri / invito). Da sm in su: due righe come prima */}
             <span className="block">
-              <span className="text-secondary">Tornei</span>, <span className="text-secondary">prenotazioni campi</span> e <span className="text-secondary">lezioni</span>{" "}
+              <span className="text-secondary">Tornei</span>,{' '}
+              <span className="text-secondary">prenotazioni campi</span> e{' '}
+              <span className="text-secondary">lezioni</span>{' '}
               <span className="block sm:inline">con maestri certificati FITP:</span>
             </span>
             <span className="block">Prenota online e scendi in campo.</span>
@@ -95,12 +74,49 @@ export default function TextHeroSection() {
       {/* Marquee logos */}
       <div className="w-full pt-6 pb-0">
         <div className="max-w-xl mx-auto overflow-hidden">
-          <div className="flex items-center w-max" style={{ animation: 'marquee 30s linear infinite' }}>
+          <div
+            className="flex items-center w-max"
+            style={{ animation: 'marquee 30s linear infinite' }}
+          >
             {[0, 1, 2, 3, 4, 5, 6, 7].map((set) => (
-              <div key={set} className="flex items-center flex-shrink-0" style={{ gap: '3rem', paddingRight: '3rem' }}>
-                <img src="/images/logo/1729263756_adidas-logo-png-210379511.png" alt="Adidas" style={{ height: '28px', width: 'auto', objectFit: 'contain', flexShrink: 0, filter: 'grayscale(1) opacity(0.45)' }} />
-                <img src="/images/logo/Dunlop-logo-4C18C47FBA-seeklogo.com-649631757.png" alt="Dunlop" style={{ height: '24px', width: 'auto', objectFit: 'contain', flexShrink: 0, filter: 'grayscale(1) opacity(0.45)' }} />
-                <img src="/images/logo/FITP-LOGO-2501270168.png" alt="FITP" style={{ height: '28px', width: 'auto', objectFit: 'contain', flexShrink: 0, filter: 'grayscale(1) opacity(0.45)' }} />
+              <div
+                key={set}
+                className="flex items-center flex-shrink-0"
+                style={{ gap: '3rem', paddingRight: '3rem' }}
+              >
+                <img
+                  src="/images/logo/1729263756_adidas-logo-png-210379511.png"
+                  alt="Adidas"
+                  style={{
+                    height: '28px',
+                    width: 'auto',
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                    filter: 'grayscale(1) opacity(0.45)',
+                  }}
+                />
+                <img
+                  src="/images/logo/Dunlop-logo-4C18C47FBA-seeklogo.com-649631757.png"
+                  alt="Dunlop"
+                  style={{
+                    height: '24px',
+                    width: 'auto',
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                    filter: 'grayscale(1) opacity(0.45)',
+                  }}
+                />
+                <img
+                  src="/images/logo/FITP-LOGO-2501270168.png"
+                  alt="FITP"
+                  style={{
+                    height: '28px',
+                    width: 'auto',
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                    filter: 'grayscale(1) opacity(0.45)',
+                  }}
+                />
               </div>
             ))}
           </div>
