@@ -5,7 +5,9 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
-import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import { getCourts } from '@/lib/courts/getCourts';
 import { DEFAULT_COURTS } from '@/lib/courts/constants';
 import AthletesSelector from '@/components/bookings/AthletesSelector';
@@ -68,8 +70,6 @@ function NewBookingPageInner() {
   const bookingCardClassName = 'bg-white border border-black/10 rounded-lg overflow-hidden';
   const bookingCardHeaderClassName = 'px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50';
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
@@ -434,23 +434,23 @@ function NewBookingPageInner() {
 
   async function handleSubmit() {
     if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
-      setError('Completa tutti i campi obbligatori');
+      toast.warning('Compila i campi obbligatori');
       return;
     }
 
     if (isTournamentBooking && !selectedTournamentMatch) {
-      setError('Seleziona la partita del torneo da giocare');
+      toast.warning('Seleziona la partita');
       return;
     }
 
     if (!isTournamentBooking) {
       if (selectedAthletes.length === 0) {
-        setError('Completa tutti i campi obbligatori');
+        toast.warning('Compila i campi obbligatori');
         return;
       }
 
       if (maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
-        setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
+        toast.warning(`Massimo ${maxAthletesAllowed} partecipanti`);
         return;
       }
 
@@ -458,18 +458,17 @@ function NewBookingPageInner() {
         (athlete) => athlete.isRegistered && athlete.userId,
       );
       if (!registeredAthlete || !registeredAthlete.userId) {
-        setError('Completa tutti i campi obbligatori');
+        toast.warning('Compila i campi obbligatori');
         return;
       }
     }
 
     if (bookingType === 'lezione_privata' && !selectedCoach) {
-      setError('Seleziona un maestro per le lezioni');
+      toast.warning('Seleziona un maestro');
       return;
     }
 
     setSubmitting(true);
-    setError('');
 
     try {
       const {
@@ -481,7 +480,7 @@ function NewBookingPageInner() {
       const token = sessionData?.session?.access_token;
 
       if (!token) {
-        throw new Error('Sessione scaduta, effettua di nuovo il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const orderedSlots = [...selectedSlots].sort((a, b) => {
@@ -548,44 +547,16 @@ function NewBookingPageInner() {
         throw new Error(errorMessage);
       }
 
-      setSuccess('Prenotazione creata con successo!');
-      setTimeout(() => {
-        router.push(`${dashboardBase}/bookings`);
-      }, 1500);
+      toast.success('Prenotazione confermata');
+      router.push(`${dashboardBase}/bookings`);
     } catch (err) {
-      setError(err.message || 'Errore nella creazione della prenotazione');
-    } finally {
+      toastError(err, 'Prenotazione non riuscita');
       setSubmitting(false);
     }
   }
 
   return (
     <div className="space-y-6 pt-3">
-      {/* Messages */}
-      {error && (
-        <div>
-          <div className="bg-red-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-900">Errore</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div>
-          <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Successo</p>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
       <div>
         <div className="space-y-6">

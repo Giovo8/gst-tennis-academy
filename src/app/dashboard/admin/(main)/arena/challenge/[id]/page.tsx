@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Target, Handshake } from 'lucide-react';
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalBody } from '@/components/ui';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Challenge {
   id: string;
@@ -382,10 +383,10 @@ export default function AdminChallengeDetailPage() {
       }
 
       const errorData = await response.json().catch(() => null);
-      toast.error(errorData?.error || 'Impossibile eliminare la sfida');
+      toastError(errorData?.error, 'Eliminazione non riuscita');
     } catch (error) {
       console.error('Error deleting challenge:', error);
-      toast.error("Errore durante l'eliminazione della sfida");
+      toast.error('Eliminazione non riuscita');
     }
   }
 
@@ -413,10 +414,10 @@ export default function AdminChallengeDetailPage() {
       }
 
       const errorData = await response.json().catch(() => null);
-      toast.error(errorData?.error || 'Impossibile annullare la sfida');
+      toastError(errorData?.error, 'Annullamento non riuscito');
     } catch (error) {
       console.error('Error cancelling challenge:', error);
-      toast.error("Errore durante l'annullamento della sfida");
+      toast.error('Annullamento non riuscito');
     }
   }
 
@@ -439,10 +440,10 @@ export default function AdminChallengeDetailPage() {
       }
 
       const errorData = await response.json().catch(() => null);
-      toast.error(errorData?.error || 'Impossibile confermare la sfida');
+      toastError(errorData?.error, 'Conferma non riuscita');
     } catch (error) {
       console.error('Error confirming challenge:', error);
-      toast.error('Errore durante la conferma della sfida');
+      toast.error('Conferma non riuscita');
     }
   }
 
@@ -453,7 +454,7 @@ export default function AdminChallengeDetailPage() {
     }
 
     if (!SCORE_PATTERN.test(score.trim())) {
-      toast.warning('Formato punteggio non valido. Usa ad esempio: 6-4, 6-3');
+      toast.warning('Formato punteggio non valido');
       return;
     }
 
@@ -465,7 +466,7 @@ export default function AdminChallengeDetailPage() {
     );
 
     if (!computedWinnerId) {
-      toast.error('Impossibile determinare il vincitore dal punteggio inserito');
+      toast.error('Vincitore non determinabile');
       return;
     }
 
@@ -483,16 +484,16 @@ export default function AdminChallengeDetailPage() {
       });
 
       if (response.ok) {
-        toast.success('Punteggio salvato con successo!');
+        toast.success('Punteggio salvato');
         setShowScoreForm(false);
         loadChallengeDetails();
       } else {
         const errorData = await response.json();
-        toast.error(`Errore: ${errorData.error || 'Impossibile salvare il punteggio'}`);
+        toastError(errorData.error, 'Salvataggio non riuscito');
       }
     } catch (error) {
       console.error('Error saving score:', error);
-      toast.error('Errore nel salvataggio del punteggio');
+      toast.error('Salvataggio non riuscito');
     } finally {
       setSavingScore(false);
     }

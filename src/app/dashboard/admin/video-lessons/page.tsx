@@ -57,7 +57,7 @@ export default function VideoLessonsPage() {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const response = await fetch('/api/admin/video-lessons', {

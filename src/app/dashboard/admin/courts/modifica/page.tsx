@@ -249,9 +249,7 @@ export default function CourtBlockEditPage() {
 
   const handleDisableDateTab = (block: Block) => {
     if (allBlocks.length <= 1) {
-      toast.warning(
-        "Non puoi rimuovere l'ultimo giorno. Usa 'Elimina Blocco' se vuoi cancellarlo tutto.",
-      );
+      toast.warning("Non puoi rimuovere l'ultimo giorno");
       return;
     }
 
@@ -462,24 +460,24 @@ export default function CourtBlockEditPage() {
 
   async function handleUpdate() {
     if (!selectedCourt || !blockType || selectedWeekDays.length === 0) {
-      toast.warning('Compila tutti i campi obbligatori');
+      toast.warning('Compila i campi obbligatori');
       return;
     }
 
     if (blockType === 'altro' && !customBlockType.trim()) {
-      toast.warning("Specifica in cosa consiste il blocco 'Altro'");
+      toast.warning('Specifica il tipo di blocco');
       return;
     }
 
     const baseStartMinutes = toMinutes(startTime);
     const baseEndMinutes = toMinutes(endTime);
     if (baseEndMinutes <= baseStartMinutes) {
-      toast.warning("L'orario fine deve essere successivo all'orario inizio");
+      toast.warning('Orario di fine non valido');
       return;
     }
 
     if (allBlocks.length === 0) {
-      toast.warning('Nessun blocco disponibile da aggiornare');
+      toast.warning('Nessun blocco da aggiornare');
       return;
     }
 
@@ -490,7 +488,7 @@ export default function CourtBlockEditPage() {
       const startParsed = parseDateInput(startDate);
       const endParsed = parseDateInput(endDate);
       if (!startParsed || !endParsed) {
-        toast.warning('Seleziona data inizio e data fine');
+        toast.warning('Seleziona le date');
         setSubmitting(false);
         return;
       }
@@ -542,14 +540,14 @@ export default function CourtBlockEditPage() {
       }
 
       if (newBlocks.length === 0) {
-        toast.warning('Nessun blocco da creare: verifica giorni selezionati o disattivazioni');
+        toast.warning('Nessun giorno selezionato');
         setSubmitting(false);
         return;
       }
 
       const conflictResult = await checkCourtBlockConflicts(supabase, newBlocks);
       if (conflictResult.hasConflict) {
-        toast.error(formatBlockConflictMessage(conflictResult));
+        toast.error('Periodo già occupato');
         setSubmitting(false);
         return;
       }
@@ -570,7 +568,7 @@ export default function CourtBlockEditPage() {
       router.push('/dashboard/admin/courts');
     } catch (err) {
       console.error('Error updating blocks:', err);
-      toast.error("Errore durante l'aggiornamento del blocco");
+      toast.error('Salvataggio non riuscito');
     } finally {
       setSubmitting(false);
     }
@@ -601,7 +599,7 @@ export default function CourtBlockEditPage() {
       router.push('/dashboard/admin/courts');
     } catch (err) {
       console.error('Error deleting blocks:', err);
-      toast.error("Errore durante l'eliminazione del blocco");
+      toast.error('Eliminazione non riuscita');
     } finally {
       setDeleting(false);
     }

@@ -11,6 +11,7 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import ParticipantsCard from '@/components/bookings/ParticipantsCard';
 import { type UserRole } from '@/lib/roles';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type User = {
   id: string;
@@ -128,7 +129,7 @@ export default function VideoLessonFormPage() {
       }
     } catch (error) {
       console.error('Error loading video:', error);
-      toast.error('Errore nel caricamento del video');
+      toast.error('Caricamento non riuscito');
     }
   }
 
@@ -136,7 +137,7 @@ export default function VideoLessonFormPage() {
     e.preventDefault();
 
     if (!formData.title || !formData.video_url) {
-      toast.warning('Titolo e URL video sono obbligatori');
+      toast.warning('Titolo e URL obbligatori');
       return;
     }
 
@@ -270,11 +271,11 @@ export default function VideoLessonFormPage() {
         }
       }
 
-      toast.success(isEditMode ? 'Video aggiornato con successo!' : 'Video creato con successo!');
+      toast.success(isEditMode ? 'Video aggiornato' : 'Video creato');
       router.push(baseVideosPath);
     } catch (error) {
       console.error('Error saving video:', error);
-      toast.error(formatDbError(error));
+      toastError(error, 'Salvataggio non riuscito');
     } finally {
       setLoading(false);
     }
@@ -290,11 +291,11 @@ export default function VideoLessonFormPage() {
 
       if (error) throw new Error(formatDbError(error));
 
-      toast.success('Video eliminato con successo!');
+      toast.success('Video eliminato');
       router.push(baseVideosPath);
     } catch (error) {
       console.error('Error deleting video:', error);
-      toast.error(formatDbError(error));
+      toastError(error, 'Eliminazione non riuscita');
     }
   }
 

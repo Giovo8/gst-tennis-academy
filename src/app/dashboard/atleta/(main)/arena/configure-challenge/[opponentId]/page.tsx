@@ -9,14 +9,7 @@ import { getSessionUser } from '@/lib/auth/clientSession';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { getClosingMinutes, getCourtHoursLabel } from '@/lib/bookings/bookingTimeRestrictions';
-import {
-  Calendar,
-  Loader2,
-  AlertCircle,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Calendar, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Modal,
   ModalContent,
@@ -29,6 +22,8 @@ import AthletesSelector from '@/components/bookings/AthletesSelector';
 import { type UserRole } from '@/lib/roles';
 import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
 import { ARENA_MATCH_FORMATS, CHALLENGE_TYPES } from '@/lib/arena/arenaConstants';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface OpponentProfile {
   id: string;
@@ -81,8 +76,6 @@ export default function ConfigureChallengePage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   // Form state
   const [challengeType, setChallengeType] = useState('ranked');
@@ -384,29 +377,28 @@ export default function ConfigureChallengePage() {
 
   async function handleSubmit() {
     if (selectedSlots.length === 0 || !selectedCourt) {
-      setError('Seleziona un campo e almeno uno slot orario');
+      toast.warning('Seleziona campo e orario');
       return;
     }
     if (matchType === 'doppio' && (!myPartner || !opponentPartner)) {
-      setError('Per il doppio devi selezionare entrambi i compagni');
+      toast.warning('Seleziona i compagni');
       return;
     }
 
     setSending(true);
-    setError('');
 
     try {
       const {
         data: { user },
       } = await getSessionUser();
       if (!user) {
-        setError('Devi essere autenticato');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      if (!token) throw new Error('Sessione scaduta, effettua di nuovo il login.');
+      if (!token) throw new Error('Sessione scaduta, accedi di nuovo');
 
       const firstSlot = selectedSlots[0];
       const lastSlot = selectedSlots[selectedSlots.length - 1];
@@ -490,10 +482,8 @@ export default function ConfigureChallengePage() {
           throw new Error(challengeError.error || 'Errore nella modifica della sfida');
         }
 
-        setSuccess('Sfida modificata con successo!');
-        setTimeout(() => {
-          router.push(`${dashboardBase}/arena/challenge/${editChallengeId}`);
-        }, 1500);
+        toast.success('Sfida modificata');
+        router.push(`${dashboardBase}/arena/challenge/${editChallengeId}`);
       } else {
         const bookingResponse = await fetch('/api/bookings', {
           method: 'POST',
@@ -539,13 +529,11 @@ export default function ConfigureChallengePage() {
           throw new Error(challengeError.error || 'Errore nella creazione della sfida');
         }
 
-        setSuccess('Sfida creata con successo!');
-        setTimeout(() => {
-          router.push(`${dashboardBase}/arena?success=challenge_created`);
-        }, 1500);
+        toast.success('Sfida creata');
+        router.push(`${dashboardBase}/arena?success=challenge_created`);
       }
     } catch (error) {
-      setError(error.message);
+      toastError(error, 'Salvataggio sfida non riuscito');
     } finally {
       setSending(false);
     }
@@ -645,27 +633,6 @@ export default function ConfigureChallengePage() {
           {editChallengeId ? 'Modifica Sfida' : 'Configura Sfida'}
         </h1>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-red-900">Errore</p>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
-          </div>
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-green-900">Successo</p>
-            <p className="text-sm text-green-700 mt-1">{success}</p>
-          </div>
-        </div>
-      )}
-
       {/* Date Selector */}
       <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
         <button

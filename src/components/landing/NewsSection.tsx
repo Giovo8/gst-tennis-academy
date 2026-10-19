@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import NewsImage from '@/components/ui/NewsImage';
 import Reveal from '@/components/landing/Reveal';
 
-type NewsItem = {
+export type NewsItem = {
   id: string;
   title: string;
   category: string;
@@ -18,7 +18,6 @@ type NewsItem = {
   is_published: boolean;
   published_at?: string;
   created_at: string;
-  updated_at: string;
 };
 
 function isPublishedNews(item: Partial<NewsItem> | null | undefined): boolean {
@@ -44,9 +43,44 @@ function normalizeLegacyTitle(title: string): string {
   return title.replace(/\s*\.\.\.$/, '').trim();
 }
 
-export default function NewsSection() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+// Segnaposto con l'ingombro delle card vere: la pagina non "salta" quando arrivano i dati
+function NewsCardsSkeleton() {
+  return (
+    <div
+      className="flex gap-6 overflow-hidden px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-3 md:px-0 mb-6 md:mb-12"
+      aria-busy="true"
+      aria-label="Caricamento news"
+    >
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="flex-shrink-0 w-72 sm:w-80 md:w-full bg-white border border-black/10 rounded-2xl overflow-hidden animate-pulse"
+        >
+          <div className="aspect-[16/9] bg-gray-200" />
+          <div className="p-7 space-y-3">
+            <div className="h-6 w-4/5 bg-gray-200 rounded" />
+            <div className="h-4 w-full bg-gray-100 rounded" />
+            <div className="h-4 w-2/3 bg-gray-100 rounded mb-6" />
+            <div className="h-px bg-gray-200" />
+            <div className="h-3 w-1/3 bg-gray-100 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function NewsSection({
+  initialNews,
+}: {
+  /** News lette lato server (app/page.tsx); `null` se la lettura è fallita. */
+  initialNews?: NewsItem[] | null;
+}) {
+  const hasInitial = Array.isArray(initialNews);
+  const [news, setNews] = useState<NewsItem[]>(() =>
+    hasInitial ? initialNews.filter((item) => isPublishedNews(item)) : [],
+  );
+  const [loading, setLoading] = useState(!hasInitial);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -142,9 +176,12 @@ export default function NewsSection() {
   async function loadNews() {
     const { data, error } = await supabase
       .from('news')
-      .select('*')
+      .select(
+        'id, title, category, content, excerpt, image_url, stato, is_published, published_at, created_at',
+      )
       .eq('is_published', true)
-      .order('published_at', { ascending: false });
+      .order('published_at', { ascending: false })
+      .limit(12);
 
     if (error) {
       console.error('Error loading news:', error);
@@ -158,20 +195,10 @@ export default function NewsSection() {
   }
 
   useEffect(() => {
-    loadNews();
+    // Se il server ha già fornito le news non serve rileggerle dal browser
+    if (!hasInitial) loadNews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  if (loading) {
-    return (
-      <section id="news" className="py-12 sm:py-16 md:py-20">
-        <div className="container section">
-          <div className="flex items-center justify-center py-8 sm:py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section id="news" className="py-20 sm:py-24 md:py-28">
@@ -188,7 +215,9 @@ export default function NewsSection() {
 
         {/* Cards */}
         <Reveal delay={0.1}>
-          {news.length === 0 ? (
+          {loading ? (
+            <NewsCardsSkeleton />
+          ) : news.length === 0 ? (
             <div className="text-center py-12 border border-black/10 rounded-2xl bg-white">
               <p className="text-secondary/80 font-medium">Nessuna news pubblicata al momento.</p>
             </div>

@@ -3,7 +3,7 @@ import localFont from 'next/font/local';
 import './globals.css';
 import ConditionalFooter from '@/components/layout/ConditionalFooter';
 import { defaultMetadata, generateOrganizationSchema } from '@/lib/seo/metadata';
-import { Toaster } from 'sonner';
+import AppToaster from '@/components/ui/AppToaster';
 
 // Font self-hosted (variable, subset latin): evita il fetch da Google Fonts in fase di build
 const inter = localFont({
@@ -57,7 +57,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${urbanist.variable} antialiased font-sans`}>
         {children}
         <ConditionalFooter />
-        <Toaster position="top-right" richColors closeButton />
+        <AppToaster />
       </body>
     </html>
   );

@@ -33,6 +33,7 @@ import {
   ThumbsDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type CourseData = {
   id: string;
@@ -396,7 +397,7 @@ export default function BookingDetailPage() {
       setBooking(enrichedBooking);
     } catch (error) {
       console.error('Errore:', error);
-      toast.error('Errore nel caricamento della prenotazione');
+      toast.error('Caricamento non riuscito');
       router.push(`${dashboardBase}/bookings`);
     } finally {
       setLoading(false);
@@ -409,7 +410,7 @@ export default function BookingDetailPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
-      if (!token) throw new Error('Sessione non valida.');
+      if (!token) throw new Error('Sessione scaduta, accedi di nuovo');
 
       const res = await fetch(`/api/bookings/confirm?id=${booking.id}`, {
         method: 'POST',
@@ -420,17 +421,17 @@ export default function BookingDetailPage() {
       if (!res.ok) {
         if (json.conflict) {
           // Slot taken — redirect to edit so they can pick a new time
-          toast.error(json.error || 'Conflitto: modifica la prenotazione.');
+          toastError(json.error, 'Orario non più disponibile');
           router.push(`${dashboardBase}/bookings/${booking.id}/edit`);
           return;
         }
         throw new Error(json.error || 'Errore durante la conferma.');
       }
 
-      toast.success('Lezione privata confermata.');
+      toast.success('Lezione confermata');
       await loadBooking();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante la conferma.');
+      toastError(err, 'Conferma non riuscita');
     } finally {
       setActionLoading(false);
     }
@@ -443,7 +444,7 @@ export default function BookingDetailPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
-      if (!token) throw new Error('Sessione non valida.');
+      if (!token) throw new Error('Sessione scaduta, accedi di nuovo');
 
       const res = await fetch(`/api/bookings/reject?id=${booking.id}`, {
         method: 'POST',
@@ -453,10 +454,10 @@ export default function BookingDetailPage() {
 
       if (!res.ok) throw new Error(json.error || 'Errore durante il rifiuto.');
 
-      toast.success('Richiesta rifiutata.');
+      toast.success('Richiesta rifiutata');
       await loadBooking();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Errore durante il rifiuto.');
+      toastError(err, 'Rifiuto non riuscito');
     } finally {
       setActionLoading(false);
     }
@@ -473,7 +474,7 @@ export default function BookingDetailPage() {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const {
@@ -481,7 +482,7 @@ export default function BookingDetailPage() {
       } = await getSessionUser();
 
       if (!user) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const updateQuery = supabase
@@ -568,10 +569,11 @@ export default function BookingDetailPage() {
 
       await Promise.all(notifyPromises);
 
+      toast.success('Prenotazione annullata');
       router.push(`${dashboardBase}/bookings`);
     } catch (error) {
       console.error('Errore:', error);
-      toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
+      toastError(error, 'Annullamento non riuscito');
     } finally {
       setActionLoading(false);
     }

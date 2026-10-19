@@ -12,6 +12,7 @@ import TournamentScheduleSection, {
 import PublicNavbar from '@/components/layout/PublicNavbar';
 import { Trophy, Users, Target, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -57,7 +58,7 @@ export default function TournamentDetail() {
       setLoading(true);
       if (!id) {
         if (mounted) {
-          toast.error('ID torneo mancante');
+          toast.error('Torneo non trovato');
           setLoading(false);
         }
         return;
@@ -100,7 +101,7 @@ export default function TournamentDetail() {
 
         // nothing extra for coaches on the public detail page — management is in Dashboard
       } catch (err) {
-        if (mounted) toast.error(err.message || 'Errore');
+        if (mounted) toastError(err.message, 'Caricamento non riuscito');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -118,7 +119,7 @@ export default function TournamentDetail() {
   );
   const scheduledMatches = useScheduledTournamentMatches(
     typeof id === 'string' ? id : null,
-    isStarted,
+    true, // fetch subito, in parallelo al caricamento del torneo: la tab resta legata a isStarted
     0,
     'public',
   );
@@ -139,7 +140,7 @@ export default function TournamentDetail() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user ?? null;
       if (!user) {
-        toast.error('Devi effettuare il login per iscriverti');
+        toast.error('Accedi per iscriverti');
         setActionLoading(false);
         return;
       }
@@ -160,9 +161,10 @@ export default function TournamentDetail() {
         json = {};
       }
       if (!res.ok) {
-        toast.error(json.error || 'Errore iscrizione');
+        toastError(json.error, 'Iscrizione non riuscita');
       } else {
         setJoined(true);
+        toast.success('Iscrizione completata');
         // refresh participants and counts
         try {
           const pRes2 = await fetch(`/api/tournament_participants?tournament_id=${id}`);
@@ -182,7 +184,7 @@ export default function TournamentDetail() {
         }
       }
     } catch (err) {
-      toast.error(err.message || 'Errore rete');
+      toastError(err, 'Iscrizione non riuscita');
     } finally {
       setActionLoading(false);
     }

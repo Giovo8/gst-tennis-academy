@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Bot, Check, Loader2, RefreshCw, Search, Settings, Sparkles, X } from "lucide-react";
-import { toast } from "sonner";
-import AuthGuard from "@/components/auth/AuthGuard";
-import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Bot, Check, Loader2, RefreshCw, Search, Settings, Sparkles, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { sanitizeAINewsBody, sanitizeAINewsTitle } from '@/lib/ai-news/contentSanitizer';
 
 type DraftItem = {
   id: string;
@@ -14,7 +15,7 @@ type DraftItem = {
   excerpt: string | null;
   category: string | null;
   created_at: string;
-  stato: "bozza" | "pubblicata" | "scartata";
+  stato: 'bozza' | 'pubblicata' | 'scartata';
   ai_generated: boolean;
   fonte_nome: string | null;
   fonte_url: string | null;
@@ -30,15 +31,17 @@ export default function AINewsDraftsPage({ basePath }: Props) {
   const [cleaningArchive, setCleaningArchive] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [items, setItems] = useState<DraftItem[]>([]);
-  const [filtro, setFiltro] = useState<"tutte" | "bozza" | "pubblicata" | "scartata">("tutte");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filtro, setFiltro] = useState<'tutte' | 'bozza' | 'pubblicata' | 'scartata'>('tutte');
+  const [searchQuery, setSearchQuery] = useState('');
   const [pubblicazioneAuto, setPubblicazioneAuto] = useState(false);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
-  const [draftValues, setDraftValues] = useState<Record<string, { titolo: string; testo: string }>>({});
+  const [draftValues, setDraftValues] = useState<Record<string, { titolo: string; testo: string }>>(
+    {},
+  );
 
   const filteredItems = useMemo(() => {
-    const byStatus = filtro === "tutte" ? items : items.filter((item) => item.stato === filtro);
+    const byStatus = filtro === 'tutte' ? items : items.filter((item) => item.stato === filtro);
 
     const query = searchQuery.trim().toLowerCase();
     if (!query) return byStatus;
@@ -47,8 +50,8 @@ export default function AINewsDraftsPage({ basePath }: Props) {
       return (
         item.title.toLowerCase().includes(query) ||
         item.content.toLowerCase().includes(query) ||
-        (item.category || "").toLowerCase().includes(query) ||
-        (item.fonte_nome || "").toLowerCase().includes(query)
+        (item.category || '').toLowerCase().includes(query) ||
+        (item.fonte_nome || '').toLowerCase().includes(query)
       );
     });
   }, [items, filtro, searchQuery]);
@@ -58,20 +61,20 @@ export default function AINewsDraftsPage({ basePath }: Props) {
 
     try {
       const [bozzeRes, configRes] = await Promise.all([
-        fetch(`/api/ai-news/bozze?stato=tutte`, { cache: "no-store" }),
-        fetch(`/api/ai-news/config`, { cache: "no-store" }),
+        fetch(`/api/ai-news/bozze?stato=tutte`, { cache: 'no-store' }),
+        fetch(`/api/ai-news/config`, { cache: 'no-store' }),
       ]);
 
       const bozzeJson = await bozzeRes.json();
       const configJson = await configRes.json();
 
-      if (!bozzeRes.ok) throw new Error(bozzeJson?.error ?? "Errore caricamento bozze");
-      if (!configRes.ok) throw new Error(configJson?.error ?? "Errore caricamento configurazione");
+      if (!bozzeRes.ok) throw new Error(bozzeJson?.error ?? 'Errore caricamento bozze');
+      if (!configRes.ok) throw new Error(configJson?.error ?? 'Errore caricamento configurazione');
 
       const nextItems = ((bozzeJson.items ?? []) as DraftItem[]).map((item) => ({
         ...item,
-        title: sanitizeAINewsTitle(item.title || ""),
-        content: sanitizeAINewsBody(item.content || ""),
+        title: sanitizeAINewsTitle(item.title || ''),
+        content: sanitizeAINewsBody(item.content || ''),
         excerpt: item.excerpt ? sanitizeAINewsBody(item.excerpt) : item.excerpt,
       }));
       setItems(nextItems);
@@ -83,7 +86,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
       });
       setDraftValues(mapped);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore caricamento dati");
+      toastError(error, 'Caricamento non riuscito');
     } finally {
       setLoading(false);
     }
@@ -96,18 +99,18 @@ export default function AINewsDraftsPage({ basePath }: Props) {
   async function generaOra() {
     setGenerating(true);
     try {
-      const res = await fetch("/api/ai-news/genera", { method: "POST" });
+      const res = await fetch('/api/ai-news/genera', { method: 'POST' });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Errore durante la generazione");
+      if (!res.ok) throw new Error(json?.error ?? 'Errore durante la generazione');
 
-      toast.success(`Generate ${json.generate ?? 0} news, skippate ${json.skippate ?? 0}`);
+      toast.success(`${json.generate ?? 0} news generate`);
       const errori = Array.isArray(json?.errori) ? json.errori : [];
       if (errori.length > 0) {
-        toast.error(`Alcune fonti hanno restituito errore (${errori.length}). Controlla il log in Configurazione.`);
+        toast.warning(`${errori.length} fonti non raggiungibili`);
       }
       await loadAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore generazione news");
+      toastError(error, 'Generazione non riuscita');
     } finally {
       setGenerating(false);
     }
@@ -116,14 +119,14 @@ export default function AINewsDraftsPage({ basePath }: Props) {
   async function approva(id: string) {
     setSavingId(id);
     try {
-      const res = await fetch(`/api/ai-news/${id}/approva`, { method: "PATCH" });
+      const res = await fetch(`/api/ai-news/${id}/approva`, { method: 'PATCH' });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Errore approvazione");
+      if (!res.ok) throw new Error(json?.error ?? 'Errore approvazione');
 
-      toast.success("News approvata e pubblicata");
+      toast.success('News pubblicata');
       await loadAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore approvazione news");
+      toastError(error, 'Pubblicazione non riuscita');
     } finally {
       setSavingId(null);
     }
@@ -132,32 +135,30 @@ export default function AINewsDraftsPage({ basePath }: Props) {
   async function bonificaArchivioAi() {
     setCleaningArchive(true);
     try {
-      const res = await fetch("/api/ai-news/cleanup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/ai-news/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dryRun: false }),
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Errore bonifica archivio AI");
+      if (!res.ok) throw new Error(json?.error ?? 'Errore bonifica archivio AI');
 
       const errored = Array.isArray(json?.errors) ? json.errors.length : 0;
       const translatedCount: number = json?.translated ?? 0;
-      toast.success(
-        `Bonifica completata: ${json.updated ?? 0} aggiornate su ${json.scanned ?? 0}${translatedCount > 0 ? `, ${translatedCount} tradotte in italiano` : ""}${errored > 0 ? ` (${errored} errori)` : ""}`
-      );
+      toast.success(`${json.updated ?? 0} news aggiornate`);
 
       if (json?.geminiAvailable === false) {
-        toast.error("Gemini non configurato: le news in inglese non sono state tradotte. Imposta GEMINI_API_KEY nelle variabili d'ambiente.");
+        toast.warning('Traduzione non disponibile');
       }
 
       if (errored > 0) {
-        toast.error("Alcune righe non sono state aggiornate. Controlla i log server.");
+        toast.warning('Alcune news non aggiornate');
       }
 
       await loadAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore bonifica archivio AI");
+      toastError(error, 'Aggiornamento non riuscito');
     } finally {
       setCleaningArchive(false);
     }
@@ -166,14 +167,14 @@ export default function AINewsDraftsPage({ basePath }: Props) {
   async function scarta(id: string) {
     setSavingId(id);
     try {
-      const res = await fetch(`/api/ai-news/${id}/scarta`, { method: "PATCH" });
+      const res = await fetch(`/api/ai-news/${id}/scarta`, { method: 'PATCH' });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Errore scarto");
+      if (!res.ok) throw new Error(json?.error ?? 'Errore scarto');
 
-      toast.success("News scartata");
+      toast.success('News scartata');
       await loadAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore scarto news");
+      toastError(error, 'Operazione non riuscita');
     } finally {
       setSavingId(null);
     }
@@ -182,45 +183,45 @@ export default function AINewsDraftsPage({ basePath }: Props) {
   async function salvaModifiche(id: string) {
     const values = draftValues[id];
     if (!values?.titolo?.trim() || !values?.testo?.trim()) {
-      toast.error("Titolo e testo sono obbligatori");
+      toast.error('Titolo e testo obbligatori');
       return;
     }
 
     setSavingId(id);
     try {
       const res = await fetch(`/api/ai-news/${id}/modifica`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titolo: values.titolo.trim(), testo: values.testo.trim() }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "Errore salvataggio modifiche");
+      if (!res.ok) throw new Error(json?.error ?? 'Errore salvataggio modifiche');
 
       setEditingTitleId(null);
       setEditingTextId(null);
-      toast.success("Modifiche salvate");
+      toast.success('Modifiche salvate');
       await loadAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore modifica news");
+      toastError(error, 'Salvataggio non riuscito');
     } finally {
       setSavingId(null);
     }
   }
 
-  function renderBadgeStato(stato: DraftItem["stato"]) {
-    if (stato === "pubblicata") return "bg-emerald-100 text-emerald-700";
-    if (stato === "scartata") return "bg-red-100 text-red-700";
-    return "bg-amber-100 text-amber-700";
+  function renderBadgeStato(stato: DraftItem['stato']) {
+    if (stato === 'pubblicata') return 'bg-emerald-100 text-emerald-700';
+    if (stato === 'scartata') return 'bg-red-100 text-red-700';
+    return 'bg-amber-100 text-amber-700';
   }
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={['admin', 'gestore']}>
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="breadcrumb text-secondary/60">
               <span>News</span>
-              {" › "}
+              {' › '}
               <span>News AI</span>
             </p>
             <h1 className="text-4xl font-bold text-secondary">News AI</h1>
@@ -231,7 +232,11 @@ export default function AINewsDraftsPage({ basePath }: Props) {
               disabled={generating || cleaningArchive}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-60"
             >
-              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {generating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
               Genera ora
             </button>
             <button
@@ -239,7 +244,11 @@ export default function AINewsDraftsPage({ basePath }: Props) {
               disabled={generating || cleaningArchive}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-secondary shadow-sm hover:bg-gray-50 disabled:opacity-60"
             >
-              {cleaningArchive ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {cleaningArchive ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
               Bonifica archivio AI
             </button>
             <Link
@@ -271,18 +280,18 @@ export default function AINewsDraftsPage({ basePath }: Props) {
 
         <div className="flex flex-wrap gap-2">
           {[
-            { key: "tutte", label: "Tutte" },
-            { key: "bozza", label: "In attesa" },
-            { key: "pubblicata", label: "Pubblicate" },
-            { key: "scartata", label: "Scartate" },
+            { key: 'tutte', label: 'Tutte' },
+            { key: 'bozza', label: 'In attesa' },
+            { key: 'pubblicata', label: 'Pubblicate' },
+            { key: 'scartata', label: 'Scartate' },
           ].map((opt) => (
             <button
               key={opt.key}
               onClick={() => setFiltro(opt.key as typeof filtro)}
               className={`rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
                 filtro === opt.key
-                  ? "border border-secondary bg-secondary text-white"
-                  : "border border-black/10 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+                  ? 'border border-secondary bg-secondary text-white'
+                  : 'border border-black/10 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
               {opt.label}
@@ -299,7 +308,9 @@ export default function AINewsDraftsPage({ basePath }: Props) {
           <div className="rounded-lg bg-white py-20 text-center">
             <Bot className="mx-auto mb-3 h-12 w-12 text-secondary/20" />
             <h2 className="text-xl font-semibold text-secondary">Nessuna bozza trovata</h2>
-            <p className="mt-1 text-sm text-secondary/70">Prova a generare nuove news o modifica filtri e ricerca</p>
+            <p className="mt-1 text-sm text-secondary/70">
+              Prova a generare nuove news o modifica filtri e ricerca
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
@@ -316,9 +327,13 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                       Notizie
                     </span>
                     <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
-                      {item.fonte_nome || "Fonte sconosciuta"}
+                      {item.fonte_nome || 'Fonte sconosciuta'}
                     </span>
-                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${renderBadgeStato(item.stato)}`}>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${renderBadgeStato(
+                        item.stato,
+                      )}`}
+                    >
                       {item.stato}
                     </span>
                   </div>
@@ -328,7 +343,10 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                       <input
                         value={values.titolo}
                         onChange={(e) =>
-                          setDraftValues((prev) => ({ ...prev, [item.id]: { ...values, titolo: e.target.value } }))
+                          setDraftValues((prev) => ({
+                            ...prev,
+                            [item.id]: { ...values, titolo: e.target.value },
+                          }))
                         }
                         className="w-full rounded-lg border border-black/10 px-3 py-2 text-lg font-bold text-secondary shadow-sm"
                       />
@@ -346,7 +364,10 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                       <textarea
                         value={values.testo}
                         onChange={(e) =>
-                          setDraftValues((prev) => ({ ...prev, [item.id]: { ...values, testo: e.target.value } }))
+                          setDraftValues((prev) => ({
+                            ...prev,
+                            [item.id]: { ...values, testo: e.target.value },
+                          }))
                         }
                         rows={4}
                         className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm text-secondary shadow-sm"
@@ -362,7 +383,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                     )}
 
                     <p className="text-xs text-secondary/60">
-                      Generata il {new Date(item.created_at).toLocaleString("it-IT")}
+                      Generata il {new Date(item.created_at).toLocaleString('it-IT')}
                     </p>
                   </div>
 
@@ -372,7 +393,11 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                       disabled={savingId === item.id}
                       className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                     >
-                      {savingId === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                      {savingId === item.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Check className="h-3 w-3" />
+                      )}
                       Approva
                     </button>
                     <button

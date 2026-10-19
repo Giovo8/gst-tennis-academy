@@ -3,18 +3,12 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  AlertCircle,
-  Calendar as CalendarIcon,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  X,
-} from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { checkCourtBlockConflicts, formatBlockConflictMessage } from '@/lib/courts/blockConflicts';
 import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 const COURTS = ['Campo 1', 'Campo 2', 'Campo 3', 'Campo 4'];
 
@@ -67,8 +61,6 @@ export default function NewCourtBlockPage() {
     useDragScroll();
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [activeDateContext, setActiveDateContext] = useState<{
     pidx: number;
@@ -324,37 +316,36 @@ export default function NewCourtBlockPage() {
 
   async function handleCreateBlock() {
     if (!blockType) {
-      setError('Seleziona un tipo di blocco');
+      toast.warning('Seleziona il tipo di blocco');
       return;
     }
 
     if (blockType === 'altro' && !customBlockType.trim()) {
-      setError("Specifica in cosa consiste il blocco 'Altro'");
+      toast.warning('Specifica il tipo di blocco');
       return;
     }
 
     for (const period of periods) {
       if (!period.court) {
-        setError('Seleziona un campo per ogni periodo');
+        toast.warning('Seleziona il campo');
         return;
       }
       if (!period.startDate || !period.endDate) {
-        setError('Seleziona data inizio e data fine per ogni periodo');
+        toast.warning('Seleziona le date');
         return;
       }
       if (period.weekDays.length === 0) {
-        setError('Seleziona almeno un giorno della settimana per ogni periodo');
+        toast.warning('Seleziona i giorni');
         return;
       }
       if (period.slots.length === 0) {
-        setError("Seleziona l'orario per ogni periodo");
+        toast.warning("Seleziona l'orario");
         return;
       }
     }
 
     try {
       setSubmitting(true);
-      setError('');
 
       const reasonText = getBlockReason();
       const blocksToInsert: Array<{
@@ -404,14 +395,14 @@ export default function NewCourtBlockPage() {
       }
 
       if (blocksToInsert.length === 0) {
-        setError('Nessun blocco da creare: verifica periodo e giorni selezionati');
+        toast.warning('Nessun giorno selezionato');
         setSubmitting(false);
         return;
       }
 
       const conflictResult = await checkCourtBlockConflicts(supabase, blocksToInsert);
       if (conflictResult.hasConflict) {
-        setError(formatBlockConflictMessage(conflictResult));
+        toast.error('Periodo già occupato');
         setSubmitting(false);
         return;
       }
@@ -421,13 +412,10 @@ export default function NewCourtBlockPage() {
       if (insertError) throw insertError;
 
       const daysCount = blocksToInsert.length;
-      setSuccess(`${daysCount} blocco${daysCount > 1 ? 'i creati' : ' creato'} con successo!`);
-
-      setTimeout(() => {
-        router.push('/dashboard/admin/courts');
-      }, 1500);
+      toast.success(daysCount > 1 ? `${daysCount} blocchi creati` : 'Blocco creato');
+      router.push('/dashboard/admin/courts');
     } catch (err) {
-      setError(err.message || 'Errore nella creazione del blocco');
+      toastError(err, 'Creazione non riuscita');
     } finally {
       setSubmitting(false);
     }
@@ -452,24 +440,6 @@ export default function NewCourtBlockPage() {
         </p>
         <h1 className="text-4xl font-bold text-secondary">Crea Blocco</h1>
       </div>
-
-      {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-red-800">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-green-800">{success}</p>
-          </div>
-        </div>
-      )}
 
       <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">

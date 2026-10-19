@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { Loader2, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Loader2, AlertCircle, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
@@ -88,7 +90,6 @@ export default function EditBookingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [matchFormat, setMatchFormat] = useState<MatchFormat>('singolo');
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
@@ -392,22 +393,20 @@ export default function EditBookingPage() {
   async function handleSave() {
     if (!bookingId) return;
     setSaving(true);
-    setError(null);
     try {
       if (!selectedDate || !selectedCourt || selectedSlots.length === 0)
-        throw new Error('Seleziona giorno, campo e almeno uno slot orario');
+        throw new Error('Seleziona giorno, campo e orario');
       if (
         (bookingType === 'lezione_privata' || bookingType === 'lezione_gruppo') &&
         selectedCoaches.length === 0
       )
-        throw new Error('Seleziona almeno un maestro per le lezioni');
-      if (isTournamentBooking && !hasTournamentMatch)
-        throw new Error('Seleziona la partita del torneo da giocare');
+        throw new Error('Seleziona un maestro');
+      if (isTournamentBooking && !hasTournamentMatch) throw new Error('Seleziona la partita');
 
       const {
         data: { user },
       } = await getSessionUser();
-      if (!user) throw new Error('Sessione non valida');
+      if (!user) throw new Error('Sessione scaduta, accedi di nuovo');
 
       const ordered = [...selectedSlots].sort((a, b) => {
         const [hA, mA] = a.split(':').map(Number);
@@ -441,8 +440,7 @@ export default function EditBookingPage() {
 
       if (updateError) {
         // Indice unico: un'altra prenotazione attiva ha già questa partita
-        if (updateError.code === '23505')
-          throw new Error('Questa partita ha già una prenotazione attiva');
+        if (updateError.code === '23505') throw new Error('Partita già prenotata');
         throw new Error(updateError.message);
       }
 
@@ -510,15 +508,10 @@ export default function EditBookingPage() {
         );
       }
 
-      setSuccess('Prenotazione aggiornata con successo!');
-      setTimeout(() => {
-        router.push(`${dashboardBase}/bookings/${bookingId}`);
-      }, 1200);
+      toast.success('Prenotazione aggiornata');
+      router.push(`${dashboardBase}/bookings/${bookingId}`);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Errore durante l'aggiornamento della prenotazione",
-      );
-    } finally {
+      toastError(err, 'Salvataggio non riuscito');
       setSaving(false);
     }
   }
@@ -548,16 +541,6 @@ export default function EditBookingPage() {
           </div>
         </div>
       )}
-      {success && (
-        <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-green-900">Successo</p>
-            <p className="text-sm text-green-700 mt-1">{success}</p>
-          </div>
-        </div>
-      )}
-
       <div className="space-y-6">
         {/* Selettore Data */}
         {selectedDate && (

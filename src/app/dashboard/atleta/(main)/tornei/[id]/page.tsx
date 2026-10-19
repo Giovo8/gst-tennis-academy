@@ -12,6 +12,8 @@ import TournamentScheduleSection, {
   useScheduledTournamentMatches,
 } from '@/components/tournaments/TournamentScheduleSection';
 import { Trophy, Loader2, Target, Users as UsersIcon, Eye } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -45,7 +47,8 @@ function AtletaTournamentDetailInner() {
   const [currentParticipants, setCurrentParticipants] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Incrementato dopo iscrizione/disiscrizione per ricaricare il manager senza reload della pagina
+  const [managerKey, setManagerKey] = useState(0);
   const [joined, setJoined] = useState(false);
   const [managerTab, setManagerTab] = useState<TournamentTabKey>('overview');
   const [managerMeta, setManagerMeta] = useState<{
@@ -65,10 +68,7 @@ function AtletaTournamentDetailInner() {
     async function load() {
       setLoading(true);
       if (!id) {
-        if (mounted) {
-          setError('ID torneo mancante');
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
         return;
       }
       try {
@@ -124,7 +124,7 @@ function AtletaTournamentDetailInner() {
           }
         }
       } catch (err) {
-        if (mounted) setError(err.message || 'Errore');
+        if (mounted) toastError(err, 'Caricamento non riuscito');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -142,7 +142,7 @@ function AtletaTournamentDetailInner() {
   );
   const scheduledMatches = useScheduledTournamentMatches(
     typeof id === 'string' ? id : null,
-    isStarted,
+    true, // fetch subito, in parallelo al caricamento del torneo: la tab resta legata a isStarted
     0,
     'public',
   );
@@ -158,13 +158,12 @@ function AtletaTournamentDetailInner() {
   }, [hasScheduledMatches, scheduleAutoSelected, managerTab]);
 
   const handleJoin = async () => {
-    setError(null);
     setActionLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user ?? null;
       if (!user) {
-        setError('Devi effettuare il login per iscriverti');
+        toast.error('Accedi per iscriverti');
         setActionLoading(false);
         return;
       }
@@ -185,15 +184,15 @@ function AtletaTournamentDetailInner() {
         json = {};
       }
       if (!res.ok) {
-        setError(json.error || 'Errore iscrizione');
+        toastError(json.error, 'Iscrizione non riuscita');
       } else {
         setJoined(true);
         setCurrentParticipants((c) => c + 1);
-        // Reload the page to refresh TournamentManagerWrapper
-        window.location.reload();
+        setManagerKey((k) => k + 1);
+        toast.success('Iscrizione completata');
       }
     } catch (err) {
-      setError(err.message || 'Errore rete');
+      toastError(err, 'Iscrizione non riuscita');
     } finally {
       setActionLoading(false);
     }
@@ -204,13 +203,12 @@ function AtletaTournamentDetailInner() {
       return;
     }
 
-    setError(null);
     setActionLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user ?? null;
       if (!user) {
-        setError('Devi effettuare il login');
+        toast.error('Sessione scaduta, accedi di nuovo');
         setActionLoading(false);
         return;
       }
@@ -233,15 +231,15 @@ function AtletaTournamentDetailInner() {
         json = {};
       }
       if (!res.ok) {
-        setError(json.error || 'Errore cancellazione iscrizione');
+        toastError(json.error, 'Annullamento non riuscito');
       } else {
         setJoined(false);
         setCurrentParticipants((c) => Math.max(0, c - 1));
-        // Reload the page to refresh TournamentManagerWrapper
-        window.location.reload();
+        setManagerKey((k) => k + 1);
+        toast.success('Iscrizione annullata');
       }
     } catch (err) {
-      setError(err.message || 'Errore rete');
+      toastError(err, 'Annullamento non riuscito');
     } finally {
       setActionLoading(false);
     }
@@ -336,13 +334,6 @@ function AtletaTournamentDetailInner() {
           >
             Esci dalla vista atleta
           </Link>
-        </div>
-      )}
-
-      {/* Messaggio errore globale */}
-      {error && (
-        <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
@@ -510,6 +501,7 @@ function AtletaTournamentDetailInner() {
       {/* Tournament Manager */}
       {currentParticipants > 0 && (
         <TournamentManagerWrapper
+          key={managerKey}
           tournamentId={tournament.id}
           isAdmin={false}
           highlightUserId={targetUserId}

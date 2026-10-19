@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { LogOut } from 'lucide-react';
 import { MenuCloseIcon } from '@/components/ui/MenuCloseIcon';
 import NotificationsDropdown from '@/components/notifications/NotificationsDropdown';
+import RotateDeviceHint from '@/components/dashboard/RotateDeviceHint';
 import { type UserRole } from '@/lib/roles';
 import { handleLogout } from '@/lib/auth/logout';
 
@@ -242,6 +243,7 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-dvh bg-white">
+      <RotateDeviceHint />
       {/* Top Navbar - solo mobile */}
       <header className="lg:hidden fixed top-4 left-6 right-6 z-[110] bg-secondary border border-black/10 rounded-lg shadow-lg [transform:translateZ(0)]">
         <div className="h-16 relative flex items-center px-4">
@@ -294,7 +296,7 @@ export default function DashboardShell({
 
       {/* Mobile sidebar overlay */}
       <aside
-        className={`lg:hidden fixed top-[6rem] left-6 right-6 z-[100] flex flex-col bg-white rounded-lg overflow-hidden border border-black/10 shadow-lg [transform:translateZ(0)] max-h-[calc(100dvh-7rem)] transition-all duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-[6rem] left-6 right-6 z-[100] flex flex-col bg-white rounded-lg overflow-hidden border border-black/10 shadow-lg [transform:translateZ(0)] max-h-[calc(100dvh-7rem)] transition-[opacity,transform,translate] duration-300 ease-in-out ${
           mobileOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-3 pointer-events-none'
@@ -391,7 +393,7 @@ export default function DashboardShell({
       <div className="flex min-h-dvh pt-[5rem] lg:pt-0">
         {/* Sidebar desktop - sticky dentro il container */}
         <aside
-          className={`hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen bg-gray-50 border border-black/10 overflow-visible transition-all duration-300 ${
+          className={`hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen bg-gray-50 border border-black/10 overflow-visible ${
             sidebarCollapsed ? 'w-16' : 'w-56'
           }`}
         >

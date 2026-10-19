@@ -189,7 +189,7 @@ export default function NotificationCenter() {
           )}
           {userRole !== 'atleta' && (
             <button
-              onClick={() => toast.info('Funzionalità in arrivo')}
+              onClick={() => toast.info('Funzione in arrivo')}
               className="flex-1 px-4 py-3 text-sm font-semibold text-secondary bg-white border border-black/10 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
             >
               <Send className="h-4 w-4" />

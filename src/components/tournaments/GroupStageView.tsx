@@ -5,6 +5,7 @@ import { Trophy, RefreshCw, Target, Calendar } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import Avatar from '@/components/ui/Avatar';
 
 type TabType = 'participants' | 'standings' | 'matches';
@@ -124,7 +125,7 @@ export default function GroupStageView({
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -138,16 +139,16 @@ export default function GroupStageView({
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(data.message || 'Gironi generati con successo!');
+        toast.success('Gironi generati');
         // Reload the page or update groups
         if (onMatchUpdate) onMatchUpdate();
         window.location.reload();
       } else {
-        toast.error(data.error || 'Errore nella generazione dei gironi');
+        toastError(data.error, 'Generazione non riuscita');
       }
     } catch (error) {
       console.error('Error generating groups:', error);
-      toast.error('Errore nella generazione dei gironi');
+      toast.error('Generazione non riuscita');
     } finally {
       setGenerating(false);
     }
@@ -379,7 +380,7 @@ export default function GroupStageView({
                       className="px-3 py-1.5 text-xs text-[#022431] hover:bg-[#022431]/10 rounded-lg font-medium whitespace-nowrap transition-colors"
                       onClick={() => {
                         if (confirm(`Rimuovere ${fullName} dal torneo?`)) {
-                          toast.info('Funzione rimozione partecipante da collegare (admin).');
+                          toast.info('Funzione in arrivo');
                         }
                       }}
                     >

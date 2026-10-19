@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Booking {
   id: string;
@@ -469,7 +470,7 @@ export default function BookingsPage({ mode = 'default' }: BookingsPageProps) {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const {
@@ -477,7 +478,7 @@ export default function BookingsPage({ mode = 'default' }: BookingsPageProps) {
       } = await getSessionUser();
 
       if (!user) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const updateQuery = supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id);
@@ -564,10 +565,11 @@ export default function BookingsPage({ mode = 'default' }: BookingsPageProps) {
         await Promise.all(notifyPromises);
       }
 
+      toast.success('Prenotazione annullata');
       await loadBookings();
     } catch (error) {
       console.error("Errore durante l'annullamento della prenotazione:", error);
-      toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
+      toastError(error, 'Annullamento non riuscito');
     }
   }
 

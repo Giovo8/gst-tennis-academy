@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
-import { CheckCircle, AlertCircle, Loader2, Upload, Link as LinkIcon, X } from 'lucide-react';
+import { Loader2, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type FormData = {
   full_name: string;
@@ -28,8 +29,6 @@ export default function NewStaffPage() {
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditMode);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState('');
@@ -74,7 +73,7 @@ export default function NewStaffPage() {
         });
       }
     } catch {
-      setError('Errore nel caricamento dei dati');
+      toast.error('Caricamento non riuscito');
     } finally {
       setLoadingData(false);
     }
@@ -83,8 +82,6 @@ export default function NewStaffPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       const dataToSave = {
@@ -110,13 +107,10 @@ export default function NewStaffPage() {
         if (error) throw error;
       }
 
-      setSuccess(isEditMode ? 'Membro aggiornato con successo!' : 'Membro creato con successo!');
-      setTimeout(() => {
-        router.push('/dashboard/admin/staff');
-      }, 1500);
+      toast.success(isEditMode ? 'Membro aggiornato' : 'Membro aggiunto');
+      router.push('/dashboard/admin/staff');
     } catch (err) {
-      setError(err.message || 'Errore durante il salvataggio');
-    } finally {
+      toastError(err, 'Salvataggio non riuscito');
       setLoading(false);
     }
   }
@@ -131,9 +125,10 @@ export default function NewStaffPage() {
 
       if (error) throw error;
 
+      toast.success('Membro eliminato');
       router.push('/dashboard/admin/staff');
-    } catch {
-      setError("Errore durante l'eliminazione");
+    } catch (err) {
+      toastError(err, 'Eliminazione non riuscita');
     }
   }
 
@@ -142,12 +137,12 @@ export default function NewStaffPage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.warning("L'immagine deve essere inferiore a 5MB");
+      toast.warning('Immagine oltre 5 MB');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast.warning("Il file deve essere un'immagine");
+      toast.warning('Formato non supportato');
       return;
     }
 
@@ -215,25 +210,18 @@ export default function NewStaffPage() {
       });
 
       // Provide specific error messages based on error type
-      let userMessage = "Errore durante l'upload dell'immagine";
+      let userMessage = 'Caricamento immagine non riuscito';
 
       if (errorMsg.includes('abort')) {
-        userMessage =
-          "⏱️ Timeout durante l'upload. La connessione è troppo lenta. Riprova con una connessione migliore.";
+        userMessage = 'Connessione troppo lenta';
       } else if (errorMsg.includes('Network') || errorMsg.includes('fetch')) {
-        userMessage = '🌐 Errore di connessione. Verifica la connessione internet e riprova.';
+        userMessage = 'Connessione assente';
       } else if (errorMsg.includes('File too large')) {
-        userMessage = "📦 L'immagine è troppo grande. Massimo 5MB.";
+        userMessage = 'Immagine oltre 5 MB';
       } else if (errorMsg.includes('must be an image')) {
-        userMessage = "🖼️ Il file deve essere un'immagine valida (JPG, PNG, GIF, WebP).";
+        userMessage = 'Formato non supportato';
       } else if (errorMsg.includes('vuoto')) {
-        userMessage = '⚠️ Il file è vuoto o corrotto.';
-      } else if (errorMsg.includes('URL valido')) {
-        userMessage = '❌ Errore server: il file non è stato salvato correttamente.';
-      } else if (errorMsg.includes('HTTP')) {
-        userMessage = `❌ ${errorMsg}`;
-      } else {
-        userMessage = `❌ ${errorMsg}`;
+        userMessage = 'File vuoto o danneggiato';
       }
 
       toast.error(userMessage);
@@ -251,7 +239,7 @@ export default function NewStaffPage() {
     try {
       new URL(imageUrlInput);
     } catch {
-      toast.warning('Inserisci un URL valido');
+      toast.warning('URL non valido');
       return;
     }
 
@@ -284,31 +272,6 @@ export default function NewStaffPage() {
           {isEditMode ? 'Modifica Membro' : 'Nuovo Membro'}
         </h1>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl border border-red-200 p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-900">Errore</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl border border-green-200 p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Successo</p>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div>

@@ -19,6 +19,7 @@ import {
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 const WEEK_DAYS = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
@@ -157,7 +158,7 @@ export default function AthleteProfileEditPage({
       });
     } catch (error) {
       console.error('Error loading profile:', error);
-      toast.error('Errore nel caricamento del profilo');
+      toast.error('Caricamento non riuscito');
       router.push(profilePath);
     } finally {
       setLoading(false);
@@ -233,7 +234,7 @@ export default function AthleteProfileEditPage({
       router.push(profilePath);
     } catch (err: unknown) {
       console.error('Error updating profile:', err);
-      toast.error(err instanceof Error ? err.message : 'Errore durante il salvataggio del profilo');
+      toastError(err, 'Salvataggio non riuscito');
     } finally {
       setUpdating(false);
     }
@@ -244,12 +245,12 @@ export default function AthleteProfileEditPage({
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.warning("L'immagine deve essere inferiore a 5MB");
+      toast.warning('Immagine oltre 5 MB');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast.warning("Il file deve essere un'immagine");
+      toast.warning('Formato non supportato');
       return;
     }
 
@@ -285,7 +286,7 @@ export default function AthleteProfileEditPage({
       setUser({ ...user, avatar_url: publicUrl });
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast.error("Errore durante l'upload dell'immagine");
+      toast.error('Caricamento immagine non riuscito');
     } finally {
       setUploadingAvatar(false);
     }
@@ -297,7 +298,7 @@ export default function AthleteProfileEditPage({
     try {
       new URL(avatarUrl);
     } catch {
-      toast.warning('Inserisci un URL valido');
+      toast.warning('URL non valido');
       return;
     }
 
@@ -316,7 +317,7 @@ export default function AthleteProfileEditPage({
       setAvatarUrl('');
     } catch (error) {
       console.error('Error updating avatar:', error);
-      toast.error("Errore durante l'aggiornamento dell'immagine");
+      toast.error('Caricamento immagine non riuscito');
     } finally {
       setUploadingAvatar(false);
     }
@@ -354,7 +355,7 @@ export default function AthleteProfileEditPage({
       setAvatarUrl('');
     } catch (error) {
       console.error('Error removing avatar:', error);
-      toast.error("Errore durante la rimozione dell'avatar");
+      toast.error('Rimozione non riuscita');
     } finally {
       setUploadingAvatar(false);
     }
@@ -366,7 +367,7 @@ export default function AthleteProfileEditPage({
     try {
       new URL(certificatoLinkUrl);
     } catch {
-      toast.warning('Inserisci un URL valido');
+      toast.warning('URL non valido');
       return;
     }
 
@@ -380,12 +381,12 @@ export default function AthleteProfileEditPage({
     if (!file || !user) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.warning('Il file deve essere inferiore a 10MB');
+      toast.warning('File oltre 10 MB');
       return;
     }
 
     if (file.type !== 'application/pdf') {
-      toast.warning('Il file deve essere un PDF');
+      toast.warning('Carica un file PDF');
       return;
     }
 
@@ -409,12 +410,10 @@ export default function AthleteProfileEditPage({
       }
 
       setFormData((prev) => ({ ...prev, certificato_medico_url: uploadPayload.url as string }));
-      toast.success('Certificato caricato con successo.');
+      toast.success('Certificato caricato');
     } catch (error) {
       console.error('Error uploading certificate:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Errore durante il caricamento del certificato',
-      );
+      toastError(error, 'Caricamento non riuscito');
     } finally {
       setUploadingCertificato(false);
       event.target.value = '';
@@ -442,12 +441,10 @@ export default function AthleteProfileEditPage({
       }
 
       setFormData((prev) => ({ ...prev, certificato_medico_url: '' }));
-      toast.success('Certificato rimosso.');
+      toast.success('Certificato rimosso');
     } catch (error) {
       console.error('Error removing certificate:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Errore durante la rimozione del certificato',
-      );
+      toastError(error, 'Rimozione non riuscita');
     } finally {
       setUploadingCertificato(false);
     }
@@ -642,10 +639,10 @@ export default function AthleteProfileEditPage({
 
       if (error) throw error;
 
-      toast.success('Email di reset password inviata con successo.');
+      toast.success('Email di reset inviata');
     } catch (err: unknown) {
       console.error('Error resetting password:', err);
-      toast.error(err instanceof Error ? err.message : "Errore durante l'invio del reset password");
+      toastError(err, 'Invio non riuscito');
     } finally {
       setResettingPassword(false);
     }

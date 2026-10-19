@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Users, UserCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import {
   Modal,
   ModalContent,
@@ -45,7 +47,6 @@ export default function LezionePresenzePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
   // Delete lesson
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -186,7 +187,6 @@ export default function LezionePresenzePage() {
   async function handleSave() {
     if (!courseId || !dateParam) return;
     setSaving(true);
-    setError('');
 
     const rows = athletes.map((a) => {
       const key = a.id ?? `guest:${a.full_name}`;
@@ -227,7 +227,7 @@ export default function LezionePresenzePage() {
     const upsertError = saveError;
 
     if (upsertError) {
-      setError('Errore nel salvataggio: ' + upsertError.message);
+      toastError(upsertError, 'Salvataggio non riuscito');
     } else {
       setSaved(true);
     }
@@ -244,9 +244,10 @@ export default function LezionePresenzePage() {
       .eq('id', courseId);
     setDeleting(false);
     if (!error) {
+      toast.success('Lezione annullata');
       router.push(`/dashboard/admin/corsi/${courseId}`);
     } else {
-      setError("Errore nell'eliminazione: " + error.message);
+      toastError(error, 'Annullamento non riuscito');
       setShowDeleteConfirm(false);
     }
   }
@@ -299,13 +300,6 @@ export default function LezionePresenzePage() {
           </div>
         </div>
       </div>
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
 
       {/* Maestro */}
       <div className="page-card">

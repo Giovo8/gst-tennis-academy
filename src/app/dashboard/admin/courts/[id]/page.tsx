@@ -1,20 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
-import {
-  Loader2,
-  Check,
-  X,
-  GraduationCap,
-  Wrench,
-  Flag,
-  Shield,
-} from "lucide-react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { useRouter, useParams } from 'next/navigation';
+import { Loader2, Check, X, GraduationCap, Wrench, Flag, Shield } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 type Block = {
@@ -38,57 +30,57 @@ export default function CourtBlockDetailPage() {
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
 
   function getBlockStyle(reason?: string) {
-    const reasonText = (reason || "").trim();
+    const reasonText = (reason || '').trim();
     const reasonLower = reasonText.toLowerCase();
 
-    if (reasonLower.includes("corso adulti")) {
+    if (reasonLower.includes('corso adulti')) {
       return {
-        type: "Corso Adulti",
+        type: 'Corso Adulti',
         icon: GraduationCap,
       };
     }
 
-    if (reasonLower.includes("corsi") || reasonLower.includes("tennis")) {
+    if (reasonLower.includes('corsi') || reasonLower.includes('tennis')) {
       return {
-        type: "Corsi Tennis",
+        type: 'Corsi Tennis',
         icon: GraduationCap,
       };
     }
 
-    if (reasonLower.includes("manutenzione")) {
+    if (reasonLower.includes('manutenzione')) {
       return {
-        type: "Manutenzione",
+        type: 'Manutenzione',
         icon: Wrench,
       };
     }
 
-    if (reasonLower.includes("evento")) {
+    if (reasonLower.includes('evento')) {
       return {
-        type: "Evento",
+        type: 'Evento',
         icon: Flag,
       };
     }
 
-    if (reasonLower.startsWith("altro")) {
+    if (reasonLower.startsWith('altro')) {
       return {
-        type: "Altro",
+        type: 'Altro',
         icon: Shield,
       };
     }
 
     return {
-      type: reasonText ? "Altro" : "Blocco",
+      type: reasonText ? 'Altro' : 'Blocco',
       icon: Shield,
     };
   }
 
   function getBlockCardBg(type: string) {
-    if (type === "Corso Adulti") return "#023047";
-    if (type === "Corsi Tennis") return "#05384c";
-    if (type === "Manutenzione") return "var(--color-frozen-lake-900)";
-    if (type === "Evento") return "var(--color-frozen-lake-900)";
-    if (type === "Altro") return "var(--secondary)";
-    return "var(--color-frozen-lake-800)";
+    if (type === 'Corso Adulti') return '#023047';
+    if (type === 'Corsi Tennis') return '#05384c';
+    if (type === 'Manutenzione') return 'var(--color-frozen-lake-900)';
+    if (type === 'Evento') return 'var(--color-frozen-lake-900)';
+    if (type === 'Altro') return 'var(--secondary)';
+    return 'var(--color-frozen-lake-800)';
   }
 
   useEffect(() => {
@@ -100,13 +92,13 @@ export default function CourtBlockDetailPage() {
       setLoading(true);
 
       const { data: mainBlock, error: mainError } = await supabase
-        .from("court_blocks")
-        .select("*")
-        .eq("id", blockId)
+        .from('court_blocks')
+        .select('*')
+        .eq('id', blockId)
         .single();
 
       if (mainError || !mainBlock) {
-        router.push("/dashboard/admin/courts");
+        router.push('/dashboard/admin/courts');
         return;
       }
 
@@ -116,12 +108,12 @@ export default function CourtBlockDetailPage() {
       const mainEndTime = mainEndDate.getHours() * 60 + mainEndDate.getMinutes();
 
       const { data: relatedBlocks } = await supabase
-        .from("court_blocks")
-        .select("*")
-        .eq("court_id", mainBlock.court_id)
-        .eq("reason", mainBlock.reason || "")
-        .eq("is_disabled", false)
-        .order("start_time", { ascending: true });
+        .from('court_blocks')
+        .select('*')
+        .eq('court_id', mainBlock.court_id)
+        .eq('reason', mainBlock.reason || '')
+        .eq('is_disabled', false)
+        .order('start_time', { ascending: true });
 
       const filteredBlocks = (relatedBlocks || []).filter((item) => {
         const itemStart = new Date(item.start_time);
@@ -133,8 +125,8 @@ export default function CourtBlockDetailPage() {
 
       setAllBlocks(filteredBlocks.length > 0 ? filteredBlocks : [mainBlock]);
     } catch (err) {
-      console.error("Error loading block:", err);
-      router.push("/dashboard/admin/courts");
+      console.error('Error loading block:', err);
+      router.push('/dashboard/admin/courts');
     } finally {
       setLoading(false);
     }
@@ -143,7 +135,11 @@ export default function CourtBlockDetailPage() {
   async function handleDelete() {
     if (!allBlocks.length) return;
 
-    if (!confirm(`Sei sicuro di voler disattivare tutti i ${allBlocks.length} giorni di questo blocco?`)) {
+    if (
+      !confirm(
+        `Sei sicuro di voler disattivare tutti i ${allBlocks.length} giorni di questo blocco?`,
+      )
+    ) {
       return;
     }
 
@@ -151,16 +147,19 @@ export default function CourtBlockDetailPage() {
       setDeleting(true);
 
       const { error } = await supabase
-        .from("court_blocks")
+        .from('court_blocks')
         .update({ is_disabled: true })
-        .in("id", allBlocks.map((item) => item.id));
+        .in(
+          'id',
+          allBlocks.map((item) => item.id),
+        );
 
       if (error) throw error;
 
-      router.push("/dashboard/admin/courts");
+      router.push('/dashboard/admin/courts');
     } catch (err) {
-      console.error("Error deleting blocks:", err);
-      toast.error("Errore durante l'eliminazione del blocco");
+      console.error('Error deleting blocks:', err);
+      toast.error('Eliminazione non riuscita');
     } finally {
       setDeleting(false);
     }
@@ -168,11 +167,11 @@ export default function CourtBlockDetailPage() {
 
   async function handleToggleDateTab(block: Block) {
     const isCurrentlyDisabled = block.is_disabled;
-    const dateLabel = format(new Date(block.start_time), "dd/MM/yyyy", { locale: it });
+    const dateLabel = format(new Date(block.start_time), 'dd/MM/yyyy', { locale: it });
     const shouldToggle = confirm(
       isCurrentlyDisabled
         ? `Vuoi riattivare il giorno ${dateLabel}?`
-        : `Vuoi disattivare il giorno ${dateLabel}?`
+        : `Vuoi disattivare il giorno ${dateLabel}?`,
     );
 
     if (!shouldToggle) return;
@@ -180,18 +179,18 @@ export default function CourtBlockDetailPage() {
     try {
       setTogglingDateId(block.id);
       const { error } = await supabase
-        .from("court_blocks")
+        .from('court_blocks')
         .update({ is_disabled: !isCurrentlyDisabled })
-        .eq("id", block.id);
+        .eq('id', block.id);
 
       if (error) throw error;
 
       setAllBlocks((prev) =>
-        prev.map((b) => b.id === block.id ? { ...b, is_disabled: !isCurrentlyDisabled } : b)
+        prev.map((b) => (b.id === block.id ? { ...b, is_disabled: !isCurrentlyDisabled } : b)),
       );
     } catch (err) {
-      console.error("Error toggling date:", err);
-      toast.error("Errore durante la modifica");
+      console.error('Error toggling date:', err);
+      toast.error('Salvataggio non riuscito');
     } finally {
       setTogglingDateId(null);
     }
@@ -229,10 +228,13 @@ export default function CourtBlockDetailPage() {
     <div className="space-y-6 pt-3">
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">
+          <Link
+            href="/dashboard/admin/courts"
+            className="hover:text-secondary/80 transition-colors"
+          >
             Blocco Campi
           </Link>
-          {" › "}
+          {' › '}
           <span>Dettagli Blocco</span>
         </p>
 
@@ -256,9 +258,7 @@ export default function CourtBlockDetailPage() {
       </div>
 
       <div className="page-card p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">
-          Date bloccate
-        </h2>
+        <h2 className="text-lg font-semibold text-secondary mb-6">Date bloccate</h2>
 
         <ul className="flex flex-col gap-2">
           {allBlocks.map((block, index) => {
@@ -270,7 +270,7 @@ export default function CourtBlockDetailPage() {
               <li key={block.id}>
                 <div
                   className="flex items-center gap-4 py-3 px-3 rounded-lg"
-                  style={{ background: isDisabledDate ? "#9ca3af" : "var(--secondary)" }}
+                  style={{ background: isDisabledDate ? '#9ca3af' : 'var(--secondary)' }}
                 >
                   <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                     <span className="text-sm font-bold leading-none text-white">{index + 1}</span>
@@ -278,10 +278,13 @@ export default function CourtBlockDetailPage() {
 
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate text-white">
-                      {format(dateStart, "EEEE d MMMM yyyy", { locale: it }).replace(/^./, (letter) => letter.toUpperCase())}
+                      {format(dateStart, 'EEEE d MMMM yyyy', { locale: it }).replace(
+                        /^./,
+                        (letter) => letter.toUpperCase(),
+                      )}
                     </p>
                     <p className="text-xs truncate mt-0.5 text-white/70">
-                      {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+                      {format(dateStart, 'HH:mm')} - {format(dateEnd, 'HH:mm')}
                     </p>
                   </div>
 
@@ -291,7 +294,11 @@ export default function CourtBlockDetailPage() {
                       onClick={() => void handleToggleDateTab(block)}
                       disabled={togglingDateId === block.id}
                       className="inline-flex items-center justify-center w-8 h-8 rounded transition-all focus:outline-none disabled:opacity-50 hover:bg-white/10 text-white/70 hover:text-white"
-                      aria-label={`${isDisabledDate ? "Riattiva" : "Disattiva"} ${format(dateStart, "dd/MM/yyyy", { locale: it })}`}
+                      aria-label={`${isDisabledDate ? 'Riattiva' : 'Disattiva'} ${format(
+                        dateStart,
+                        'dd/MM/yyyy',
+                        { locale: it },
+                      )}`}
                     >
                       {togglingDateId === block.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -314,44 +321,58 @@ export default function CourtBlockDetailPage() {
 
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Motivo</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{firstBlock.reason || "Non specificato"}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni bloccati</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Motivo
+            </label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
-                {allBlocks.length} {allBlocks.length === 1 ? "giorno" : "giorni"}
+                {firstBlock.reason || 'Non specificato'}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Intervallo date</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Giorni bloccati
+            </label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
-                {format(firstDate, "dd/MM/yyyy", { locale: it })} - {format(lastDate, "dd/MM/yyyy", { locale: it })}
+                {allBlocks.length} {allBlocks.length === 1 ? 'giorno' : 'giorni'}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Intervallo date
+            </label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
-                {format(new Date(firstBlock.start_time), "HH:mm")} - {format(new Date(firstBlock.end_time), "HH:mm")}
+                {format(firstDate, 'dd/MM/yyyy', { locale: it })} -{' '}
+                {format(lastDate, 'dd/MM/yyyy', { locale: it })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Orario
+            </label>
+            <div className="flex-1">
+              <p className="text-secondary font-semibold">
+                {format(new Date(firstBlock.start_time), 'HH:mm')} -{' '}
+                {format(new Date(firstBlock.end_time), 'HH:mm')}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creato il</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Creato il
+            </label>
             <div className="flex-1">
               <p className="text-secondary/70">
-                {format(new Date(firstBlock.created_at), "dd/MM/yyyy HH:mm", { locale: it })}
+                {format(new Date(firstBlock.created_at), 'dd/MM/yyyy HH:mm', { locale: it })}
               </p>
             </div>
           </div>
@@ -371,9 +392,7 @@ export default function CourtBlockDetailPage() {
           disabled={deleting}
           className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {deleting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : null}
+          {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
           Elimina
         </button>
       </div>

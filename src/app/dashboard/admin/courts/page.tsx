@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -87,11 +89,12 @@ export default function CourtsBlockPage() {
         .update({ is_disabled: true })
         .in('id', blockIds);
 
-      if (!error) {
-        setBlocks((prev) => prev.filter((block) => !blockIds.includes(block.id)));
-      }
+      if (error) throw error;
+      setBlocks((prev) => prev.filter((block) => !blockIds.includes(block.id)));
+      toast.success('Blocco disattivato');
     } catch (err) {
       console.error('Error deleting block:', err);
+      toastError(err, 'Disattivazione non riuscita');
     }
   }
 

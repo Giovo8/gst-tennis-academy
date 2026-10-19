@@ -61,11 +61,11 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { user_id, tournament_id } = body;
     if (!user_id || !tournament_id) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
     }
 
     const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
 
     // If the requester is trying to register someone else, allow gestore/admin.
     // Allow `maestro` (coach) to register other users only if the target is an `atleta`.
@@ -81,15 +81,12 @@ export async function POST(req: Request) {
           .eq('id', user_id)
           .single();
         if (tErr || !targetProfile)
-          return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+          return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 });
         if (String(targetProfile.role).toLowerCase() !== 'atleta') {
-          return NextResponse.json(
-            { error: 'Forbidden: can only register athletes' },
-            { status: 403 },
-          );
+          return NextResponse.json({ error: 'Puoi iscrivere solo atleti' }, { status: 403 });
         }
       } else {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
       }
     }
 
@@ -100,7 +97,7 @@ export async function POST(req: Request) {
       .eq('id', tournament_id)
       .single();
     if (tErr) return NextResponse.json({ error: tErr.message }, { status: 404 });
-    if (!tournament) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+    if (!tournament) return NextResponse.json({ error: 'Torneo non trovato' }, { status: 404 });
 
     const { count, error: countErr } = await supabaseServer
       .from('tournament_participants')
@@ -109,7 +106,7 @@ export async function POST(req: Request) {
     if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
 
     if ((count ?? 0) >= (tournament.max_participants ?? 0)) {
-      return NextResponse.json({ error: 'Tournament is full' }, { status: 409 });
+      return NextResponse.json({ error: 'Torneo al completo' }, { status: 409 });
     }
 
     // Create participation
@@ -153,15 +150,15 @@ export async function PATCH(req: Request) {
     const { id, user_id } = body;
 
     if (!id || !user_id) {
-      return NextResponse.json({ error: 'Missing id or user_id' }, { status: 400 });
+      return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
     }
 
     const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
 
     const roleLower = String(profile.role).toLowerCase();
     if (!['gestore', 'admin'].includes(roleLower)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
     }
 
     // Verify the target user exists in profiles
@@ -196,10 +193,7 @@ export async function PATCH(req: Request) {
       .limit(1);
 
     if (existing && existing.length > 0) {
-      return NextResponse.json(
-        { error: 'Questo utente è già iscritto al torneo' },
-        { status: 409 },
-      );
+      return NextResponse.json({ error: 'Già iscritto al torneo' }, { status: 409 });
     }
 
     const { data, error } = await supabaseServer
@@ -249,7 +243,7 @@ export async function DELETE(req: Request) {
       if (pErr) return NextResponse.json({ error: pErr.message }, { status: 404 });
 
       const { user, profile } = await getUserProfileFromRequest(req);
-      if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
 
       // Allow owner, gestore/admin, and maestro (coach) if the participant is an atleta
       if (String(profile.id) === String(part.user_id)) {
@@ -266,11 +260,11 @@ export async function DELETE(req: Request) {
             .eq('id', part.user_id)
             .single();
           if (ppErr || !pProfile)
-            return NextResponse.json({ error: 'Participant profile not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
           if (String(pProfile.role).toLowerCase() !== 'atleta')
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
         } else {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
         }
       }
 
@@ -297,7 +291,7 @@ export async function DELETE(req: Request) {
 
     if (user_id && tournament_id) {
       const { user, profile } = await getUserProfileFromRequest(req);
-      if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
 
       if (String(profile.id) === String(user_id)) {
         // owner allowed to remove self
@@ -313,11 +307,11 @@ export async function DELETE(req: Request) {
             .eq('id', user_id)
             .single();
           if (tpErr || !targetProfile)
-            return NextResponse.json({ error: 'Target profile not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
           if (String(targetProfile.role).toLowerCase() !== 'atleta')
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
         } else {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
         }
       }
 
@@ -345,10 +339,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json(
-      { error: 'Missing id or (user_id and tournament_id)' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

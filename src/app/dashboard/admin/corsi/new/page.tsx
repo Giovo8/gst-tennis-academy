@@ -3,15 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  AlertCircle,
-  Calendar as CalendarIcon,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  X,
-} from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
@@ -21,6 +13,8 @@ import { DEFAULT_COURTS } from '@/lib/courts/constants';
 import { findBookingsBlockedByCourse } from '@/lib/bookings/courseConflicts';
 import AthletesSelector from '@/components/bookings/AthletesSelector';
 import AuthGuard from '@/components/auth/AuthGuard';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Athlete {
   id: string;
@@ -96,8 +90,6 @@ export default function NuovoCorsoPage() {
 
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -174,7 +166,7 @@ export default function NuovoCorsoPage() {
         .single();
 
       if (error || !data) {
-        setError('Corso non trovato.');
+        toast.error('Corso non trovato');
         setLoading(false);
         return;
       }
@@ -512,13 +504,12 @@ export default function NuovoCorsoPage() {
 
   async function handleSubmit() {
     if (!name.trim()) {
-      setError('Il nome del corso è obbligatorio.');
+      toast.warning('Inserisci il nome del corso');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     setSubmitting(true);
-    setError('');
 
     try {
       const allDays = [...new Set(periods.flatMap((p) => p.days))];
@@ -616,7 +607,7 @@ export default function NuovoCorsoPage() {
       }
 
       if (err) {
-        setError(err.message);
+        toastError(err, 'Salvataggio non riuscito');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
@@ -652,10 +643,10 @@ export default function NuovoCorsoPage() {
         }
       }
 
-      setSuccess(isEditMode ? 'Corso aggiornato con successo!' : 'Corso creato con successo!');
-      setTimeout(() => router.push('/dashboard/admin/corsi'), 1200);
+      toast.success(isEditMode ? 'Corso aggiornato' : 'Corso creato');
+      router.push('/dashboard/admin/corsi');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Errore imprevisto. Riprova.');
+      toastError(e, 'Salvataggio non riuscito');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
@@ -691,20 +682,6 @@ export default function NuovoCorsoPage() {
             {isEditMode ? 'Modifica Corso' : 'Nuovo Corso'}
           </h1>
         </div>
-
-        {error && (
-          <div className="bg-red-50 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-red-800">{error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-50 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-green-800">{success}</p>
-          </div>
-        )}
 
         {/* Informazioni generali */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">

@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import {
   Swords,
   Trophy,
@@ -268,10 +270,21 @@ export default function AthleteArenaPage() {
 
       if (response.ok) {
         setOpenMenuId(null);
+        toast.success(
+          status === 'accepted'
+            ? 'Sfida accettata'
+            : status === 'declined'
+            ? 'Sfida rifiutata'
+            : 'Sfida annullata',
+        );
         await loadArenaData();
+      } else {
+        const json = await response.json().catch(() => ({}));
+        toastError(json.error, 'Operazione non riuscita');
       }
     } catch (error) {
       console.error('Error updating athlete challenge:', error);
+      toastError(error, 'Operazione non riuscita');
     }
   }
 

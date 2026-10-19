@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Users, Dumbbell, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface JobApplication {
   id: string;
@@ -59,10 +61,15 @@ export default function JobApplicationDetailPage() {
       });
 
       if (res.ok) {
+        toast.success('Candidatura eliminata');
         router.push('/dashboard/admin/job-applications');
+      } else {
+        const json = await res.json().catch(() => ({}));
+        toastError(json.error, 'Eliminazione non riuscita');
       }
     } catch (error) {
       console.error('Error deleting application:', error);
+      toastError(error, 'Eliminazione non riuscita');
     } finally {
       setDeleting(false);
     }

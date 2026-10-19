@@ -1,44 +1,27 @@
-"use client";
+import { Suspense } from 'react';
+import Image from 'next/image';
+import CTASection from '@/components/landing/CTASection';
+import Footer from '@/components/layout/Footer';
+import LogoScrollSection from '@/components/landing/LogoScrollSection';
+import PublicNavbar from '@/components/layout/PublicNavbar';
+import TextHeroSection from '@/components/landing/TextHeroSection';
+import ImageOnlySection from '@/components/landing/ImageOnlySection';
+import NewsSection from '@/components/landing/NewsSection';
+import LiveScoresSection from '@/components/landing/LiveScoresSection';
+import StaffSection from '@/components/landing/StaffSection';
+import TournamentsSection from '@/components/landing/TournamentsSection';
+import Reveal from '@/components/landing/Reveal';
+import AuthCodeHandler from '@/components/landing/AuthCodeHandler';
+import { getLandingNews, getLandingStaff } from '@/lib/landing/getLandingData';
 
-import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import CTASection from "@/components/landing/CTASection";
-import Footer from "@/components/layout/Footer";
-import LogoScrollSection from "@/components/landing/LogoScrollSection";
-import PublicNavbar from "@/components/layout/PublicNavbar";
-import TextHeroSection from "@/components/landing/TextHeroSection";
-import ImageOnlySection from "@/components/landing/ImageOnlySection";
-import NewsSection from "@/components/landing/NewsSection";
-import LiveScoresSection from "@/components/landing/LiveScoresSection";
-import StaffSection from "@/components/landing/StaffSection";
-import TournamentsSection from "@/components/landing/TournamentsSection";
-import Reveal from "@/components/landing/Reveal";
+// ISR: la home viene rigenerata al massimo ogni 60 secondi, quindi news e staff
+// modificati dall'admin compaiono entro un minuto.
+export const revalidate = 60;
 
-function AuthCodeHandler() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+// Server Component: solo le sezioni interattive vengono idratate nel browser.
+export default async function Home() {
+  const [news, staff] = await Promise.all([getLandingNews(), getLandingStaff()]);
 
-  useEffect(() => {
-    const code = searchParams.get("code");
-    const tokenHash = searchParams.get("token_hash");
-    const type = searchParams.get("type");
-
-    if (code) {
-      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset-password`);
-      return;
-    }
-
-    if (tokenHash && type) {
-      router.replace(
-        `/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}&next=/auth/reset-password`
-      );
-    }
-  }, [searchParams, router]);
-
-  return null;
-}
-
-export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Suspense fallback={null}>
@@ -48,31 +31,32 @@ export default function Home() {
         <PublicNavbar home flush />
         <main>
           {/* Accessibility skip link */}
-          <a href="#main-content" className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4">Vai al contenuto</a>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4"
+          >
+            Vai al contenuto
+          </a>
 
           {/* Sfondi alternati bianco/grigio: contano solo le <section>, così se una sezione non viene renderizzata (es. Live) l'alternanza resta corretta */}
-          <div
-            className="home-sections flex flex-col gap-0"
-            id="main-content"
-          >
+          <div className="home-sections flex flex-col gap-0" id="main-content">
             <TextHeroSection />
             <ImageOnlySection />
             <TournamentsSection />
-            <StaffSection />
-            <NewsSection />
+            <StaffSection initialStaff={staff} />
+            <NewsSection initialNews={news} />
             <LiveScoresSection />
             <CTASection />
             <Reveal>
-              <div
-                className="h-[56vw] sm:h-[400px] md:h-[500px] w-full"
-                style={{
-                  backgroundImage: 'url(/images/3.jpeg)',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center top',
-                }}
-                role="img"
-                aria-label="Campo da tennis GST Tennis Academy"
-              />
+              <div className="relative h-[56vw] sm:h-[400px] md:h-[500px] w-full overflow-hidden">
+                <Image
+                  src="/images/3.jpeg"
+                  alt="Campo da tennis GST Tennis Academy"
+                  fill
+                  sizes="(max-width: 1400px) 100vw, 1400px"
+                  className="object-cover object-top"
+                />
+              </div>
             </Reveal>
             <LogoScrollSection />
           </div>

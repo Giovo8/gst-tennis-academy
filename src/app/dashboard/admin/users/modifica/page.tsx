@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 const WEEK_DAYS = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
@@ -170,7 +171,7 @@ export default function ModificaUtentePage({
       });
     } catch (error) {
       console.error('Error loading user:', error);
-      toast.error("Errore nel caricamento dell'utente");
+      toast.error('Caricamento non riuscito');
       router.push(`${basePath}/users`);
     } finally {
       setLoading(false);
@@ -181,7 +182,7 @@ export default function ModificaUtentePage({
     e.preventDefault();
 
     if (!formData.email || !formData.full_name) {
-      toast.warning('Email e Nome sono obbligatori');
+      toast.warning('Email e nome obbligatori');
       return;
     }
 
@@ -240,11 +241,11 @@ export default function ModificaUtentePage({
         }
       }
 
-      toast.success('Profilo aggiornato con successo!');
+      toast.success('Profilo aggiornato');
       router.push(`${basePath}/users`);
     } catch (error) {
       console.error('Error updating user:', error);
-      toast.error(error.message || "Errore durante l'aggiornamento del profilo");
+      toastError(error.message, 'Salvataggio non riuscito');
     } finally {
       setUpdating(false);
     }
@@ -255,12 +256,12 @@ export default function ModificaUtentePage({
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.warning("L'immagine deve essere inferiore a 5MB");
+      toast.warning('Immagine oltre 5 MB');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast.warning("Il file deve essere un'immagine");
+      toast.warning('Formato non supportato');
       return;
     }
 
@@ -293,14 +294,14 @@ export default function ModificaUtentePage({
 
       if (updateError) {
         console.error('Update error:', updateError);
-        toast.error("Errore durante l'aggiornamento del profilo");
+        toast.error('Salvataggio non riuscito');
         return;
       }
 
       setUser({ ...user, avatar_url: publicUrl });
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast.error("Errore durante l'upload dell'immagine");
+      toast.error('Caricamento immagine non riuscito');
     } finally {
       setUploadingAvatar(false);
     }
@@ -312,7 +313,7 @@ export default function ModificaUtentePage({
     try {
       new URL(avatarUrl);
     } catch {
-      toast.warning('Inserisci un URL valido');
+      toast.warning('URL non valido');
       return;
     }
 
@@ -334,7 +335,7 @@ export default function ModificaUtentePage({
 
       if (updateError) {
         console.error('Update error:', updateError);
-        toast.error("Errore durante l'aggiornamento del profilo");
+        toast.error('Salvataggio non riuscito');
         return;
       }
 
@@ -342,7 +343,7 @@ export default function ModificaUtentePage({
       setAvatarUrl('');
     } catch (error) {
       console.error('Error updating avatar:', error);
-      toast.error("Errore durante l'aggiornamento dell'immagine");
+      toast.error('Caricamento immagine non riuscito');
     } finally {
       setUploadingAvatar(false);
     }
@@ -382,7 +383,7 @@ export default function ModificaUtentePage({
       setAvatarUrl('');
     } catch (error) {
       console.error('Error removing avatar:', error);
-      toast.error("Errore durante la rimozione dell'avatar");
+      toast.error('Rimozione non riuscita');
     } finally {
       setUploadingAvatar(false);
     }
@@ -393,7 +394,7 @@ export default function ModificaUtentePage({
     try {
       new URL(certificatoLinkUrl);
     } catch {
-      toast.warning('Inserisci un URL valido');
+      toast.warning('URL non valido');
       return;
     }
     setFormData((prev) => ({ ...prev, certificato_medico_url: certificatoLinkUrl }));
@@ -406,12 +407,12 @@ export default function ModificaUtentePage({
     if (!file || !userId) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.warning('Il file deve essere inferiore a 10MB');
+      toast.warning('File oltre 10 MB');
       return;
     }
 
     if (file.type !== 'application/pdf') {
-      toast.warning('Il file deve essere un PDF');
+      toast.warning('Carica un file PDF');
       return;
     }
 
@@ -437,7 +438,7 @@ export default function ModificaUtentePage({
       setFormData((prev) => ({ ...prev, certificato_medico_url: urlData.publicUrl }));
     } catch (error) {
       console.error('Error uploading certificate:', error);
-      toast.error('Errore durante il caricamento del certificato');
+      toast.error('Caricamento non riuscito');
     } finally {
       setUploadingCertificato(false);
       event.target.value = '';
@@ -621,7 +622,7 @@ export default function ModificaUtentePage({
       setFormData((prev) => ({ ...prev, certificato_medico_url: '' }));
     } catch (error) {
       console.error('Error removing certificate:', error);
-      toast.error('Errore durante la rimozione del certificato');
+      toast.error('Rimozione non riuscita');
     } finally {
       setUploadingCertificato(false);
     }
@@ -640,7 +641,7 @@ export default function ModificaUtentePage({
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error('Sessione non valida');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const response = await fetch('/api/admin/users/reset-password', {
@@ -656,10 +657,10 @@ export default function ModificaUtentePage({
       if (!response.ok)
         throw new Error(data.error || "Errore durante l'invio dell'email di reset password");
 
-      toast.success('Email di reset password inviata con successo.');
+      toast.success('Email di reset inviata');
     } catch (error) {
       console.error('Error resetting password:', error);
-      toast.error(error?.message || "Errore durante l'invio dell'email di reset password");
+      toastError(error?.message, 'Invio non riuscito');
     } finally {
       setResettingPassword(false);
     }
@@ -683,10 +684,11 @@ export default function ModificaUtentePage({
 
       if (error) throw error;
 
+      toast.success('Utente eliminato');
       router.push(`${basePath}/users`);
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error(error?.message || "Errore durante l'eliminazione dell'utente");
+      toastError(error, 'Eliminazione non riuscita');
       setDeletingUser(false);
     }
   }

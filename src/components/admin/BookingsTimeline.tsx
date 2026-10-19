@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import { supabase } from '@/lib/supabase/client';
 import { useDragScroll } from './hooks/useDragScroll';
 import { useBookingDrag, type DragTarget } from './hooks/useBookingDrag';
@@ -585,11 +586,9 @@ export default function BookingsTimeline({
           savedCount === 1 ? 'Prenotazione aggiornata' : `${savedCount} prenotazioni aggiornate`,
         );
       } else if (savedCount > 0) {
-        toast.warning(
-          `${savedCount} salvate, ${remaining.length} non salvate. ${lastError || ''}`.trim(),
-        );
+        toast.warning(`${savedCount} salvate, ${remaining.length} non salvate`);
       } else {
-        toast.error(lastError || 'Impossibile salvare le modifiche');
+        toastError(lastError, 'Salvataggio non riuscito');
       }
 
       if (savedCount > 0) onBookingsChanged?.();

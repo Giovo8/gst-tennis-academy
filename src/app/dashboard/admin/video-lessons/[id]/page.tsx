@@ -9,6 +9,7 @@ import { it } from 'date-fns/locale';
 import { Clock, Loader2, Play } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type VideoLesson = {
   id: string;
@@ -111,11 +112,11 @@ export default function VideoDetailPage() {
 
       if (error) throw error;
 
-      toast.success('Video eliminato con successo!');
+      toast.success('Video eliminato');
       router.push('/dashboard/admin/video-lessons');
     } catch (error) {
       console.error('Error deleting video:', error);
-      toast.error(error.message || "Errore durante l'eliminazione");
+      toastError(error.message, 'Eliminazione non riuscita');
     }
   }
 
@@ -127,7 +128,7 @@ export default function VideoDetailPage() {
       setNotesDirty(false);
     } catch (error) {
       console.error('Error saving notes:', error);
-      toast.error(error.message || 'Errore durante il salvataggio delle note');
+      toastError(error.message, 'Salvataggio non riuscito');
     } finally {
       setNotesSaving(false);
     }

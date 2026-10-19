@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, User, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { errorText, toastError } from '@/lib/toast';
 
 type Course = {
   name: string;
@@ -159,6 +161,9 @@ export default function PartecipantePresenzePage() {
       setEnrollmentFee(fee);
       setSettingFee(false);
       setFeeInput('');
+      toast.success('Quota salvata');
+    } else {
+      toastError(error, 'Salvataggio non riuscito');
     }
     setSavingFee(false);
   }
@@ -184,20 +189,26 @@ export default function PartecipantePresenzePage() {
       .select('id, amount, payment_method, status, paid_at, created_at, metadata')
       .single();
     if (error) {
-      setPaymentError(error.message);
+      setPaymentError(errorText(error, 'Pagamento non registrato'));
     } else if (data) {
       setPayments((prev) => [...prev, data]);
       setNewAmount('');
       setNewNote('');
       setNewMethod('cash');
       setAddingPayment(false);
+      toast.success('Pagamento registrato');
     }
     setSavingPayment(false);
   }
 
   async function deletePayment(id: string) {
-    await supabase.from('payments').delete().eq('id', id);
+    const { error } = await supabase.from('payments').delete().eq('id', id);
+    if (error) {
+      toastError(error, 'Eliminazione non riuscita');
+      return;
+    }
     setPayments((prev) => prev.filter((p) => p.id !== id));
+    toast.success('Pagamento eliminato');
   }
 
   if (loading) {

@@ -5,6 +5,7 @@ import { Trophy } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import type { PlayerNum, SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Participant {
   id: string;
@@ -76,10 +77,13 @@ export default function EliminationBracket({
 
   const checkAdminRole = async () => {
     try {
-      const { supabase } = await import('@/lib/supabase/client');
+      const [{ supabase }, { getSessionUser }] = await Promise.all([
+        import('@/lib/supabase/client'),
+        import('@/lib/auth/clientSession'),
+      ]);
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getSessionUser();
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -165,7 +169,7 @@ export default function EliminationBracket({
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         setGenerating(false);
         return;
       }
@@ -185,18 +189,18 @@ export default function EliminationBracket({
         await loadMatches(); // Ricarica i match
         if (onBracketGenerated) onBracketGenerated(); // Cambia al tab bracket
         if (onMatchUpdate) onMatchUpdate();
-        toast.success(data.message || 'Bracket generato con successo!');
+        toast.success('Tabellone generato');
       } else {
         // Se dice che è già generato, prova a ricaricare comunque
         if (data.error?.includes('già stato generato')) {
           await loadMatches();
           if (onBracketGenerated) onBracketGenerated();
         }
-        toast.error(data.error || 'Errore nella generazione del bracket');
+        toastError(data.error, 'Generazione non riuscita');
       }
     } catch (error) {
       console.error('Error generating bracket:', error);
-      toast.error('Errore nella generazione del bracket');
+      toast.error('Generazione non riuscita');
     } finally {
       setGenerating(false);
     }

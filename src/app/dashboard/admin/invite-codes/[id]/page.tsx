@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import { Loader2, AlertCircle, Crown, Home, Dumbbell, User, Search } from 'lucide-react';
 
 type InviteCode = {
@@ -107,6 +109,9 @@ export default function InviteCodeDetailPage() {
       .eq('id', codeId);
     if (!error) {
       setInviteCode((prev) => (prev ? { ...prev, expires_at: new Date().toISOString() } : prev));
+      toast.success('Codice disattivato');
+    } else {
+      toastError(error, 'Disattivazione non riuscita');
     }
     setDisabling(false);
   }
@@ -116,8 +121,10 @@ export default function InviteCodeDetailPage() {
     setDeleting(true);
     const { error } = await supabase.from('invite_codes').delete().eq('id', codeId);
     if (!error) {
+      toast.success('Codice eliminato');
       router.push('/dashboard/admin/invite-codes');
     } else {
+      toastError(error, 'Eliminazione non riuscita');
       setDeleting(false);
     }
   }

@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Trophy, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -27,8 +29,6 @@ interface TournamentFormData {
 export default function NewTournamentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState<TournamentFormData>({
     title: '',
@@ -103,7 +103,6 @@ export default function NewTournamentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
@@ -113,7 +112,7 @@ export default function NewTournamentPage() {
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        setError('Sessione non valida. Effettua nuovamente il login.');
+        toast.error('Sessione scaduta, accedi di nuovo');
         setLoading(false);
         return;
       }
@@ -152,14 +151,11 @@ export default function NewTournamentPage() {
         throw new Error(data.error || 'Errore nella creazione del torneo');
       }
 
-      setSuccess(true);
-      setTimeout(() => {
-        router.push('/dashboard/admin/tornei');
-      }, 2000);
+      toast.success('Torneo creato');
+      router.push('/dashboard/admin/tornei');
     } catch (err) {
       console.error('Error creating tournament:', err);
-      setError(err.message || 'Errore nella creazione del torneo');
-    } finally {
+      toastError(err, 'Creazione non riuscita');
       setLoading(false);
     }
   };
@@ -180,27 +176,6 @@ export default function NewTournamentPage() {
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea nuovo torneo</h1>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-red-900">Errore</p>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-green-900">Successo</p>
-            <p className="text-sm text-green-700 mt-1">Torneo creato con successo!</p>
-          </div>
-        </div>
-      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit}>

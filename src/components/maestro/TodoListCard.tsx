@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Check, ListTodo, Plus, Trash2 } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from 'react';
+import { Check, ListTodo, Plus, Trash2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { toastError } from '@/lib/toast';
 
 type Todo = { id: string; content: string; done: boolean };
 
@@ -12,7 +13,7 @@ type Todo = { id: string; content: string; done: boolean };
  */
 export default function TodoListCard({ userId }: { userId?: string }) {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [newText, setNewText] = useState("");
+  const [newText, setNewText] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,10 +21,10 @@ export default function TodoListCard({ userId }: { userId?: string }) {
     let cancelled = false;
     (async () => {
       const { data } = await supabase
-        .from("personal_todos")
-        .select("id, content, done")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .from('personal_todos')
+        .select('id, content, done')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
       if (!cancelled) {
         setTodos((data as Todo[]) ?? []);
         setLoading(false);
@@ -37,23 +38,41 @@ export default function TodoListCard({ userId }: { userId?: string }) {
   async function addTodo() {
     const text = newText.trim();
     if (!text || !userId) return;
-    setNewText("");
-    const { data } = await supabase
-      .from("personal_todos")
+    setNewText('');
+    const { data, error } = await supabase
+      .from('personal_todos')
       .insert({ user_id: userId, content: text })
-      .select("id, content, done")
+      .select('id, content, done')
       .single();
+    if (error) {
+      setNewText(text);
+      toastError(error, 'Salvataggio non riuscito');
+      return;
+    }
     if (data) setTodos((prev) => [data as Todo, ...prev]);
   }
 
+  // Aggiornamenti ottimistici: in caso di errore si ripristina lo stato precedente
   async function toggleTodo(todo: Todo) {
     setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, done: !t.done } : t)));
-    await supabase.from("personal_todos").update({ done: !todo.done }).eq("id", todo.id);
+    const { error } = await supabase
+      .from('personal_todos')
+      .update({ done: !todo.done })
+      .eq('id', todo.id);
+    if (error) {
+      setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, done: todo.done } : t)));
+      toastError(error, 'Salvataggio non riuscito');
+    }
   }
 
   async function removeTodo(id: string) {
+    const previous = todos;
     setTodos((prev) => prev.filter((t) => t.id !== id));
-    await supabase.from("personal_todos").delete().eq("id", id);
+    const { error } = await supabase.from('personal_todos').delete().eq('id', id);
+    if (error) {
+      setTodos(previous);
+      toastError(error, 'Eliminazione non riuscita');
+    }
   }
 
   const doneCount = todos.filter((t) => t.done).length;
@@ -75,7 +94,7 @@ export default function TodoListCard({ userId }: { userId?: string }) {
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") void addTodo();
+              if (e.key === 'Enter') void addTodo();
             }}
             placeholder="Aggiungi qualcosa da fare…"
             disabled={!userId}
@@ -102,7 +121,10 @@ export default function TodoListCard({ userId }: { userId?: string }) {
             <p className="text-sm font-medium">Nessuna cosa da fare</p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2 overflow-y-auto scrollbar-hide" style={{ maxHeight: "260px" }}>
+          <ul
+            className="flex flex-col gap-2 overflow-y-auto scrollbar-hide"
+            style={{ maxHeight: '260px' }}
+          >
             {todos.map((todo) => (
               <li
                 key={todo.id}
@@ -111,16 +133,18 @@ export default function TodoListCard({ userId }: { userId?: string }) {
                 <button
                   type="button"
                   onClick={() => void toggleTodo(todo)}
-                  aria-label={todo.done ? "Segna come da fare" : "Segna come fatta"}
+                  aria-label={todo.done ? 'Segna come da fare' : 'Segna come fatta'}
                   className={`flex h-5 w-5 items-center justify-center rounded border-2 flex-shrink-0 transition-colors ${
-                    todo.done ? "border-secondary bg-secondary" : "border-secondary bg-white hover:bg-secondary/10"
+                    todo.done
+                      ? 'border-secondary bg-secondary'
+                      : 'border-secondary bg-white hover:bg-secondary/10'
                   }`}
                 >
                   {todo.done && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                 </button>
                 <span
                   className={`flex-1 min-w-0 text-sm break-words ${
-                    todo.done ? "text-secondary/40 line-through" : "text-secondary"
+                    todo.done ? 'text-secondary/40 line-through' : 'text-secondary'
                   }`}
                 >
                   {todo.content}

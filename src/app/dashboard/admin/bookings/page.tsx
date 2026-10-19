@@ -13,6 +13,7 @@ import {
 } from '@/lib/bookings/tournamentBookings';
 
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type Booking = {
   id: string;
@@ -258,9 +259,7 @@ export default function BookingsPage({
 
       if (bookingsError) {
         console.error('❌ Errore Supabase:', bookingsError);
-        toast.error(
-          `Errore nel caricamento: ${bookingsError.message}\n\nVerifica di avere il ruolo admin/gestore nel database.`,
-        );
+        toastError(bookingsError, 'Caricamento non riuscito');
         setLoading(false);
         return;
       }
@@ -348,7 +347,7 @@ export default function BookingsPage({
       setBookings(enrichedBookings);
     } catch (error) {
       console.error('❌ Errore nel caricamento prenotazioni:', error);
-      toast.error(`Errore: ${error}`);
+      toastError(error, 'Caricamento non riuscito');
     } finally {
       setLoading(false);
     }

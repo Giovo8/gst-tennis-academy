@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 import { supabase } from '@/lib/supabase/client';
 import { getCourts } from '@/lib/courts/getCourts';
@@ -134,7 +136,6 @@ export default function AdminEditBookingPage({
   const [existingBookings, setExistingBookings] = useState<ExistingBooking[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [matchFormat, setMatchFormat] = useState<MatchFormat>('singolo');
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
@@ -596,37 +597,36 @@ export default function AdminEditBookingPage({
     if (!bookingId) return;
 
     setSaving(true);
-    setError(null);
 
     try {
       if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
-        throw new Error('Seleziona giorno, campo e almeno uno slot orario');
+        throw new Error('Seleziona giorno, campo e orario');
       }
 
       if (isTournamentBooking && !hasTournamentMatch) {
-        throw new Error('Seleziona la partita del torneo da giocare');
+        throw new Error('Seleziona la partita');
       }
 
       if (!isTournamentBooking && selectedAthletes.length === 0) {
-        throw new Error('Seleziona almeno un atleta/partecipante');
+        throw new Error('Seleziona almeno un atleta');
       }
 
       if (!isTournamentBooking && selectedAthletes.length > maxAthletesAllowed) {
-        throw new Error(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
+        throw new Error(`Massimo ${maxAthletesAllowed} partecipanti`);
       }
 
       if (
         (bookingType === 'lezione_privata' || bookingType === 'lezione_gruppo') &&
         selectedCoaches.length === 0
       ) {
-        throw new Error('Seleziona almeno un maestro per le lezioni');
+        throw new Error('Seleziona un maestro');
       }
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       // Torneo: con una nuova partita i partecipanti diventano i suoi due giocatori;
@@ -737,16 +737,11 @@ export default function AdminEditBookingPage({
         if (insertParticipantsError) throw insertParticipantsError;
       }
 
-      setSuccess('Prenotazione aggiornata con successo!');
-      setTimeout(() => {
-        router.push(`${basePath}/bookings`);
-      }, 1200);
+      toast.success('Prenotazione aggiornata');
+      router.push(`${basePath}/bookings`);
     } catch (err) {
       console.error(err);
-      setError(
-        err instanceof Error ? err.message : "Errore durante l'aggiornamento della prenotazione",
-      );
-    } finally {
+      toastError(err, 'Salvataggio non riuscito');
       setSaving(false);
     }
   }
@@ -777,18 +772,6 @@ export default function AdminEditBookingPage({
             <div>
               <p className="text-sm font-semibold text-red-900">Errore</p>
               <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div>
-          <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Successo</p>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
             </div>
           </div>
         </div>

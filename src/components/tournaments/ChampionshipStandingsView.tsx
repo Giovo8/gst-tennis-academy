@@ -5,6 +5,7 @@ import { Trophy, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import Avatar from '@/components/ui/Avatar';
 
 interface Participant {
@@ -246,15 +247,15 @@ export default function ChampionshipStandingsView({
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(data.message || 'Calendario generato con successo!');
+        toast.success('Calendario generato');
         await loadMatches();
         if (onMatchUpdate) onMatchUpdate();
       } else {
-        toast.error(data.error || 'Errore nella generazione del calendario');
+        toastError(data.error, 'Generazione non riuscita');
       }
     } catch (error) {
       console.error('Error generating championship:', error);
-      toast.error('Errore nella generazione del calendario');
+      toast.error('Generazione non riuscita');
     } finally {
       setGenerating(false);
     }

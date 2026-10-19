@@ -1,13 +1,14 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import AuthGuard from "@/components/auth/AuthGuard";
-import { Newspaper, Plus, Trash2, Loader2, Search, Sparkles } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { Newspaper, Plus, Trash2, Loader2, Search, Sparkles } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type News = {
   id: string;
@@ -22,37 +23,37 @@ type News = {
 export default function AdminNewsPage() {
   const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiBozzeCount, setAiBozzeCount] = useState(0);
   const [deletingDrafts, setDeletingDrafts] = useState(false);
 
   const categoryLabels: Record<string, string> = {
-    notizie: "Notizie",
-    risultati: "Risultati",
-    eventi: "Eventi",
-    generale: "Generale",
-    tornei: "Tornei",
-    orari: "Orari",
-    lezioni: "Lezioni",
-    novità: "Novità",
+    notizie: 'Notizie',
+    risultati: 'Risultati',
+    eventi: 'Eventi',
+    generale: 'Generale',
+    tornei: 'Tornei',
+    orari: 'Orari',
+    lezioni: 'Lezioni',
+    novità: 'Novità',
   };
 
   async function loadNews() {
     try {
       const [{ data, error }, { count }] = await Promise.all([
-        supabase.from("news").select("*").order("published_at", { ascending: false }),
+        supabase.from('news').select('*').order('published_at', { ascending: false }),
         supabase
-          .from("news")
-          .select("id", { count: "exact", head: true })
-          .eq("ai_generated", true)
-          .eq("stato", "bozza"),
+          .from('news')
+          .select('id', { count: 'exact', head: true })
+          .eq('ai_generated', true)
+          .eq('stato', 'bozza'),
       ]);
 
       if (error) throw error;
       setNews(data || []);
       setAiBozzeCount(count ?? 0);
     } catch (error) {
-      console.error("Error loading news:", error);
+      console.error('Error loading news:', error);
     } finally {
       setLoading(false);
     }
@@ -65,18 +66,23 @@ export default function AdminNewsPage() {
   async function deleteAllDrafts() {
     const drafts = news.filter((n) => !n.is_published);
     if (drafts.length === 0) {
-      toast.info("Nessuna bozza da eliminare");
+      toast.info('Nessuna bozza da eliminare');
       return;
     }
-    if (!confirm(`Sei sicuro di voler eliminare ${drafts.length} bozze? Questa azione è irreversibile.`)) return;
+    if (
+      !confirm(
+        `Sei sicuro di voler eliminare ${drafts.length} bozze? Questa azione è irreversibile.`,
+      )
+    )
+      return;
 
     setDeletingDrafts(true);
     const ids = drafts.map((n) => n.id);
-    const { error } = await supabase.from("news").delete().in("id", ids);
+    const { error } = await supabase.from('news').delete().in('id', ids);
     setDeletingDrafts(false);
 
     if (error) {
-      toast.error("Errore durante l'eliminazione: " + error.message);
+      toastError(error, 'Eliminazione non riuscita');
     } else {
       toast.success(`${ids.length} bozze eliminate`);
       void loadNews();
@@ -92,7 +98,7 @@ export default function AdminNewsPage() {
   });
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={['admin', 'gestore']}>
       <div className="space-y-6 pt-3">
         {/* Header */}
         <div>
@@ -115,7 +121,11 @@ export default function AdminNewsPage() {
               disabled={deletingDrafts}
               className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-[#023b52] rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {deletingDrafts ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {deletingDrafts ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
               <span>Elimina bozze</span>
             </button>
           )}
@@ -157,7 +167,9 @@ export default function AdminNewsPage() {
             <Newspaper className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessuna news trovata</h3>
             <p className="text-gray-600 mb-6">
-              {searchQuery ? "Prova a modificare i filtri di ricerca" : "Crea la prima news per iniziare"}
+              {searchQuery
+                ? 'Prova a modificare i filtri di ricerca'
+                : 'Crea la prima news per iniziare'}
             </p>
             {!searchQuery && (
               <Link
@@ -173,9 +185,12 @@ export default function AdminNewsPage() {
           <div className="space-y-2">
             {filteredNews.map((item) => {
               const categoryLabel = categoryLabels[item.category] || item.category;
-              const meta = [format(new Date(item.created_at), "d MMM yyyy", { locale: it }), categoryLabel]
+              const meta = [
+                format(new Date(item.created_at), 'd MMM yyyy', { locale: it }),
+                categoryLabel,
+              ]
                 .filter(Boolean)
-                .join(" · ");
+                .join(' · ');
 
               return (
                 <Link
@@ -183,14 +198,19 @@ export default function AdminNewsPage() {
                   href={`/dashboard/admin/news/${item.id}`}
                   className="block rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
                   style={{
-                    background: item.is_published ? "var(--color-frozen-lake-900)" : "#9ca3af",
+                    background: item.is_published ? 'var(--color-frozen-lake-900)' : '#9ca3af',
                   }}
                 >
                   <div className="flex items-center gap-3 px-3 py-3.5">
                     <div className="flex h-10 aspect-video flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
                       {item.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image_url} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <Newspaper className="h-4 w-4 text-white/50" strokeWidth={2} />
                       )}

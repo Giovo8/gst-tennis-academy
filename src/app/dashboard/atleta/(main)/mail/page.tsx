@@ -11,6 +11,7 @@ import { Mail, Search, X, Send, Users, Settings, LogOut, Check } from 'lucide-re
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Message {
   id: string;
@@ -525,7 +526,7 @@ export default function AtletaMailPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -546,11 +547,9 @@ export default function AtletaMailPage() {
         const errorData = await res.json();
         console.error('Error creating group:', errorData);
         if (errorData.error?.includes('does not exist')) {
-          toast.warning(
-            'La funzionalità gruppi non è ancora disponibile. Esegui la migration del database.',
-          );
+          toast.warning('Gruppi non ancora disponibili');
         } else {
-          toast.error(errorData.error || 'Errore nella creazione del gruppo');
+          toastError(errorData.error, 'Creazione gruppo non riuscita');
         }
         return;
       }
@@ -577,7 +576,7 @@ export default function AtletaMailPage() {
       closeModal();
     } catch (error) {
       console.error('Errore nella creazione del gruppo:', error);
-      toast.error('Errore nella creazione del gruppo');
+      toast.error('Creazione gruppo non riuscita');
     } finally {
       setCreatingGroup(false);
     }
@@ -593,7 +592,7 @@ export default function AtletaMailPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -607,16 +606,17 @@ export default function AtletaMailPage() {
       if (!res.ok) {
         const errorData = await res.json();
         console.error('Error leaving group:', errorData);
-        toast.error(errorData.error || "Errore nell'abbandonare il gruppo");
+        toastError(errorData.error, 'Uscita dal gruppo non riuscita');
         return;
       }
 
       setSelectedConversation(null);
       closeModal();
+      toast.success('Hai lasciato il gruppo');
       await loadConversations();
     } catch (error) {
       console.error('Errore:', error);
-      toast.error("Errore nell'abbandonare il gruppo");
+      toast.error('Uscita dal gruppo non riuscita');
     }
   }
 

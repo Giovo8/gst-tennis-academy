@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Trophy, Target, Users } from 'lucide-react';
+import { Trophy, Target, Users } from 'lucide-react';
 import Reveal from '@/components/landing/Reveal';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
@@ -16,6 +16,12 @@ type Tournament = {
   tournament_type?: TournamentType;
   competition_type?: TournamentType;
   status?: string;
+};
+
+const TYPE_LABELS: Record<TournamentType, string> = {
+  eliminazione_diretta: 'Eliminazione diretta',
+  girone_eliminazione: 'Gironi + eliminazione',
+  campionato: 'Campionato',
 };
 
 export default function TournamentsSection() {
@@ -84,9 +90,15 @@ export default function TournamentsSection() {
         {/* Lista eventi stile "Events" */}
         <Reveal delay={0.1}>
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-secondary mb-2" />
-              <p className="text-xs text-secondary/50">Caricamento tornei...</p>
+            // Righe segnaposto alte come quelle vere: niente salto quando arrivano i dati
+            <div
+              className="space-y-2 animate-pulse"
+              aria-busy="true"
+              aria-label="Caricamento tornei"
+            >
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-[68px] rounded-lg bg-secondary/10" />
+              ))}
             </div>
           ) : error ? (
             <div className="text-sm text-red-600 py-10 rounded-lg px-4 bg-red-50 border border-red-200">
@@ -137,6 +149,11 @@ export default function TournamentsSection() {
                         <p className="font-semibold text-white text-sm truncate">
                           {tournament.title}
                         </p>
+                        {type && (
+                          <p className="text-xs text-white/70 mt-0.5 truncate">
+                            {TYPE_LABELS[type]}
+                          </p>
+                        )}
                         {tournament.description && (
                           <p className="text-xs text-white/70 mt-0.5 truncate">
                             {tournament.description}

@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface TournamentMetaChange {
   participantsCount: number;
@@ -36,7 +37,7 @@ export function useTournamentData({
     setLoading(true);
     try {
       const participantsRes = await fetch(
-        `/api/tournament_participants?tournament_id=${tournamentId}`
+        `/api/tournament_participants?tournament_id=${tournamentId}`,
       );
       const participantsData = await participantsRes.json();
       let participantsArray: any[] = [];
@@ -47,7 +48,7 @@ export function useTournamentData({
         setParticipants([]);
       }
 
-      if (tournamentType === "girone_eliminazione") {
+      if (tournamentType === 'girone_eliminazione') {
         const groupsRes = await fetch(`/api/tournaments/${tournamentId}/groups`);
         const groupsData = await groupsRes.json();
         if (groupsRes.ok) {
@@ -65,7 +66,7 @@ export function useTournamentData({
         });
       }
     } catch (error) {
-      console.error("Error loading tournament data:", error);
+      console.error('Error loading tournament data:', error);
     } finally {
       setLoading(false);
     }
@@ -74,67 +75,67 @@ export function useTournamentData({
   const handleRemoveParticipant = async (participantId: string, participantName: string) => {
     if (!confirm(`Sei sicuro di voler rimuovere ${participantName} dal torneo?`)) return;
     try {
-      const { supabase } = await import("@/lib/supabase/client");
+      const { supabase } = await import('@/lib/supabase/client');
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error("Sessione non valida");
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
       const res = await fetch(`/api/tournament_participants?id=${participantId}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (res.ok) {
-        toast.success("Partecipante rimosso con successo");
+        toast.success('Partecipante rimosso');
         void loadData();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Errore nella rimozione del partecipante");
+        toastError(data.error, 'Rimozione non riuscita');
       }
     } catch (error) {
-      console.error("Error removing participant:", error);
-      toast.error("Errore nella rimozione del partecipante");
+      console.error('Error removing participant:', error);
+      toast.error('Rimozione non riuscita');
     }
   };
 
   const handleDeleteTournament = async () => {
     if (
       !confirm(
-        "⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo torneo?\n\nQuesta azione è irreversibile e cancellerà:\n- Il torneo\n- Tutti i partecipanti\n- Tutte le partite\n- Tutte le statistiche"
+        '⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo torneo?\n\nQuesta azione è irreversibile e cancellerà:\n- Il torneo\n- Tutti i partecipanti\n- Tutte le partite\n- Tutte le statistiche',
       )
     )
       return;
     try {
-      const { supabase } = await import("@/lib/supabase/client");
+      const { supabase } = await import('@/lib/supabase/client');
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error("Sessione non valida");
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
       const res = await fetch(`/api/tournaments?id=${tournamentId}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (res.ok) {
-        toast.success("Torneo eliminato con successo");
-        window.location.href = "/dashboard/admin/tornei";
+        toast.success('Torneo eliminato');
+        window.location.href = '/dashboard/admin/tornei';
       } else {
         const data = await res.json();
-        toast.error(data.error || "Errore nell'eliminazione del torneo");
+        toastError(data.error, 'Eliminazione non riuscita');
       }
     } catch (error) {
-      console.error("Error deleting tournament:", error);
-      toast.error("Errore nell'eliminazione del torneo");
+      console.error('Error deleting tournament:', error);
+      toast.error('Eliminazione non riuscita');
     }
   };
 
   useEffect(() => {
     void loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId]);
 
   return {

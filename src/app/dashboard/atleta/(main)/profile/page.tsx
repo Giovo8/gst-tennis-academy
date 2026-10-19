@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import {
   Loader2,
   AlertCircle,
@@ -120,10 +121,10 @@ export default function AthleteProfilePage({
 
       if (resetError) throw resetError;
 
-      toast.success('Email di reset password inviata con successo.');
+      toast.success('Email di reset inviata');
     } catch (err: unknown) {
       console.error('Error resetting password:', err);
-      toast.error(err instanceof Error ? err.message : "Errore durante l'invio del reset password");
+      toastError(err, 'Invio non riuscito');
     } finally {
       setResettingPassword(false);
     }
@@ -134,12 +135,12 @@ export default function AthleteProfilePage({
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.warning("L'immagine deve essere inferiore a 5MB");
+      toast.warning('Immagine oltre 5 MB');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast.warning("Il file deve essere un'immagine");
+      toast.warning('Formato non supportato');
       return;
     }
 
@@ -176,7 +177,7 @@ export default function AthleteProfilePage({
       setUser({ ...user, avatar_url: publicUrl });
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast.error("Errore durante l'upload dell'immagine");
+      toast.error('Caricamento immagine non riuscito');
     } finally {
       setUploadingAvatar(false);
     }
@@ -188,7 +189,7 @@ export default function AthleteProfilePage({
     try {
       new URL(avatarUrl);
     } catch {
-      toast.warning('Inserisci un URL valido');
+      toast.warning('URL non valido');
       return;
     }
 
@@ -207,7 +208,7 @@ export default function AthleteProfilePage({
       setAvatarUrl('');
     } catch (error) {
       console.error('Error updating avatar:', error);
-      toast.error("Errore durante l'aggiornamento dell'immagine");
+      toast.error('Caricamento immagine non riuscito');
     } finally {
       setUploadingAvatar(false);
     }
@@ -246,7 +247,7 @@ export default function AthleteProfilePage({
       setAvatarUrl('');
     } catch (error) {
       console.error('Error removing avatar:', error);
-      toast.error("Errore durante la rimozione dell'avatar");
+      toast.error('Rimozione non riuscita');
     } finally {
       setUploadingAvatar(false);
     }

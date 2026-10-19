@@ -8,6 +8,7 @@ import { getSessionUser } from '@/lib/auth/clientSession';
 import { Check, X, Target, Handshake } from 'lucide-react';
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalBody } from '@/components/ui';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Challenge {
   id: string;
@@ -359,7 +360,7 @@ export default function AtletaChallengePage() {
       return;
     }
     if (!SCORE_PATTERN.test(score.trim())) {
-      toast.warning('Formato punteggio non valido. Usa ad esempio: 6-4, 6-3');
+      toast.warning('Formato punteggio non valido');
       return;
     }
 
@@ -371,7 +372,7 @@ export default function AtletaChallengePage() {
     );
 
     if (!computedWinnerId) {
-      toast.error('Impossibile determinare il vincitore dal punteggio inserito');
+      toast.error('Vincitore non determinabile');
       return;
     }
 
@@ -388,16 +389,16 @@ export default function AtletaChallengePage() {
       });
 
       if (response.ok) {
-        toast.success('Punteggio salvato con successo!');
+        toast.success('Punteggio salvato');
         setShowScoreForm(false);
         loadChallengeDetails();
       } else {
         const errorData = await response.json();
-        toast.error(`Errore: ${errorData.error || 'Impossibile salvare il punteggio'}`);
+        toastError(errorData.error, 'Salvataggio non riuscito');
       }
     } catch (error) {
       console.error('Error saving score:', error);
-      toast.error('Errore nel salvataggio del punteggio');
+      toast.error('Salvataggio non riuscito');
     } finally {
       setSavingScore(false);
     }

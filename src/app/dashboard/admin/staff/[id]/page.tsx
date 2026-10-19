@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Loader2, User } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { Loader2, User } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 type StaffMember = {
@@ -37,11 +37,7 @@ export default function AdminStaffDetailPage() {
   async function loadStaffDetail() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("staff")
-        .select("*")
-        .eq("id", staffId)
-        .single();
+      const { data, error } = await supabase.from('staff').select('*').eq('id', staffId).single();
 
       if (error) throw error;
       setStaff(data as StaffMember);
@@ -59,11 +55,12 @@ export default function AdminStaffDetailPage() {
     }
 
     try {
-      const { error } = await supabase.from("staff").delete().eq("id", staff.id);
+      const { error } = await supabase.from('staff').delete().eq('id', staff.id);
       if (error) throw error;
-      router.push("/dashboard/admin/staff");
+      toast.success('Membro eliminato');
+      router.push('/dashboard/admin/staff');
     } catch {
-      toast.error("Errore durante l'eliminazione del membro staff");
+      toast.error('Eliminazione non riuscita');
     }
   }
 
@@ -94,10 +91,10 @@ export default function AdminStaffDetailPage() {
   }
 
   const socialLinks = [
-    { label: "Facebook", url: staff.facebook_url },
-    { label: "Instagram", url: staff.instagram_url },
-    { label: "LinkedIn", url: staff.linkedin_url },
-    { label: "Twitter", url: staff.twitter_url },
+    { label: 'Facebook', url: staff.facebook_url },
+    { label: 'Instagram', url: staff.instagram_url },
+    { label: 'LinkedIn', url: staff.linkedin_url },
+    { label: 'Twitter', url: staff.twitter_url },
   ].filter((item) => Boolean(item.url));
 
   return (
@@ -107,7 +104,7 @@ export default function AdminStaffDetailPage() {
           <Link href="/dashboard/admin/staff" className="hover:text-secondary/80 transition-colors">
             Staff
           </Link>
-          {" › "}
+          {' › '}
           <span>Dettaglio</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">Dettaglio Staff</h1>
@@ -115,7 +112,7 @@ export default function AdminStaffDetailPage() {
 
       <div
         className="rounded-lg border border-black/10 p-6 overflow-hidden"
-        style={{ backgroundColor: "#023047" }}
+        style={{ backgroundColor: '#023047' }}
       >
         <div className="flex items-start gap-6">
           <User className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -139,7 +136,9 @@ export default function AdminStaffDetailPage() {
             />
           ) : (
             <div className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg bg-secondary/10 border border-black/10 flex items-center justify-center">
-              <span className="font-bold text-4xl text-secondary">{staff.full_name.charAt(0).toUpperCase()}</span>
+              <span className="font-bold text-4xl text-secondary">
+                {staff.full_name.charAt(0).toUpperCase()}
+              </span>
             </div>
           )}
         </div>
@@ -152,13 +151,19 @@ export default function AdminStaffDetailPage() {
 
         <div className="p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Ruolo</label>
+            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">
+              Ruolo
+            </label>
             <div className="font-semibold text-secondary">{staff.role}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-1 flex-shrink-0">Bio</label>
-            <div className="text-secondary/80 whitespace-pre-wrap">{staff.bio || "Nessuna biografia"}</div>
+            <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-1 flex-shrink-0">
+              Bio
+            </label>
+            <div className="text-secondary/80 whitespace-pre-wrap">
+              {staff.bio || 'Nessuna biografia'}
+            </div>
           </div>
 
           {socialLinks.length > 0 && (
@@ -167,10 +172,12 @@ export default function AdminStaffDetailPage() {
                 <div
                   key={item.label}
                   className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 ${
-                    index < socialLinks.length - 1 ? "pb-6 mb-6 border-b border-gray-200" : ""
+                    index < socialLinks.length - 1 ? 'pb-6 mb-6 border-b border-gray-200' : ''
                   }`}
                 >
-                  <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">{item.label}</label>
+                  <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">
+                    {item.label}
+                  </label>
                   <a
                     href={item.url as string}
                     target="_blank"
@@ -185,14 +192,24 @@ export default function AdminStaffDetailPage() {
           )}
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Ordine</label>
-            <div className="font-semibold text-secondary">{staff.order_index && staff.order_index > 0 ? staff.order_index : "Non impostato"}</div>
+            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">
+              Ordine
+            </label>
+            <div className="font-semibold text-secondary">
+              {staff.order_index && staff.order_index > 0 ? staff.order_index : 'Non impostato'}
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Stato</label>
-            <div className={staff.active ? "font-semibold text-secondary" : "font-semibold text-gray-500"}>
-              {staff.active ? "Attivo" : "Disattivo"}
+            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">
+              Stato
+            </label>
+            <div
+              className={
+                staff.active ? 'font-semibold text-secondary' : 'font-semibold text-gray-500'
+              }
+            >
+              {staff.active ? 'Attivo' : 'Disattivo'}
             </div>
           </div>
         </div>

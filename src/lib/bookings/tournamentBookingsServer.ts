@@ -276,7 +276,7 @@ export async function resolveTournamentMatchForBooking(
   }
 
   if (hydrated.booking && hydrated.booking.id !== options.excludeBookingId) {
-    return { status: 409, error: 'Questa partita ha già una prenotazione attiva' };
+    return { status: 409, error: 'Partita già prenotata' };
   }
 
   return { match: hydrated };

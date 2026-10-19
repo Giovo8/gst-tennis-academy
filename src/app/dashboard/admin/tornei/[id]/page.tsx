@@ -12,6 +12,7 @@ import TournamentScheduleSection, {
   useScheduledTournamentMatches,
 } from '@/components/tournaments/TournamentScheduleSection';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 function AdminTournamentDetailInner() {
   const params = useParams();
@@ -82,7 +83,7 @@ function AdminTournamentDetailInner() {
   );
   const scheduledMatches = useScheduledTournamentMatches(
     typeof id === 'string' ? id : null,
-    isStarted,
+    true, // fetch subito, in parallelo al caricamento del torneo: la tab resta legata a isStarted
     reloadKey,
   );
   const hasScheduledMatches = isStarted && scheduledMatches.length > 0;
@@ -127,14 +128,15 @@ function AdminTournamentDetailInner() {
       });
 
       if (res.ok) {
+        toast.success('Torneo eliminato');
         router.push('/dashboard/admin/tornei');
       } else {
         const data = await res.json().catch(() => null);
-        toast.error(data?.error || "Errore nell'eliminazione del torneo");
+        toastError(data?.error, 'Eliminazione non riuscita');
       }
     } catch (error) {
       console.error('Error deleting tournament', error);
-      toast.error("Errore nell'eliminazione del torneo");
+      toast.error('Eliminazione non riuscita');
     } finally {
       setDeleting(false);
     }
@@ -144,7 +146,7 @@ function AdminTournamentDetailInner() {
     if (!id || typeof id !== 'string') return;
 
     if (!meta || meta.participantsCount < 2) {
-      toast.warning('Per avviare il torneo servono almeno 2 partecipanti.');
+      toast.warning('Servono almeno 2 iscritti');
       return;
     }
 
@@ -180,15 +182,15 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || 'Torneo avviato con successo');
+        toast.success('Torneo avviato');
         // Ricarica completamente il manager per riflettere la nuova fase
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data?.error || "Errore nell'avvio del torneo");
+        toastError(data?.error, 'Avvio non riuscito');
       }
     } catch (error) {
       console.error('Error starting tournament', error);
-      toast.error("Errore nell'avvio del torneo");
+      toast.error('Avvio non riuscito');
     } finally {
       setStarting(false);
     }
@@ -214,7 +216,7 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -228,14 +230,14 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || 'Partecipanti avanzati alla fase eliminatoria!');
+        toast.success('Fase eliminatoria avviata');
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data?.error || "Errore nell'avanzamento alla fase eliminatoria");
+        toastError(data?.error, 'Avanzamento non riuscito');
       }
     } catch (error) {
       console.error('Error advancing to knockout', error);
-      toast.error("Errore nell'avanzamento alla fase eliminatoria");
+      toast.error('Avanzamento non riuscito');
     } finally {
       setAdvancing(false);
     }
@@ -261,7 +263,7 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -275,14 +277,14 @@ function AdminTournamentDetailInner() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(data.message || 'Torneo concluso con successo!');
+        toast.success('Torneo concluso');
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data.error || 'Errore nella conclusione del torneo');
+        toastError(data.error, 'Chiusura non riuscita');
       }
     } catch (error) {
       console.error('Error completing tournament:', error);
-      toast.error('Errore nella conclusione del torneo');
+      toast.error('Chiusura non riuscita');
     } finally {
       setCompleting(false);
     }
@@ -308,7 +310,7 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -323,14 +325,14 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || 'Bracket rigenerato con successo!');
+        toast.success('Tabellone rigenerato');
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data?.error || 'Errore nella rigenerazione del bracket');
+        toastError(data?.error, 'Rigenerazione non riuscita');
       }
     } catch (error) {
       console.error('Error regenerating bracket', error);
-      toast.error('Errore nella rigenerazione del bracket');
+      toast.error('Rigenerazione non riuscita');
     } finally {
       setRegeneratingBracket(false);
     }
@@ -356,7 +358,7 @@ function AdminTournamentDetailInner() {
       const token = session?.access_token;
 
       if (!token) {
-        toast.error('Sessione non valida');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -370,7 +372,7 @@ function AdminTournamentDetailInner() {
 
       if (!deleteRes.ok) {
         const deleteData = await deleteRes.json().catch(() => null);
-        toast.error(deleteData?.error || "Errore nell'eliminazione dei match");
+        toastError(deleteData?.error, 'Rigenerazione non riuscita');
         return;
       }
 
@@ -385,14 +387,14 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        toast.success(data?.message || 'Calendario rigenerato con successo!');
+        toast.success('Calendario rigenerato');
         setReloadKey((prev) => prev + 1);
       } else {
-        toast.error(data?.error || 'Errore nella rigenerazione del calendario');
+        toastError(data?.error, 'Rigenerazione non riuscita');
       }
     } catch (error) {
       console.error('Error regenerating calendar', error);
-      toast.error('Errore nella rigenerazione del calendario');
+      toast.error('Rigenerazione non riuscita');
     } finally {
       setRegeneratingCalendar(false);
     }

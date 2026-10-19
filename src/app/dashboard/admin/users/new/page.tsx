@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 type NewUserPageProps = {
   basePath?: string;
@@ -18,8 +20,6 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
   }, []);
 
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,28 +54,26 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
     e.preventDefault();
 
     if (!newUser.email || !newUser.password || !newUser.full_name) {
-      setError('Compila tutti i campi obbligatori');
+      toast.warning('Compila i campi obbligatori');
       return;
     }
 
     if (!emailRegex.test(newUser.email)) {
-      setError('Inserisci un indirizzo email valido (es: utente@esempio.com)');
+      toast.warning('Email non valida');
       return;
     }
 
     if (newUser.password.length < 6) {
-      setError('La password deve essere di almeno 6 caratteri');
+      toast.warning('Password troppo corta (min. 6)');
       return;
     }
 
     if (newUser.password !== confirmPassword) {
-      setError('Le password non corrispondono');
+      toast.warning('Le password non coincidono');
       return;
     }
 
     setCreating(true);
-    setError('');
-    setSuccess('');
 
     try {
       // Ottieni il token della sessione admin corrente
@@ -110,14 +108,11 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Errore durante la creazione dell'utente");
 
-      setSuccess('Utente creato con successo!');
-
-      // Attendi un attimo prima di reindirizzare
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      toast.success('Utente creato');
       router.push(`${basePath}/users`);
     } catch (error) {
       console.error('Error creating user:', error);
-      setError(error.message || "Errore durante la creazione dell'utente");
+      toastError(error, 'Creazione non riuscita');
     } finally {
       setCreating(false);
     }
@@ -125,31 +120,6 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
 
   return (
     <div className="space-y-6 pt-3">
-      {/* Messages */}
-      {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-900">Errore</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Successo</p>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informazioni Account */}
         <div className="page-card">

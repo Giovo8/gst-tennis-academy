@@ -11,6 +11,7 @@ import { Video, Play, Clock, Loader2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface VideoLesson {
   id: string;
@@ -71,7 +72,7 @@ export default function VideoPlayerPage() {
       const token = sessionData.session?.access_token;
 
       if (sessionError || !token) {
-        throw new Error('Sessione non valida. Effettua nuovamente il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       const response = await fetch(`/api/video-lessons?id=${encodeURIComponent(videoId)}`, {
@@ -163,18 +164,10 @@ export default function VideoPlayerPage() {
 
       if (deleteError) throw deleteError;
 
-      toast.success('Video eliminato con successo!');
+      toast.success('Video eliminato');
       router.push(`${dashboardBase}/videos`);
     } catch (deleteErr) {
-      const dbErrorCode = deleteErr?.code;
-      const baseMessage = deleteErr?.message || "Errore durante l'eliminazione";
-      if (dbErrorCode === '42501') {
-        toast.error(
-          `${baseMessage}. Verifica che sia applicata la migration 039_allow_maestro_delete_own_video_lessons.sql.`,
-        );
-      } else {
-        toast.error(baseMessage);
-      }
+      toastError(deleteErr, 'Eliminazione non riuscita');
     } finally {
       setDeleting(false);
     }

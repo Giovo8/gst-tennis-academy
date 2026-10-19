@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { Loader2, AlertCircle, CheckCircle, Upload, Link as LinkIcon, X } from 'lucide-react';
+import { Loader2, Upload, Link as LinkIcon, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { createNotification } from '@/lib/notifications/createNotification';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 export default function CreateNewsPage() {
   const router = useRouter();
@@ -24,8 +26,6 @@ export default function CreateNewsPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const categoryLabels: Record<string, string> = {
     notizie: 'Notizie',
@@ -51,7 +51,7 @@ export default function CreateNewsPage() {
     const { data, error } = await supabase.from('news').select('*').eq('id', editId).single();
 
     if (error || !data) {
-      setError('News non trovata');
+      toast.error('News non trovata');
       setLoading(false);
       return;
     }
@@ -65,12 +65,10 @@ export default function CreateNewsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
     setSaving(true);
 
     if (!title || !category || !summary) {
-      setError('Titolo, categoria e contenuto sono obbligatori');
+      toast.warning('Compila i campi obbligatori');
       setSaving(false);
       return;
     }
@@ -93,8 +91,8 @@ export default function CreateNewsPage() {
           .eq('id', editId);
 
         if (error) throw error;
-        setSuccess('News aggiornata con successo!');
-        setTimeout(() => router.push('/dashboard/admin/news'), 1500);
+        toast.success('News aggiornata');
+        router.push('/dashboard/admin/news');
       } else {
         // Create new
         const { data: userData } = await getSessionUser();
@@ -138,11 +136,11 @@ export default function CreateNewsPage() {
           }
         }
 
-        setSuccess('News creata con successo!');
-        setTimeout(() => router.push('/dashboard/admin/news'), 1500);
+        toast.success('News creata');
+        router.push('/dashboard/admin/news');
       }
     } catch (err) {
-      setError(err.message || 'Errore durante il salvataggio');
+      toastError(err, 'Salvataggio non riuscito');
     } finally {
       setSaving(false);
     }
@@ -157,17 +155,16 @@ export default function CreateNewsPage() {
     if (!confirmed) return;
 
     setDeleting(true);
-    setError(null);
 
     try {
       const { error } = await supabase.from('news').delete().eq('id', editId);
 
       if (error) throw error;
 
-      setSuccess('News eliminata con successo!');
-      setTimeout(() => router.push('/dashboard/admin/news'), 1000);
+      toast.success('News eliminata');
+      router.push('/dashboard/admin/news');
     } catch (err) {
-      setError(err.message || "Errore durante l'eliminazione");
+      toastError(err, 'Eliminazione non riuscita');
     } finally {
       setDeleting(false);
     }
@@ -178,18 +175,17 @@ export default function CreateNewsPage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("L'immagine deve essere inferiore a 5MB");
+      toast.warning('Immagine oltre 5 MB');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      setError("Il file deve essere un'immagine");
+      toast.warning('Formato non supportato');
       return;
     }
 
     setUploadingImage(true);
     setShowImageModal(false);
-    setError(null);
 
     try {
       const uploadFormData = new FormData();
@@ -221,7 +217,7 @@ export default function CreateNewsPage() {
 
       setImageUrl(responseData.url);
     } catch (uploadError) {
-      setError(uploadError?.message || "Errore durante l'upload dell'immagine");
+      toastError(uploadError, 'Caricamento immagine non riuscito');
     } finally {
       setUploadingImage(false);
       const fileInput = document.getElementById('news-image-upload') as HTMLInputElement | null;
@@ -235,13 +231,12 @@ export default function CreateNewsPage() {
     try {
       new URL(imageUrlInput);
     } catch {
-      setError('Inserisci un URL immagine valido');
+      toast.warning('URL non valido');
       return;
     }
 
     setUploadingImage(true);
     setShowImageModal(false);
-    setError(null);
 
     try {
       const uploadFormData = new FormData();
@@ -272,11 +267,7 @@ export default function CreateNewsPage() {
       setImageUrl(responseData.url);
       setImageUrlInput('');
     } catch (uploadError: unknown) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : "Errore durante il recupero dell'immagine",
-      );
+      toastError(uploadError, 'Caricamento immagine non riuscito');
     } finally {
       setUploadingImage(false);
     }
@@ -310,32 +301,6 @@ export default function CreateNewsPage() {
             {editId ? 'Modifica News' : 'Crea nuova news'}
           </h1>
         </div>
-
-        {/* Messages */}
-        {error && (
-          <div className="mt-2">
-            <div className="bg-red-50 rounded-xl border border-red-200 p-4 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-red-900">Errore</p>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="mt-2">
-            <div className="bg-green-50 rounded-xl border border-green-200 p-4 flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-green-900">Successo</p>
-                <p className="text-sm text-green-700 mt-1">{success}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Main Content */}
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">

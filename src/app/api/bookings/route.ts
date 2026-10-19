@@ -1,26 +1,29 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
-import { createBookingSchema } from "@/lib/validation/schemas";
-import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sanitize-server";
-import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
-import { shouldNotifyAdminsForUserBookingDeletion } from "@/lib/bookings/bookingDeletionNotifications";
-import { BOOKING_DELETE_SNAPSHOT_FIELDS } from "@/lib/bookings/bookingDeletionEmail";
-import logger from "@/lib/logger/secure-logger";
-import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
-import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
-import { validateRestrictedBookingHours } from "@/lib/bookings/bookingTimeRestrictions";
-import { findCourseConflict, COURSE_CONFLICT_SELECT } from "@/lib/bookings/courseConflicts";
-import { resolveBookingUpdatePermission, pickBookingMoveFields } from "@/lib/bookings/bookingUpdateAuth";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth, isAdminOrGestore } from '@/lib/auth/verifyAuth';
+import { createBookingSchema } from '@/lib/validation/schemas';
+import { sanitizeObject, sanitizePhone, sanitizeUuid } from '@/lib/security/sanitize-server';
+import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from '@/lib/security/rate-limiter';
+import { shouldNotifyAdminsForUserBookingDeletion } from '@/lib/bookings/bookingDeletionNotifications';
+import { BOOKING_DELETE_SNAPSHOT_FIELDS } from '@/lib/bookings/bookingDeletionEmail';
+import logger from '@/lib/logger/secure-logger';
+import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from '@/lib/constants/app';
+import { normalizeBookingMutation } from '@/lib/bookings/normalizeBookingMutation';
+import { validateRestrictedBookingHours } from '@/lib/bookings/bookingTimeRestrictions';
+import { findCourseConflict, COURSE_CONFLICT_SELECT } from '@/lib/bookings/courseConflicts';
+import {
+  resolveBookingUpdatePermission,
+  pickBookingMoveFields,
+} from '@/lib/bookings/bookingUpdateAuth';
 import {
   handleBookingCreatedSideEffects,
   handleBookingPendingSideEffects,
   handleBookingUpdatedSideEffects,
   handleBookingDeletedSideEffects,
-} from "@/lib/bookings/bookingService";
-import { logActivityServer } from "@/lib/activity/logActivity";
-import { TOURNAMENT_BOOKING_TYPE } from "@/lib/bookings/tournamentBookings";
-import { resolveTournamentMatchForBooking } from "@/lib/bookings/tournamentBookingsServer";
+} from '@/lib/bookings/bookingService';
+import { logActivityServer } from '@/lib/activity/logActivity';
+import { TOURNAMENT_BOOKING_TYPE } from '@/lib/bookings/tournamentBookings';
+import { resolveTournamentMatchForBooking } from '@/lib/bookings/tournamentBookingsServer';
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -34,100 +37,100 @@ export async function GET(req: Request) {
 
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    const user_id = url.searchParams.get("user_id");
-    const coach_id = url.searchParams.get("coach_id");
+    const id = url.searchParams.get('id');
+    const user_id = url.searchParams.get('user_id');
+    const coach_id = url.searchParams.get('coach_id');
 
     // Validate UUID if provided
     if (id && !sanitizeUuid(id)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
     if (id) {
       const { data: booking, error: bookingError } = await supabaseServer
-        .from("bookings")
-        .select("*")
-        .eq("id", id)
+        .from('bookings')
+        .select('*')
+        .eq('id', id)
         .single();
-      
+
       if (bookingError) {
         logger.error('Booking not found', bookingError, { bookingId: id });
         return NextResponse.json(
           { error: ERROR_MESSAGES.NOT_FOUND },
-          { status: HTTP_STATUS.NOT_FOUND }
+          { status: HTTP_STATUS.NOT_FOUND },
         );
       }
 
       // Non-privileged users may only read their own bookings
       if (!isPrivileged && booking.user_id !== currentUserId) {
         return NextResponse.json(
-          { error: ERROR_MESSAGES.FORBIDDEN ?? "Permessi insufficienti" },
-          { status: 403 }
+          { error: ERROR_MESSAGES.FORBIDDEN ?? 'Permessi insufficienti' },
+          { status: 403 },
         );
       }
 
       // Fetch participants
       const { data: participants } = await supabaseServer
-        .from("booking_participants")
-        .select("*")
-        .eq("booking_id", id)
-        .order("order_index", { ascending: true });
+        .from('booking_participants')
+        .select('*')
+        .eq('booking_id', id)
+        .order('order_index', { ascending: true });
 
       const duration = Date.now() - startTime;
       logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
-      return NextResponse.json({ 
+      return NextResponse.json({
         booking: {
           ...booking,
-          participants: participants || []
-        } 
+          participants: participants || [],
+        },
       });
     }
 
     let query = supabaseServer
-      .from("bookings")
-      .select("*")
-      .order("start_time", { ascending: true });
-    
+      .from('bookings')
+      .select('*')
+      .order('start_time', { ascending: true });
+
     if (!isPrivileged) {
       // Non-privileged users are always scoped to their own bookings
-      query = query.eq("user_id", currentUserId);
+      query = query.eq('user_id', currentUserId);
     } else if (user_id) {
-      query = query.eq("user_id", user_id);
+      query = query.eq('user_id', user_id);
     }
-    if (coach_id) query = query.eq("coach_id", coach_id);
-    
+    if (coach_id) query = query.eq('coach_id', coach_id);
+
     const { data: bookings, error } = await query;
-    
+
     if (error) {
       logger.error('Database error fetching bookings', error);
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
     // Fetch participants for all bookings
-    const bookingIds = bookings?.map(b => b.id) || [];
+    const bookingIds = bookings?.map((b) => b.id) || [];
     let allParticipants: Array<{ booking_id: string; [key: string]: unknown }> = [];
 
     if (bookingIds.length > 0) {
       const { data: participants } = await supabaseServer
-        .from("booking_participants")
-        .select("*")
-        .in("booking_id", bookingIds);
-      
+        .from('booking_participants')
+        .select('*')
+        .in('booking_id', bookingIds);
+
       allParticipants = participants || [];
     }
 
     // Merge participants with bookings
-    const bookingsWithParticipants = (bookings || []).map(booking => ({
+    const bookingsWithParticipants = (bookings || []).map((booking) => ({
       ...booking,
-      participants: allParticipants.filter(p => p.booking_id === booking.id)
+      participants: allParticipants.filter((p) => p.booking_id === booking.id),
     }));
-    
+
     const duration = Date.now() - startTime;
     logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
     return NextResponse.json({ bookings: bookingsWithParticipants });
@@ -137,33 +140,33 @@ export async function GET(req: Request) {
     logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
 
 export async function POST(req: Request) {
   const startTime = Date.now();
-  
+
   try {
     // Rate limiting
     const clientId = getClientIdentifier(req);
     const rateLimit = await applyRateLimit(clientId, RATE_LIMITS.API_WRITE);
-    
+
     if (!rateLimit.allowed) {
       logger.security('Booking creation rate limit exceeded', { clientId });
       return NextResponse.json(
-        { 
+        {
           error: ERROR_MESSAGES.RATE_LIMIT,
           retryAfter: rateLimit.reset,
         },
-        { 
+        {
           status: HTTP_STATUS.TOO_MANY_REQUESTS,
           headers: {
             'X-RateLimit-Remaining': rateLimit.remaining.toString(),
             'X-RateLimit-Reset': rateLimit.reset.toString(),
           },
-        }
+        },
       );
     }
 
@@ -174,14 +177,14 @@ export async function POST(req: Request) {
     }
 
     const { user, profile } = authResult.data;
-    
+
     // Parse and sanitize input
     const rawBody = await req.json();
     const sanitized = sanitizeObject(rawBody);
 
     // Validate with Zod
     const validationResult = createBookingSchema.safeParse(sanitized);
-    
+
     if (!validationResult.success) {
       logger.warn('Booking validation failed', {
         userId: user.id,
@@ -190,12 +193,12 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: ERROR_MESSAGES.INVALID_INPUT,
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.errors.map((e) => ({
             field: e.path.join('.'),
             message: e.message,
           })),
         },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
 
@@ -209,10 +212,13 @@ export async function POST(req: Request) {
     // Atleti/maestri possono prenotare solo le proprie partite, admin/gestore tutte.
     let tournamentMatchId: string | null = null;
     if (type === TOURNAMENT_BOOKING_TYPE) {
-      const resolved = await resolveTournamentMatchForBooking(bookingData.tournament_match_id as string, {
-        userId: user.id,
-        isPrivileged: canBookForOthers,
-      });
+      const resolved = await resolveTournamentMatchForBooking(
+        bookingData.tournament_match_id as string,
+        {
+          userId: user.id,
+          isPrivileged: canBookForOthers,
+        },
+      );
 
       if (resolved.error) {
         logger.warn('Tournament booking rejected', {
@@ -233,7 +239,7 @@ export async function POST(req: Request) {
         phone: null,
         is_registered: Boolean(player.user_id),
       }));
-      user_id = canBookForOthers ? (player1.user_id ?? player2.user_id ?? user.id) : user.id;
+      user_id = canBookForOthers ? player1.user_id ?? player2.user_id ?? user.id : user.id;
     }
 
     // Authorization: users can only book for themselves, admin/gestore for anyone
@@ -243,8 +249,8 @@ export async function POST(req: Request) {
         targetUserId: user_id,
       });
       return NextResponse.json(
-        { error: "Non autorizzato a prenotare per altri utenti" },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { error: 'Operazione non consentita' },
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
 
@@ -258,27 +264,23 @@ export async function POST(req: Request) {
           start_time,
           end_time,
         });
-        return NextResponse.json(
-          { error: timeError },
-          { status: HTTP_STATUS.FORBIDDEN }
-        );
+        return NextResponse.json({ error: timeError }, { status: HTTP_STATUS.FORBIDDEN });
       }
     }
 
     // Determine if this should be a pending booking:
     // only when an athlete books a private lesson (coach approves later).
-    const shouldBePending =
-      type === "lezione_privata" && profile?.role === "atleta";
+    const shouldBePending = type === 'lezione_privata' && profile?.role === 'atleta';
 
     // Check for overlapping CONFIRMED bookings on the same court.
     // Pending bookings do not occupy the slot and are intentionally excluded.
     const { data: conflicts, error: conflictError } = await supabaseServer
-      .from("bookings")
-      .select("id, user_id, status, start_time, end_time")
-      .eq("court", court)
-      .neq("status", BOOKING_STATUS.CANCELLED)
-      .neq("status", BOOKING_STATUS.REJECTED)
-      .neq("status", BOOKING_STATUS.PENDING)
+      .from('bookings')
+      .select('id, user_id, status, start_time, end_time')
+      .eq('court', court)
+      .neq('status', BOOKING_STATUS.CANCELLED)
+      .neq('status', BOOKING_STATUS.REJECTED)
+      .neq('status', BOOKING_STATUS.PENDING)
       .or(`and(start_time.lt.${end_time},end_time.gt.${start_time})`);
 
     if (conflictError) {
@@ -288,7 +290,7 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -299,22 +301,22 @@ export async function POST(req: Request) {
         requestedTime: start_time,
       });
       return NextResponse.json(
-        { 
-          error: "Slot già prenotato. Seleziona un altro orario.",
-          conflict: true 
+        {
+          error: 'Orario già prenotato',
+          conflict: true,
         },
-        { status: HTTP_STATUS.CONFLICT }
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
 
     // Check for court blocks overlapping the requested slot
     const { data: blockConflicts, error: blockConflictError } = await supabaseServer
-      .from("court_blocks")
-      .select("id")
-      .eq("court_id", court)
-      .eq("is_disabled", false)
-      .lt("start_time", end_time)
-      .gt("end_time", start_time);
+      .from('court_blocks')
+      .select('id')
+      .eq('court_id', court)
+      .eq('is_disabled', false)
+      .lt('start_time', end_time)
+      .gt('end_time', start_time);
 
     if (blockConflictError) {
       logger.error('Error checking court blocks', blockConflictError, {
@@ -323,7 +325,7 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -335,24 +337,24 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         {
-          error: "Il campo non è disponibile in questo orario.",
+          error: 'Campo non disponibile',
           conflict: true,
         },
-        { status: HTTP_STATUS.CONFLICT }
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
 
     // Check for course conflicts overlapping the requested slot
     const { data: courseData, error: courseError } = await supabaseServer
-      .from("courses")
+      .from('courses')
       .select(COURSE_CONFLICT_SELECT)
-      .eq("is_active", true);
+      .eq('is_active', true);
 
     if (courseError) {
       logger.error('Error checking course conflicts', courseError, { userId: user.id, court });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -364,10 +366,10 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         {
-          error: "Il campo non è disponibile in questo orario (corso programmato).",
+          error: 'Campo occupato da un corso',
           conflict: true,
         },
-        { status: HTTP_STATUS.CONFLICT }
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
 
@@ -382,23 +384,27 @@ export async function POST(req: Request) {
     // Formato calcolato una sola volta dal numero di partecipanti al momento della creazione
     // e mai ricalcolato: campo -> singolo (<=2 giocatori) / doppio (>2); lezione_privata ->
     // singola (1 partecipante) / doppia (2+ partecipanti).
-    const bookingType = type || "campo";
+    const bookingType = type || 'campo';
     const bookingFormato =
-      bookingType === "campo"
-        ? (participants.length > 2 ? "doppio" : "singolo")
-        : bookingType === "lezione_privata"
-          ? (participants.length > 1 ? "doppia" : "singola")
-          : null;
+      bookingType === 'campo'
+        ? participants.length > 2
+          ? 'doppio'
+          : 'singolo'
+        : bookingType === 'lezione_privata'
+        ? participants.length > 1
+          ? 'doppia'
+          : 'singola'
+        : null;
 
     const { data, error } = await supabaseServer
-      .from("bookings")
+      .from('bookings')
       .insert([
         {
           user_id,
           coach_id: coach_id || null,
           created_by: user.id,
           court,
-          type: type || "campo",
+          type: type || 'campo',
           formato: bookingFormato,
           start_time,
           end_time,
@@ -416,14 +422,13 @@ export async function POST(req: Request) {
       // Race condition: un'altra prenotazione attiva per la stessa partita è appena stata creata
       if (tournamentMatchId && error.code === '23505') {
         return NextResponse.json(
-          { error: "Questa partita ha già una prenotazione attiva", conflict: true },
-          { status: HTTP_STATUS.CONFLICT }
+          { error: 'Partita già prenotata', conflict: true },
+          { status: HTTP_STATUS.CONFLICT },
         );
       }
       // Handle race condition: DB constraint violation means slot was taken concurrently
       const isOverlapConstraint =
-        error.message?.includes('bookings_no_overlap') ||
-        error.code === '23P01';
+        error.message?.includes('bookings_no_overlap') || error.code === '23P01';
       if (isOverlapConstraint) {
         logger.warn('Booking overlap constraint violation (race condition)', {
           userId: user.id,
@@ -431,14 +436,14 @@ export async function POST(req: Request) {
           start_time,
         });
         return NextResponse.json(
-          { error: "Slot già prenotato. Seleziona un altro orario.", conflict: true },
-          { status: HTTP_STATUS.CONFLICT }
+          { error: 'Orario già prenotato', conflict: true },
+          { status: HTTP_STATUS.CONFLICT },
         );
       }
       logger.error('Failed to create booking', error, { userId: user.id });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -458,7 +463,7 @@ export async function POST(req: Request) {
       }));
 
       const { error: participantsError, data: insertedParticipants } = await supabaseServer
-        .from("booking_participants")
+        .from('booking_participants')
         .insert(participantsData)
         .select();
 
@@ -472,7 +477,7 @@ export async function POST(req: Request) {
             return rest;
           });
           const { error: fallbackError, data: fallbackInsertedParticipants } = await supabaseServer
-            .from("booking_participants")
+            .from('booking_participants')
             .insert(fallbackParticipantsData)
             .select();
 
@@ -505,8 +510,8 @@ export async function POST(req: Request) {
           profile,
           participants,
           userId: user_id,
-          ipAddress: req.headers.get("x-forwarded-for"),
-          userAgent: req.headers.get("user-agent"),
+          ipAddress: req.headers.get('x-forwarded-for'),
+          userAgent: req.headers.get('user-agent'),
           participantsInserted,
         });
       } else {
@@ -516,8 +521,8 @@ export async function POST(req: Request) {
           profile,
           participants,
           userId: user_id,
-          ipAddress: req.headers.get("x-forwarded-for"),
-          userAgent: req.headers.get("user-agent"),
+          ipAddress: req.headers.get('x-forwarded-for'),
+          userAgent: req.headers.get('user-agent'),
           participantsInserted,
         });
       }
@@ -530,7 +535,7 @@ export async function POST(req: Request) {
       participantsCount: participantsInserted,
     });
     logger.apiResponse('POST', '/api/bookings', HTTP_STATUS.CREATED, duration);
-    
+
     return NextResponse.json({ booking: data?.[0] ?? null }, { status: HTTP_STATUS.CREATED });
   } catch (err: unknown) {
     const duration = Date.now() - startTime;
@@ -538,25 +543,25 @@ export async function POST(req: Request) {
     logger.apiResponse('POST', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
 
 export async function PUT(req: Request) {
   const startTime = Date.now();
-  
+
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    
+    const id = url.searchParams.get('id');
+
     if (!id || !sanitizeUuid(id)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
-    
+
     // Authentication
     const authResult = await verifyAuth(req);
     if (!authResult.success) {
@@ -567,15 +572,15 @@ export async function PUT(req: Request) {
 
     // Check if booking exists
     const { data: booking } = await supabaseServer
-      .from("bookings")
-      .select("user_id, coach_id, court, type, start_time, end_time, notes, tournament_match_id")
-      .eq("id", id)
+      .from('bookings')
+      .select('user_id, coach_id, court, type, start_time, end_time, notes, tournament_match_id')
+      .eq('id', id)
       .single();
 
     if (!booking) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.NOT_FOUND },
-        { status: HTTP_STATUS.NOT_FOUND }
+        { status: HTTP_STATUS.NOT_FOUND },
       );
     }
 
@@ -585,7 +590,7 @@ export async function PUT(req: Request) {
     // l'atleta prenotante o il coach assegnato. Nessun altro ruolo può modificare.
     const permission = resolveBookingUpdatePermission(
       { role: profile?.role, userId: user.id },
-      { user_id: booking.user_id, coach_id: booking.coach_id }
+      { user_id: booking.user_id, coach_id: booking.coach_id },
     );
 
     if (!permission.allowed) {
@@ -596,7 +601,7 @@ export async function PUT(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
 
@@ -605,22 +610,22 @@ export async function PUT(req: Request) {
     let shouldNotifyAthlete = false;
     if (updatedByManager) {
       const { data: ownerProfile, error: ownerProfileError } = await supabaseServer
-        .from("profiles")
-        .select("role")
-        .eq("id", booking.user_id)
+        .from('profiles')
+        .select('role')
+        .eq('id', booking.user_id)
         .single();
 
       if (ownerProfileError) {
-        logger.warn("Failed to resolve booking owner role before update", {
+        logger.warn('Failed to resolve booking owner role before update', {
           bookingId: id,
           ownerId: booking.user_id,
           error: ownerProfileError.message,
         });
       }
 
-      shouldNotifyAthlete = ownerProfile?.role === "atleta";
+      shouldNotifyAthlete = ownerProfile?.role === 'atleta';
     }
-    
+
     const rawBody = await req.json();
     let sanitized = sanitizeObject(rawBody);
 
@@ -639,8 +644,8 @@ export async function PUT(req: Request) {
         (sanitized.tournament_match_id as string | null | undefined) ?? booking.tournament_match_id;
       if (!nextMatchId || !sanitizeUuid(nextMatchId)) {
         return NextResponse.json(
-          { error: "Seleziona la partita del torneo da giocare" },
-          { status: HTTP_STATUS.BAD_REQUEST }
+          { error: 'Seleziona la partita' },
+          { status: HTTP_STATUS.BAD_REQUEST },
         );
       }
 
@@ -648,10 +653,14 @@ export async function PUT(req: Request) {
         const resolved = await resolveTournamentMatchForBooking(
           nextMatchId,
           { userId: user.id, isPrivileged: isAdminOrGestore(profile?.role) },
-          { excludeBookingId: id }
+          { excludeBookingId: id },
         );
         if (resolved.error) {
-          logger.warn('Tournament booking update rejected', { userId: user.id, bookingId: id, reason: resolved.error });
+          logger.warn('Tournament booking update rejected', {
+            userId: user.id,
+            bookingId: id,
+            reason: resolved.error,
+          });
           return NextResponse.json({ error: resolved.error }, { status: resolved.status });
         }
       }
@@ -667,13 +676,13 @@ export async function PUT(req: Request) {
     const newEndTime = (sanitized.end_time as string | undefined) || booking.end_time;
 
     const { data: conflicts, error: conflictError } = await supabaseServer
-      .from("bookings")
-      .select("id")
-      .eq("court", newCourt)
-      .neq("id", id)
-      .neq("status", BOOKING_STATUS.CANCELLED)
-      .neq("status", BOOKING_STATUS.REJECTED)
-      .neq("status", BOOKING_STATUS.PENDING)
+      .from('bookings')
+      .select('id')
+      .eq('court', newCourt)
+      .neq('id', id)
+      .neq('status', BOOKING_STATUS.CANCELLED)
+      .neq('status', BOOKING_STATUS.REJECTED)
+      .neq('status', BOOKING_STATUS.PENDING)
       .or(`and(start_time.lt.${newEndTime},end_time.gt.${newStartTime})`);
 
     if (conflictError) {
@@ -683,7 +692,7 @@ export async function PUT(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -696,21 +705,21 @@ export async function PUT(req: Request) {
       });
       return NextResponse.json(
         {
-          error: "Slot già prenotato. Seleziona un altro orario.",
+          error: 'Orario già prenotato',
           conflict: true,
         },
-        { status: HTTP_STATUS.CONFLICT }
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
 
     // Check for court blocks overlapping the (possibly new) slot
     const { data: blockConflicts, error: blockConflictError } = await supabaseServer
-      .from("court_blocks")
-      .select("id")
-      .eq("court_id", newCourt)
-      .eq("is_disabled", false)
-      .lt("start_time", newEndTime)
-      .gt("end_time", newStartTime);
+      .from('court_blocks')
+      .select('id')
+      .eq('court_id', newCourt)
+      .eq('is_disabled', false)
+      .lt('start_time', newEndTime)
+      .gt('end_time', newStartTime);
 
     if (blockConflictError) {
       logger.error('Error checking court blocks on update', blockConflictError, {
@@ -719,7 +728,7 @@ export async function PUT(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -730,16 +739,16 @@ export async function PUT(req: Request) {
         court: newCourt,
       });
       return NextResponse.json(
-        { error: "Il campo non è disponibile in questo orario.", conflict: true },
-        { status: HTTP_STATUS.CONFLICT }
+        { error: 'Campo non disponibile', conflict: true },
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
 
     // Check for scheduled-course conflicts overlapping the (possibly new) slot
     const { data: courseData, error: courseError } = await supabaseServer
-      .from("courses")
+      .from('courses')
       .select(COURSE_CONFLICT_SELECT)
-      .eq("is_active", true);
+      .eq('is_active', true);
 
     if (courseError) {
       logger.error('Error checking course conflicts on update', courseError, {
@@ -748,7 +757,7 @@ export async function PUT(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -760,25 +769,24 @@ export async function PUT(req: Request) {
       });
       return NextResponse.json(
         {
-          error: "Il campo non è disponibile in questo orario (corso programmato).",
+          error: 'Campo occupato da un corso',
           conflict: true,
         },
-        { status: HTTP_STATUS.CONFLICT }
+        { status: HTTP_STATUS.CONFLICT },
       );
     }
 
     const normalizedUpdate = normalizeBookingMutation(sanitized);
 
     const { data, error } = await supabaseServer
-      .from("bookings")
+      .from('bookings')
       .update(normalizedUpdate)
-      .eq("id", id)
+      .eq('id', id)
       .select();
-    
+
     if (error) {
       const isOverlapConstraint =
-        error.message?.includes('bookings_no_overlap') ||
-        error.code === '23P01';
+        error.message?.includes('bookings_no_overlap') || error.code === '23P01';
       if (isOverlapConstraint) {
         logger.warn('Booking overlap constraint violation on update (race condition)', {
           userId: user.id,
@@ -786,20 +794,20 @@ export async function PUT(req: Request) {
           court: newCourt,
         });
         return NextResponse.json(
-          { error: "Slot già prenotato. Seleziona un altro orario.", conflict: true },
-          { status: HTTP_STATUS.CONFLICT }
+          { error: 'Orario già prenotato', conflict: true },
+          { status: HTTP_STATUS.CONFLICT },
         );
       }
       if (error.code === '23505' && sanitized.tournament_match_id) {
         return NextResponse.json(
-          { error: "Questa partita ha già una prenotazione attiva", conflict: true },
-          { status: HTTP_STATUS.CONFLICT }
+          { error: 'Partita già prenotata', conflict: true },
+          { status: HTTP_STATUS.CONFLICT },
         );
       }
       logger.error('Failed to update booking', error, { userId: user.id, bookingId: id });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -823,11 +831,11 @@ export async function PUT(req: Request) {
 
     await logActivityServer({
       userId: user.id,
-      action: "booking.update",
-      entityType: "booking",
+      action: 'booking.update',
+      entityType: 'booking',
       entityId: id,
-      ipAddress: req.headers.get("x-forwarded-for") || undefined,
-      userAgent: req.headers.get("user-agent") || undefined,
+      ipAddress: req.headers.get('x-forwarded-for') || undefined,
+      userAgent: req.headers.get('user-agent') || undefined,
       metadata: {
         updatedByRole: profile?.role || null,
         updatedByManager,
@@ -835,7 +843,7 @@ export async function PUT(req: Request) {
         ownerUserId: booking.user_id,
       },
     });
-    
+
     const duration = Date.now() - startTime;
     logger.apiResponse('PUT', '/api/bookings', HTTP_STATUS.OK, duration);
     return NextResponse.json({ booking: data?.[0] });
@@ -845,25 +853,25 @@ export async function PUT(req: Request) {
     logger.apiResponse('PUT', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }
 
 export async function DELETE(req: Request) {
   const startTime = Date.now();
-  
+
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    
+    const id = url.searchParams.get('id');
+
     if (!id || !sanitizeUuid(id)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST }
+        { status: HTTP_STATUS.BAD_REQUEST },
       );
     }
-    
+
     // Authentication
     const authResult = await verifyAuth(req);
     if (!authResult.success) {
@@ -874,15 +882,15 @@ export async function DELETE(req: Request) {
 
     // Check if booking exists
     const { data: booking } = await supabaseServer
-      .from("bookings")
+      .from('bookings')
       .select(BOOKING_DELETE_SNAPSHOT_FIELDS)
-      .eq("id", id)
+      .eq('id', id)
       .single();
 
     if (!booking) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.NOT_FOUND },
-        { status: HTTP_STATUS.NOT_FOUND }
+        { status: HTTP_STATUS.NOT_FOUND },
       );
     }
 
@@ -896,21 +904,21 @@ export async function DELETE(req: Request) {
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
-        { status: HTTP_STATUS.FORBIDDEN }
+        { status: HTTP_STATUS.FORBIDDEN },
       );
     }
-    
+
     const deletedByManager = isAdminOrGestore(profile?.role) && booking.user_id !== user.id;
     const deletedByOwner = booking.user_id === user.id;
 
     const { data: bookingParticipants, error: bookingParticipantsError } = await supabaseServer
-      .from("booking_participants")
-      .select("user_id, full_name, email, is_registered, order_index")
-      .eq("booking_id", id)
-      .order("order_index", { ascending: true });
+      .from('booking_participants')
+      .select('user_id, full_name, email, is_registered, order_index')
+      .eq('booking_id', id)
+      .order('order_index', { ascending: true });
 
     if (bookingParticipantsError) {
-      logger.warn("Failed to fetch booking participants before deletion email", {
+      logger.warn('Failed to fetch booking participants before deletion email', {
         bookingId: id,
         error: bookingParticipantsError.message,
       });
@@ -923,13 +931,13 @@ export async function DELETE(req: Request) {
 
     if (deletedByManager || deletedByOwner) {
       const { data: ownerProfile, error: ownerProfileError } = await supabaseServer
-        .from("profiles")
-        .select("role, full_name, email")
-        .eq("id", booking.user_id)
+        .from('profiles')
+        .select('role, full_name, email')
+        .eq('id', booking.user_id)
         .single();
 
       if (ownerProfileError) {
-        logger.warn("Failed to resolve booking owner role before deletion", {
+        logger.warn('Failed to resolve booking owner role before deletion', {
           bookingId: id,
           ownerId: booking.user_id,
           error: ownerProfileError.message,
@@ -940,7 +948,7 @@ export async function DELETE(req: Request) {
         bookingOwnerEmail = ownerProfile?.email || null;
       }
 
-      shouldNotifyAthlete = deletedByManager && ownerProfile?.role === "atleta";
+      shouldNotifyAthlete = deletedByManager && ownerProfile?.role === 'atleta';
     }
 
     const shouldNotifyAdmins = shouldNotifyAdminsForUserBookingDeletion({
@@ -950,13 +958,13 @@ export async function DELETE(req: Request) {
       ownerRole: bookingOwnerRole,
     });
 
-    const { error } = await supabaseServer.from("bookings").delete().eq("id", id);
-    
+    const { error } = await supabaseServer.from('bookings').delete().eq('id', id);
+
     if (error) {
       logger.error('Failed to delete booking', error, { userId: user.id, bookingId: id });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
 
@@ -977,11 +985,11 @@ export async function DELETE(req: Request) {
 
     await logActivityServer({
       userId: user.id,
-      action: "booking.cancel",
-      entityType: "booking",
+      action: 'booking.cancel',
+      entityType: 'booking',
       entityId: id,
-      ipAddress: req.headers.get("x-forwarded-for") || undefined,
-      userAgent: req.headers.get("user-agent") || undefined,
+      ipAddress: req.headers.get('x-forwarded-for') || undefined,
+      userAgent: req.headers.get('user-agent') || undefined,
       metadata: {
         deletedByRole: profile?.role || null,
         deletedByManager,
@@ -1000,7 +1008,7 @@ export async function DELETE(req: Request) {
     logger.apiResponse('DELETE', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 }

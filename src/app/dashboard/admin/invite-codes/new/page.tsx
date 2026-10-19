@@ -8,6 +8,7 @@ import { getSessionUser } from '@/lib/auth/clientSession';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 export default function NewInviteCodePage() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function NewInviteCodePage() {
         data: { user },
       } = await getSessionUser();
       if (!user) {
-        toast.error('Errore: utente non autenticato');
+        toast.error('Sessione scaduta, accedi di nuovo');
         return;
       }
 
@@ -91,7 +92,7 @@ export default function NewInviteCodePage() {
 
       if (error) {
         console.error('Error generating code:', error);
-        toast.error(`Errore nella generazione del codice: ${error.message}`);
+        toastError(error, 'Generazione non riuscita');
         return;
       }
 
@@ -113,12 +114,12 @@ export default function NewInviteCodePage() {
           }),
         });
 
-        toast.success('Codice generato con successo!');
+        toast.success('Codice generato');
         router.push('/dashboard/admin/invite-codes');
       }
     } catch (error) {
       console.error('Error generating code:', error);
-      toast.error(`Errore: ${error?.message || 'Errore sconosciuto'}`);
+      toastError(error, 'Generazione non riuscita');
     } finally {
       setGenerating(false);
     }

@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import AuthGuard from "@/components/auth/AuthGuard";
-import { supabase } from "@/lib/supabase/client";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
+import { Loader2 } from 'lucide-react';
 
 type NewsItem = {
   id: string;
@@ -31,14 +33,14 @@ export default function AdminNewsDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const categoryLabels: Record<string, string> = {
-    notizie: "Notizie",
-    risultati: "Risultati",
-    eventi: "Eventi",
-    generale: "Generale",
-    tornei: "Tornei",
-    orari: "Orari",
-    lezioni: "Lezioni",
-    novità: "Novità",
+    notizie: 'Notizie',
+    risultati: 'Risultati',
+    eventi: 'Eventi',
+    generale: 'Generale',
+    tornei: 'Tornei',
+    orari: 'Orari',
+    lezioni: 'Lezioni',
+    novità: 'Novità',
   };
 
   useEffect(() => {
@@ -49,13 +51,13 @@ export default function AdminNewsDetailPage() {
       setError(null);
 
       const { data, error: loadError } = await supabase
-        .from("news")
-        .select("*")
-        .eq("id", newsId)
+        .from('news')
+        .select('*')
+        .eq('id', newsId)
         .single();
 
       if (loadError || !data) {
-        setError("News non trovata");
+        setError('News non trovata');
         setNews(null);
       } else {
         setNews(data);
@@ -70,25 +72,26 @@ export default function AdminNewsDetailPage() {
   async function handleDelete() {
     if (!newsId) return;
 
-    const confirmed = confirm("Sei sicuro di voler eliminare questa news?");
+    const confirmed = confirm('Sei sicuro di voler eliminare questa news?');
     if (!confirmed) return;
 
     setDeleting(true);
 
-    const { error: deleteError } = await supabase.from("news").delete().eq("id", newsId);
+    const { error: deleteError } = await supabase.from('news').delete().eq('id', newsId);
 
     if (deleteError) {
-      setError(deleteError.message || "Errore durante l'eliminazione");
+      toastError(deleteError, 'Eliminazione non riuscita');
       setDeleting(false);
       return;
     }
 
-    router.push("/dashboard/admin/news");
+    toast.success('News eliminata');
+    router.push('/dashboard/admin/news');
   }
 
   if (loading) {
     return (
-      <AuthGuard allowedRoles={["admin", "gestore"]}>
+      <AuthGuard allowedRoles={['admin', 'gestore']}>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-secondary" />
         </div>
@@ -98,19 +101,24 @@ export default function AdminNewsDetailPage() {
 
   if (!news) {
     return (
-      <AuthGuard allowedRoles={["admin", "gestore"]}>
+      <AuthGuard allowedRoles={['admin', 'gestore']}>
         <div className="space-y-6">
           <div>
             <p className="breadcrumb text-secondary/60">
-              <Link href="/dashboard/admin/news" className="hover:text-secondary/80 transition-colors">News</Link>
-              {" › "}
+              <Link
+                href="/dashboard/admin/news"
+                className="hover:text-secondary/80 transition-colors"
+              >
+                News
+              </Link>
+              {' › '}
               <span>Dettaglio News</span>
             </p>
             <h1 className="text-4xl font-bold text-secondary">Dettaglio News</h1>
           </div>
 
           <div className="page-card p-6">
-            <p className="text-secondary/60">{error || "News non trovata"}</p>
+            <p className="text-secondary/60">{error || 'News non trovata'}</p>
           </div>
         </div>
       </AuthGuard>
@@ -118,12 +126,17 @@ export default function AdminNewsDetailPage() {
   }
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={['admin', 'gestore']}>
       <div className="space-y-6 pt-3">
         <div>
           <p className="breadcrumb text-secondary/60">
-            <Link href="/dashboard/admin/news" className="hover:text-secondary/80 transition-colors">News</Link>
-            {" › "}
+            <Link
+              href="/dashboard/admin/news"
+              className="hover:text-secondary/80 transition-colors"
+            >
+              News
+            </Link>
+            {' › '}
             <span>Dettaglio News</span>
           </p>
           <h1 className="text-4xl font-bold text-secondary">Dettaglio News</h1>
@@ -137,7 +150,12 @@ export default function AdminNewsDetailPage() {
           <div className="p-6 space-y-6">
             {news.image_url && (
               <div className="rounded-xl overflow-hidden border border-black/10 bg-secondary/5">
-                <img src={news.image_url} alt={news.title} referrerPolicy="no-referrer" className="w-full h-auto object-cover" />
+                <img
+                  src={news.image_url}
+                  alt={news.title}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-auto object-cover"
+                />
               </div>
             )}
 
@@ -149,16 +167,14 @@ export default function AdminNewsDetailPage() {
             </div>
 
             <p className="text-sm text-secondary/70">
-              {new Date(news.created_at).toLocaleDateString("it-IT", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
+              {new Date(news.created_at).toLocaleDateString('it-IT', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
               })}
             </p>
 
-            <div className="text-secondary leading-relaxed whitespace-pre-wrap">
-              {news.content}
-            </div>
+            <div className="text-secondary leading-relaxed whitespace-pre-wrap">{news.content}</div>
           </div>
         </div>
 
@@ -169,7 +185,7 @@ export default function AdminNewsDetailPage() {
             disabled={deleting}
             className="w-full flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Elimina"}
+            {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Elimina'}
           </button>
 
           <Link

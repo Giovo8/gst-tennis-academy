@@ -4,14 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
-import {
-  Calendar,
-  Loader2,
-  AlertCircle,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Calendar, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Modal,
   ModalContent,
@@ -26,6 +19,8 @@ import { ARENA_MATCH_FORMATS, CHALLENGE_TYPES } from '@/lib/arena/arenaConstants
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { type UserRole } from '@/lib/roles';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Player {
   id: string;
@@ -66,8 +61,6 @@ export default function CreateChallengePage() {
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
@@ -310,9 +303,6 @@ export default function CreateChallengePage() {
   };
 
   async function handleSubmit() {
-    setError('');
-    setSuccess('');
-
     const challenger = selectedParticipants[0]?.userId || '';
     const myPartner = selectedParticipants[1]?.userId || '';
     const opponent = selectedParticipants[2]?.userId || '';
@@ -320,22 +310,22 @@ export default function CreateChallengePage() {
 
     // Validation
     if (!challenger || !opponent) {
-      setError('Seleziona sia lo sfidante che lo sfidato');
+      toast.warning('Seleziona i due giocatori');
       return;
     }
 
     if (challenger === opponent) {
-      setError('Lo sfidante e lo sfidato devono essere persone diverse');
+      toast.warning('Scegli due giocatori diversi');
       return;
     }
 
     if (matchType === 'doubles' && selectedParticipants.length < 4) {
-      setError('Per il doppio devi selezionare 4 partecipanti (2 coppie)');
+      toast.warning('Seleziona 4 giocatori');
       return;
     }
 
     if (selectedSlots.length === 0) {
-      setError('Seleziona almeno uno slot orario');
+      toast.warning('Seleziona un orario');
       return;
     }
 
@@ -346,11 +336,7 @@ export default function CreateChallengePage() {
     });
 
     if (unavailableSlots.length > 0) {
-      setError(
-        `Gli slot selezionati non sono più disponibili: ${unavailableSlots.join(
-          ', ',
-        )}. Ricarica la pagina.`,
-      );
+      toast.warning('Orario non più disponibile');
       return;
     }
 
@@ -362,7 +348,7 @@ export default function CreateChallengePage() {
       const token = sessionData?.session?.access_token;
 
       if (!token) {
-        throw new Error('Sessione scaduta, effettua di nuovo il login.');
+        throw new Error('Sessione scaduta, accedi di nuovo');
       }
 
       // Calculate start and end times
@@ -434,12 +420,10 @@ export default function CreateChallengePage() {
         throw new Error(challengeError.error || 'Errore nella creazione della sfida');
       }
 
-      setSuccess('Sfida creata con successo!');
-      setTimeout(() => {
-        router.push('/dashboard/admin/arena');
-      }, 1500);
+      toast.success('Sfida creata');
+      router.push('/dashboard/admin/arena');
     } catch (error) {
-      setError(error.message);
+      toastError(error, 'Creazione sfida non riuscita');
     } finally {
       setSending(false);
     }
@@ -600,32 +584,6 @@ export default function CreateChallengePage() {
           <h1 className="text-4xl font-bold text-secondary">Crea Sfida</h1>
         </div>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-900">Errore</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Successo</p>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
       <div>
         <div className="space-y-6">

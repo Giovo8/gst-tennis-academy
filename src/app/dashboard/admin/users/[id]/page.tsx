@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 import { Loader2, AlertCircle, User, Crown, Dumbbell, Home } from 'lucide-react';
 
 type UserProfile = {
@@ -467,7 +468,7 @@ export default function UserProfilePage({ basePath = '/dashboard/admin' }: UserP
               } = await supabase.auth.getSession();
 
               if (!session?.access_token) {
-                throw new Error('Sessione non valida');
+                throw new Error('Sessione scaduta, accedi di nuovo');
               }
 
               const response = await fetch('/api/admin/users/reset-password', {
@@ -482,9 +483,9 @@ export default function UserProfilePage({ basePath = '/dashboard/admin' }: UserP
               const data = await response.json();
               if (!response.ok)
                 throw new Error(data.error || "Impossibile inviare l'email di reset.");
-              toast.success('Email di reset password inviata con successo.');
+              toast.success('Email di reset inviata');
             } catch (err) {
-              toast.error('Errore: ' + (err.message || "Impossibile inviare l'email di reset."));
+              toastError(err, 'Invio non riuscito');
             } finally {
               setResettingPassword(false);
             }
@@ -509,9 +510,10 @@ export default function UserProfilePage({ basePath = '/dashboard/admin' }: UserP
             try {
               const { error } = await supabase.from('profiles').delete().eq('id', userId);
               if (error) throw error;
+              toast.success('Utente eliminato');
               router.push(`${basePath}/users`);
             } catch (err) {
-              toast.error('Errore: ' + (err.message || "Impossibile eliminare l'utente."));
+              toastError(err, 'Eliminazione non riuscita');
               setDeletingUser(false);
             }
           }}

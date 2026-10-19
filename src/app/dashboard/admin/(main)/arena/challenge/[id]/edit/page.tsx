@@ -3,14 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Loader2,
-  AlertCircle,
-  Calendar,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Loader2, Calendar, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase/client';
@@ -26,6 +19,8 @@ import AthletesSelector from '@/components/bookings/AthletesSelector';
 import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
 import { CHALLENGE_TYPES } from '@/lib/arena/arenaConstants';
 import { type UserRole } from '@/lib/roles';
+import { toast } from 'sonner';
+import { toastError } from '@/lib/toast';
 
 interface Player {
   id: string;
@@ -107,8 +102,6 @@ export default function AdminEditChallengePage() {
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<BookingEntry | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
@@ -240,7 +233,7 @@ export default function AdminEditChallengePage() {
       }
     } catch (error) {
       console.error('Error loading challenge:', error);
-      setError('Errore nel caricamento della sfida');
+      toast.error('Caricamento non riuscito');
     } finally {
       setLoading(false);
     }
@@ -421,31 +414,28 @@ export default function AdminEditChallengePage() {
   };
 
   async function handleSubmit() {
-    setError('');
-    setSuccess('');
-
     const challenger = selectedParticipants[0]?.userId || '';
     const myPartner = selectedParticipants[1]?.userId || '';
     const opponent = selectedParticipants[2]?.userId || '';
     const opponentPartner = selectedParticipants[3]?.userId || '';
 
     if (!challenger || !opponent) {
-      setError('Seleziona sia lo sfidante che lo sfidato');
+      toast.warning('Seleziona i due giocatori');
       return;
     }
 
     if (challenger === opponent) {
-      setError('Lo sfidante e lo sfidato devono essere persone diverse');
+      toast.warning('Scegli due giocatori diversi');
       return;
     }
 
     if (matchType === 'doubles' && selectedParticipants.length < 4) {
-      setError('Per il doppio devi selezionare 4 partecipanti (2 coppie)');
+      toast.warning('Seleziona 4 giocatori');
       return;
     }
 
     if (selectedSlots.length === 0) {
-      setError('Seleziona almeno uno slot orario');
+      toast.warning('Seleziona un orario');
       return;
     }
 
@@ -455,7 +445,7 @@ export default function AdminEditChallengePage() {
     });
 
     if (unavailableSlots.length > 0) {
-      setError(`Gli slot selezionati non sono disponibili: ${unavailableSlots.join(', ')}`);
+      toast.warning('Orario non più disponibile');
       return;
     }
 
@@ -506,12 +496,10 @@ export default function AdminEditChallengePage() {
         throw new Error(errorData.error || "Errore nell'aggiornamento");
       }
 
-      setSuccess('Sfida aggiornata con successo!');
-      setTimeout(() => {
-        router.push(`/dashboard/admin/arena/challenge/${challengeId}`);
-      }, 1500);
+      toast.success('Sfida aggiornata');
+      router.push(`/dashboard/admin/arena/challenge/${challengeId}`);
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Errore nell'aggiornamento");
+      toastError(error, 'Salvataggio non riuscito');
     } finally {
       setSaving(false);
     }
@@ -675,32 +663,6 @@ export default function AdminEditChallengePage() {
           <h1 className="text-4xl font-bold text-secondary">Modifica Sfida</h1>
         </div>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-red-900">Errore</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Successo</p>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
       <div>
         <div className="space-y-6">
