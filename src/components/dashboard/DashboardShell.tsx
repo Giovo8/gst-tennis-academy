@@ -149,6 +149,7 @@ export default function DashboardShell({
     staff: 'Staff',
     'invite-codes': 'Codici Invito',
     'job-applications': 'Lavora con Noi',
+    feedback: 'Feedback',
     notifications: 'Centro Notifiche',
   };
 
@@ -201,6 +202,7 @@ export default function DashboardShell({
     arena: 'Dettaglio Sfida',
     'invite-codes': 'Dettaglio Codice',
     'job-applications': 'Dettaglio Candidatura',
+    feedback: 'Dettaglio Feedback',
   };
 
   const dashboardRootHref = dashboardItem?.href || '/dashboard';

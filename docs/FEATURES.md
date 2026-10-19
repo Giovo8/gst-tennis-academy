@@ -1,6 +1,6 @@
 # Funzionalità per modulo
 
-Panoramica delle funzionalità della piattaforma, verificate sul codice. Per i dettagli su ruoli e permessi vedi [ROLES.md](ROLES.md); per le API vedi [API.md](API.md); per lo schema dati vedi [DATABASE.md](DATABASE.md).
+Panoramioa delle funzionalità della piattaforma, verifioate sul codice. Per i dettagli su ruoli e permessi vedi [ROLES.md](ROLES.md); per le API vedi [API.md](API.md); per lo schema dati vedi [DATABASE.md](DATABASE.md).
 
 ---
 
@@ -80,6 +80,15 @@ Pagina: `dashboard/admin/invite-codes`. Tabelle: `invite_codes`, `invite_code_us
 Pagina pubblica: `/lavora-con-noi`; gestione in `dashboard/admin/job-applications`. Tabella: `recruitment_applications` (enum `recruitment_role`).
 
 - Form pubblico di candidatura con upload documenti; revisione delle candidature da parte di admin/gestore.
+
+## Feedback
+
+Pagine: `dashboard/atleta/feedback` e `dashboard/maestro/feedback` (invio), `dashboard/admin/feedback` (consultazione). Tabelle: `feedback` (migrazioni 090, 091) e `feedback_risposte` (092).
+
+- Atleti e maestri inviano un consiglio con categoria (suggerimento / problema / altro), titolo e messaggio; vedono i propri invii in lista e ne aprono il dettaglio in una pagina dedicata.
+- Admin/gestore ricevono una notifica a ogni invio e gestiscono i feedback (nuovo → letto, archivia/ripristina, elimina) con lista filtrabile per stato e categoria.
+- Nel dettaglio, admin/gestore e autore si scrivono in una conversazione; ogni risposta notifica l'altra parte e una risposta dell'autore riporta il feedback a "nuovo".
+- Accesso solo via API con service role (`/api/feedback`, `/api/admin/feedback`), senza policy RLS.
 
 ## Staff
 

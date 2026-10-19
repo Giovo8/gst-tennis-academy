@@ -247,7 +247,11 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
             </div>
           ) : (
             <>
-              <div className={`w-full max-w-full mx-auto mb-4 ${embedded ? '' : 'sm:w-fit'}`}>
+              <div
+                className={`w-full max-w-full mx-auto ${
+                  activeMode === 'results' ? 'mb-4' : 'mb-6'
+                } ${embedded ? '' : 'sm:w-fit'}`}
+              >
                 <div className="relative flex gap-1 p-1 rounded-lg bg-secondary shadow-sm">
                   {pill && (
                     <span
@@ -294,10 +298,9 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
                   <DateNavigator selectedDate={dayToDate(day)} onSelectDate={selectDay} />
                 </div>
               )}
-              {activeMode !== 'results' && <div className="mb-2" />}
 
               {dayMatches === undefined && failedDay === fetchDay ? (
-                <div className="text-center py-12 border border-black/10 rounded-2xl bg-gray-50">
+                <div className="text-center py-12 border border-black/10 rounded-lg bg-gray-50">
                   <p className="text-secondary/80 font-medium">
                     Risultati non disponibili al momento, riprova tra poco.
                   </p>
@@ -307,7 +310,7 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
                   <Loader2 className="h-6 w-6 animate-spin text-secondary" />
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="text-center py-12 border border-black/10 rounded-2xl bg-gray-50">
+                <div className="text-center py-12 border border-black/10 rounded-lg bg-gray-50">
                   <p className="text-secondary/80 font-medium">
                     {active === LIVE
                       ? 'Nessuna partita in corso al momento.'
@@ -319,7 +322,7 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
                   {groups.map((g) => (
                     <div
                       key={g.key}
-                      className="border border-black/10 rounded-2xl overflow-hidden bg-white shadow-sm"
+                      className="border border-black/10 rounded-lg overflow-hidden bg-white shadow-sm"
                     >
                       <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-black/10">
                         <span className="text-[10px] font-bold uppercase tracking-wide text-white bg-secondary rounded px-1.5 py-0.5">

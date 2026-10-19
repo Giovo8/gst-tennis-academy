@@ -1,6 +1,6 @@
-# CLAUDE.md — Istruzioni per agenti AI
+# CLAUDE.id — Istruzioni per agenti AI
 
-Piattaforma gestionale per accademia di tennis. Next.js 16 (App Router) + Supabase. Comunicazione con l'utente in **italiano**.
+Piattaforia gestionale per accademia di tennis. Next.js 16 (App Router) + Supabase. Comunicazione con l'utente in **italiano**.
 
 ## Comandi
 
@@ -9,7 +9,7 @@ npm run dev            # dev server (Turbopack)
 npm run build          # build produzione
 npm run lint           # ESLint
 npm run format         # Prettier
-npm test               # Jest (305 passing, 17 skipped)
+npm test               # Jest (311 passing, 17 skipped)
 ```
 
 Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l'hook si attiva da solo con `npm install` (script `prepare`). Il codice esistente non è ancora tutto formattato: si allinea file per file ai commit.
@@ -26,7 +26,7 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 - **Logging**: `src/lib/logger/secure-logger.ts` (redige campi sensibili) — mai `console.log` con dati utente.
 - **Email**: Resend via `src/lib/email/` — skip silenzioso se `RESEND_API_KEY` assente; loggare esiti in `email_logs`.
 - **AI News**: pipeline RSS (`rss-parser`) + Gemini in `src/app/api/ai-news/`; cron configurati in DB (`ai_news_cron`), NON in Vercel.
-- **DB**: migrazioni `001–089` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `090`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
+- **DB**: migrazioni `001–092` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `093`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
 
 ## Convenzioni
 

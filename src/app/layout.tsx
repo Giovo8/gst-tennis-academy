@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
-import ConditionalFooter from '@/components/layout/ConditionalFooter';
 import { defaultMetadata, generateOrganizationSchema } from '@/lib/seo/metadata';
 import AppToaster from '@/components/ui/AppToaster';
 
@@ -55,8 +54,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${urbanist.variable} antialiased font-sans`}>
+        {/* Il footer non sta qui: ogni pagina pubblica lo rende nel proprio
+            contenitore, così resta in fondo e non si duplica durante la navigazione */}
         {children}
-        <ConditionalFooter />
         <AppToaster />
       </body>
     </html>

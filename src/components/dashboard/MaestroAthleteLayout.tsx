@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   Swords,
   Bell,
+  MessageSquarePlus,
 } from 'lucide-react';
 
 interface MaestroAthleteLayoutProps {
@@ -139,6 +140,11 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
       href: '/dashboard/maestro/mail',
       icon: <Mail className="h-5 w-5" />,
       badge: unreadMessages > 0 ? unreadMessages : undefined,
+    },
+    {
+      label: 'Feedback',
+      href: '/dashboard/maestro/feedback',
+      icon: <MessageSquarePlus className="h-5 w-5" />,
     },
     {
       label: 'Centro Notifiche',

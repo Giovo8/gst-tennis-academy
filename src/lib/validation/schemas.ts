@@ -172,4 +172,23 @@ export const createTournamentSchema = z.object({
   description: z.string().max(1000, 'Descrizione troppo lunga').optional(),
 });
 
+// ==================== FEEDBACK ====================
+
+export const FEEDBACK_CATEGORIE = ['suggerimento', 'problema', 'altro'] as const;
+export const FEEDBACK_STATI = ['nuovo', 'letto', 'archiviato'] as const;
+
+export const createFeedbackSchema = z.object({
+  categoria: z.enum(FEEDBACK_CATEGORIE),
+  titolo: z.string().trim().min(3, 'Titolo troppo corto').max(100, 'Titolo troppo lungo'),
+  messaggio: z.string().trim().min(5, 'Messaggio troppo corto').max(2000, 'Messaggio troppo lungo'),
+});
+
+export const createFeedbackRispostaSchema = z.object({
+  messaggio: z.string().trim().min(1, 'Messaggio vuoto').max(2000, 'Messaggio troppo lungo'),
+});
+
+export const updateFeedbackSchema = z.object({
+  stato: z.enum(FEEDBACK_STATI),
+});
+
 // ==================== TYPE EXPORTS ====================

@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import PublicNavbar from "@/components/layout/PublicNavbar";
-import NewsShareButtons from "@/components/news/NewsShareButtons";
-import NewsImage from "@/components/ui/NewsImage";
-import env from "@/lib/config/env";
-import { createClient } from "@/lib/supabase/server";
-import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import PublicNavbar from '@/components/layout/PublicNavbar';
+import Footer from '@/components/layout/Footer';
+import NewsShareButtons from '@/components/news/NewsShareButtons';
+import NewsImage from '@/components/ui/NewsImage';
+import env from '@/lib/config/env';
+import { createClient } from '@/lib/supabase/server';
+import { sanitizeAINewsBody, sanitizeAINewsTitle } from '@/lib/ai-news/contentSanitizer';
 
 type NewsPost = {
   id: string;
@@ -23,34 +24,36 @@ type NewsPost = {
 };
 
 function buildAbsoluteUrl(pathOrUrl: string): string {
-  const baseUrl = env.publicSiteUrl.replace(/\/$/, "");
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+  const baseUrl = env.publicSiteUrl.replace(/\/$/, '');
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
     return pathOrUrl;
   }
-  const normalizedPath = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+  const normalizedPath = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
   return `${baseUrl}${normalizedPath}`;
 }
 
-function isPublishedNews(post: Partial<NewsPost> & { stato?: string | null } | null | undefined): boolean {
+function isPublishedNews(
+  post: (Partial<NewsPost> & { stato?: string | null }) | null | undefined,
+): boolean {
   if (!post) return false;
-  if (typeof post.is_published === "boolean") return post.is_published;
-  return String(post.stato ?? "").toLowerCase() === "pubblicata";
+  if (typeof post.is_published === 'boolean') return post.is_published;
+  return String(post.stato ?? '').toLowerCase() === 'pubblicata';
 }
 
 function normalizeLegacyTitle(title: string): string {
-  return title.replace(/\s*\.\.\.$/, "").trim();
+  return title.replace(/\s*\.\.\.$/, '').trim();
 }
 
 function formatCategoryLabel(category: string | null | undefined): string {
-  const safeCategory = String(category ?? "notizie").trim();
-  if (!safeCategory) return "Notizie";
+  const safeCategory = String(category ?? 'notizie').trim();
+  if (!safeCategory) return 'Notizie';
   return safeCategory.charAt(0).toUpperCase() + safeCategory.slice(1);
 }
 
 function renderBoldText(text: string) {
   const parts = text.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return (
         <strong key={index} className="font-semibold">
           {part.slice(2, -2)}
@@ -65,46 +68,49 @@ async function recoverTitleFromSource(sourceUrl: string): Promise<string | null>
   try {
     const response = await fetch(sourceUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; GST-News/1.0)",
-        Accept: "text/html,application/xhtml+xml",
+        'User-Agent': 'Mozilla/5.0 (compatible; GST-News/1.0)',
+        Accept: 'text/html,application/xhtml+xml',
       },
-      redirect: "follow",
-      cache: "no-store",
+      redirect: 'follow',
+      cache: 'no-store',
     });
 
     if (!response.ok) return null;
 
     const html = await response.text();
-    const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1];
-    const twitterTitle = html.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i)?.[1];
+    const ogTitle = html.match(
+      /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
+    )?.[1];
+    const twitterTitle = html.match(
+      /<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i,
+    )?.[1];
     const documentTitle = html.match(/<title>([^<]+)<\/title>/i)?.[1];
 
-    const candidate = (ogTitle || twitterTitle || documentTitle || "").trim();
+    const candidate = (ogTitle || twitterTitle || documentTitle || '').trim();
     if (!candidate) return null;
 
-    return candidate.replace(/\s*\|\s*.*$/, "").replace(/\s*-\s*.*$/, "").trim();
+    return candidate
+      .replace(/\s*\|\s*.*$/, '')
+      .replace(/\s*-\s*.*$/, '')
+      .trim();
   } catch {
     return null;
   }
 }
 
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return "";
+  if (!dateString) return '';
   const date = new Date(dateString);
   const day = date.getDate();
   const year = date.getFullYear();
-  const month = date.toLocaleDateString("it-IT", { month: "long" });
+  const month = date.toLocaleDateString('it-IT', { month: 'long' });
   const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
   return `${day} ${monthCapitalized} ${year}`;
 };
 
 async function getPublishedNewsById(id: string): Promise<NewsPost | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("news")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error } = await supabase.from('news').select('*').eq('id', id).maybeSingle();
 
   if (error || !data) return null;
   const post = data as NewsPost;
@@ -112,24 +118,26 @@ async function getPublishedNewsById(id: string): Promise<NewsPost | null> {
   return post;
 }
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ id: string }> }
-): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
   const post = await getPublishedNewsById(id);
 
   if (!post) {
     return {
-      title: "News non trovata | GST Tennis Academy",
-      description: "La notizia richiesta non e disponibile.",
+      title: 'News non trovata | GST Tennis Academy',
+      description: 'La notizia richiesta non e disponibile.',
       robots: { index: false, follow: false },
     };
   }
 
-  const title = sanitizeAINewsTitle(post.title || "News");
-  const description = sanitizeAINewsBody(post.excerpt || post.content || "").slice(0, 220);
+  const title = sanitizeAINewsTitle(post.title || 'News');
+  const description = sanitizeAINewsBody(post.excerpt || post.content || '').slice(0, 220);
   const canonicalUrl = buildAbsoluteUrl(`/news/${post.id}`);
-  const defaultOgImageUrl = buildAbsoluteUrl("/images/1.jpeg");
+  const defaultOgImageUrl = buildAbsoluteUrl('/images/1.jpeg');
   const articleImageUrl = post.image_url ? buildAbsoluteUrl(post.image_url) : defaultOgImageUrl;
 
   return {
@@ -139,10 +147,10 @@ export async function generateMetadata(
       canonical: canonicalUrl,
     },
     openGraph: {
-      type: "article",
-      locale: "it_IT",
+      type: 'article',
+      locale: 'it_IT',
       url: canonicalUrl,
-      siteName: "GST Tennis Academy",
+      siteName: 'GST Tennis Academy',
       title,
       description,
       images: [
@@ -162,7 +170,7 @@ export async function generateMetadata(
       publishedTime: post.published_at || post.created_at,
     },
     twitter: {
-      card: "summary_large_image",
+      card: 'summary_large_image',
       title,
       description,
       images: [defaultOgImageUrl],
@@ -170,11 +178,7 @@ export async function generateMetadata(
   };
 }
 
-export default async function NewsDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const post = await getPublishedNewsById(id);
 
@@ -185,43 +189,45 @@ export default async function NewsDetailPage({
   const supabase = await createClient();
 
   const { data: relatedPostsRaw } = await supabase
-    .from("news")
-    .select("*")
-    .eq("category", post.category)
-    .neq("id", id)
-    .order("published_at", { ascending: false })
+    .from('news')
+    .select('*')
+    .eq('category', post.category)
+    .neq('id', id)
+    .order('published_at', { ascending: false })
     .limit(20);
 
   const typedPost = post as NewsPost;
   const sanitizedPost: NewsPost = {
     ...typedPost,
-    title: sanitizeAINewsTitle(typedPost.title || ""),
-    content: sanitizeAINewsBody(typedPost.content || ""),
+    title: sanitizeAINewsTitle(typedPost.title || ''),
+    content: sanitizeAINewsBody(typedPost.content || ''),
     excerpt: typedPost.excerpt ? sanitizeAINewsBody(typedPost.excerpt) : typedPost.excerpt,
   };
   const typedRelated = ((relatedPostsRaw ?? []) as NewsPost[])
     .filter((item) => isPublishedNews(item))
     .slice(0, 3)
     .map((item) => ({
-    ...item,
-    title: sanitizeAINewsTitle(item.title || ""),
-    content: sanitizeAINewsBody(item.content || ""),
-    excerpt: item.excerpt ? sanitizeAINewsBody(item.excerpt) : item.excerpt,
-  }));
+      ...item,
+      title: sanitizeAINewsTitle(item.title || ''),
+      content: sanitizeAINewsBody(item.content || ''),
+      excerpt: item.excerpt ? sanitizeAINewsBody(item.excerpt) : item.excerpt,
+    }));
   const normalizedStoredTitle = normalizeLegacyTitle(sanitizedPost.title);
-  const shouldRecoverTitle = sanitizedPost.title.trim().endsWith("...") && Boolean(sanitizedPost.fonte_url);
-  const recoveredTitle = shouldRecoverTitle && typedPost.fonte_url
-    ? await recoverTitleFromSource(sanitizedPost.fonte_url)
-    : null;
+  const shouldRecoverTitle =
+    sanitizedPost.title.trim().endsWith('...') && Boolean(sanitizedPost.fonte_url);
+  const recoveredTitle =
+    shouldRecoverTitle && typedPost.fonte_url
+      ? await recoverTitleFromSource(sanitizedPost.fonte_url)
+      : null;
   const displayTitle = recoveredTitle || normalizedStoredTitle;
-  const baseUrl = env.publicSiteUrl.replace(/\/$/, "");
+  const baseUrl = env.publicSiteUrl.replace(/\/$/, '');
   const shareUrl = `${baseUrl}/news/${id}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1400px] mx-auto bg-white">
+      <div className="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col">
         <PublicNavbar home flush />
-        <main>
+        <main className="flex-1">
           {/* Hero Image */}
           {sanitizedPost.image_url && (
             <div className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8 pt-6 mb-8">
@@ -246,63 +252,58 @@ export default async function NewsDetailPage({
 
             {/* Meta information */}
             <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-secondary/70">
-              <span className="font-semibold">
-                {formatCategoryLabel(typedPost.category)}
-              </span>
+              <span className="font-semibold">{formatCategoryLabel(typedPost.category)}</span>
               <time dateTime={sanitizedPost.published_at || sanitizedPost.created_at}>
                 {formatDate(sanitizedPost.published_at || sanitizedPost.created_at)}
               </time>
             </div>
 
-          {/* Content */}
-          <div className="prose prose-lg max-w-none text-secondary/90">
-            {sanitizedPost.content.split("\n").map((paragraph, index) => {
-              // Handle markdown-like syntax
-              if (paragraph.startsWith("# ")) {
+            {/* Content */}
+            <div className="prose prose-lg max-w-none text-secondary/90">
+              {sanitizedPost.content.split('\n').map((paragraph, index) => {
+                // Handle markdown-like syntax
+                if (paragraph.startsWith('# ')) {
+                  return (
+                    <h1 key={index} className="text-3xl font-bold text-secondary mt-8 mb-4">
+                      {paragraph.substring(2)}
+                    </h1>
+                  );
+                }
+                if (paragraph.startsWith('## ')) {
+                  return (
+                    <h2 key={index} className="text-2xl font-bold text-secondary mt-6 mb-3">
+                      {paragraph.substring(3)}
+                    </h2>
+                  );
+                }
+                if (paragraph.startsWith('### ')) {
+                  return (
+                    <h3 key={index} className="text-xl font-bold text-secondary mt-4 mb-2">
+                      {paragraph.substring(4)}
+                    </h3>
+                  );
+                }
+                if (paragraph.startsWith('- ')) {
+                  return (
+                    <li key={index} className="ml-6 mb-2">
+                      {renderBoldText(paragraph.substring(2))}
+                    </li>
+                  );
+                }
+                if (paragraph.trim() === '') {
+                  return <br key={index} />;
+                }
                 return (
-                  <h1 key={index} className="text-3xl font-bold text-secondary mt-8 mb-4">
-                    {paragraph.substring(2)}
-                  </h1>
+                  <p key={index} className="mb-4 leading-relaxed">
+                    {renderBoldText(paragraph)}
+                  </p>
                 );
-              }
-              if (paragraph.startsWith("## ")) {
-                return (
-                  <h2 key={index} className="text-2xl font-bold text-secondary mt-6 mb-3">
-                    {paragraph.substring(3)}
-                  </h2>
-                );
-              }
-              if (paragraph.startsWith("### ")) {
-                return (
-                  <h3 key={index} className="text-xl font-bold text-secondary mt-4 mb-2">
-                    {paragraph.substring(4)}
-                  </h3>
-                );
-              }
-              if (paragraph.startsWith("- ")) {
-                return (
-                  <li key={index} className="ml-6 mb-2">
-                    {renderBoldText(paragraph.substring(2))}
-                  </li>
-                );
-              }
-              if (paragraph.trim() === "") {
-                return <br key={index} />;
-              }
-              return (
-                <p
-                  key={index}
-                  className="mb-4 leading-relaxed"
-                >
-                  {renderBoldText(paragraph)}
-                </p>
-              );
-            })}
-          </div>
+              })}
+            </div>
 
-          <div className="mt-8 border-t border-gray-200 pt-6">
-            <NewsShareButtons url={shareUrl} title={displayTitle} />
-          </div>
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <NewsShareButtons url={shareUrl} title={displayTitle} />
+            </div>
           </article>
 
           {/* Related Posts */}
@@ -364,6 +365,7 @@ export default async function NewsDetailPage({
             </section>
           )}
         </main>
+        <Footer flush />
       </div>
     </div>
   );

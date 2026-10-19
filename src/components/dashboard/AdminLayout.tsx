@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Shield,
   Bell,
+  MessageSquarePlus,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -139,6 +140,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Candidature',
       href: '/dashboard/admin/job-applications',
       icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      label: 'Feedback',
+      href: '/dashboard/admin/feedback',
+      icon: <MessageSquarePlus className="h-5 w-5" />,
     },
     {
       label: 'News',

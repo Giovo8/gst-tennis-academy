@@ -15,6 +15,7 @@ import {
   GraduationCap,
   User,
   Bell,
+  MessageSquarePlus,
 } from 'lucide-react';
 
 interface AthleteLayoutProps {
@@ -135,6 +136,11 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: 'Profilo',
       href: '/dashboard/atleta/profile',
       icon: <User className="h-5 w-5" />,
+    },
+    {
+      label: 'Feedback',
+      href: '/dashboard/atleta/feedback',
+      icon: <MessageSquarePlus className="h-5 w-5" />,
     },
     {
       label: 'Centro Notifiche',

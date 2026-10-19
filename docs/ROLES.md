@@ -54,6 +54,7 @@ I vecchi percorsi `/dashboard/coach/*` vengono rediretti a `/dashboard/maestro/*
 | Staff (pagina pubblica)                             | `staff/`            |
 | Codici invito                                       | `invite-codes/`     |
 | Candidature lavora-con-noi                          | `job-applications/` |
+| Feedback di atleti e maestri sulla web app          | `feedback/`         |
 | Arena (gestione sfide e classifica)                 | `(main)/arena/`     |
 | Vista maestro (solo con ruolo secondario `maestro`) | `maestro/`          |
 | Log attività (solo admin)                           | `platform-logs/`    |

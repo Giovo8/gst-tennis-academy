@@ -11,7 +11,7 @@ Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy. Lo schema n
 | `pgcrypto` / `uuid-ossp` | attive di default su Supabase   | `gen_random_uuid()` / `uuid_generate_v4()` per le primary key  |
 | `btree_gist`             | migrazione 047                  | Vincolo di esclusione anti-sovrapposizione su `bookings`       |
 | `pg_cron`                | migrazioni 063, 082 (opzionale) | Generazione notizie AI schedulata, retention `security_events` |
-| `pg_net`                 | migrazione 063 (opzionale)      | Chiamata HTTP dal job cron alla Edge Function `genera-news`    |
+| `pg_net`                 | migrazione 063 (opzionale)      | Chiamata HTTP dal job cron alla Edge eunction `genera-news`    |
 
 ## Enum
 
@@ -30,7 +30,7 @@ Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy. Lo schema n
 
 | Tabella                            | Colonne chiave / note                                                                                                                                                                     |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `profiles`                         | `id` (FK `auth.users`), `email`, `full_name`, `role user_role` (default `atleta`), `avatar_url`, `metadata`; creata automaticamente dal trigger `handle_new_user` (031/043, backfill 067) |
+| `profiles`                         | `id` (eK `auth.users`), `email`, `full_name`, `role user_role` (default `atleta`), `avatar_url`, `metadata`; creata automaticamente dal trigger `handle_new_user` (031/043, backfill 067) |
 | `staff`                            | Membri staff mostrati nella landing: `full_name`, `role`, `bio`, `image_url`, `order_index`, `active`, link social                                                                        |
 | `recruitment_applications`         | Candidature "lavora con noi": `full_name`, `email`, `role recruitment_role`, `message`, `cv_url`, `status`                                                                                |
 | `invite_codes`, `invite_code_uses` | Codici invito con `role`, `max_uses`, `uses_remaining`, `expires_at` e log utilizzi                                                                                                       |
@@ -90,13 +90,15 @@ Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy. Lo schema n
 
 ### Pagamenti, contenuti e log
 
-| Tabella                   | Colonne chiave / note                                                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `payments`                | Pagamenti (corsi, iscrizioni) con supporto ospiti (052, 062); nessun provider di pagamento integrato                    |
-| `notifications`           | Notifiche in-app per utente                                                                                             |
-| `activity_log`            | Log attività applicative (024)                                                                                          |
-| `security_events`         | Anomalie di sicurezza (082), scritta solo con service role; retention 90 giorni via `purge_security_events()` + pg_cron |
-| `email_logs`, `email_log` | Esiti invii Resend: il codice scrive su entrambe (007b/034 e 025)                                                       |
+| Tabella                   | Colonne chiave / note                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `payments`                | Pagamenti (corsi, iscrizioni) con supporto ospiti (052, 062); nessun provider di pagamento integrato                                                                           |
+| `notifications`           | Notifiche in-app per utente                                                                                                                                                    |
+| `activity_log`            | Log attività applicative (024)                                                                                                                                                 |
+| `feedback`                | Feedback di atleti/maestri (090, 091): `categoria`, `titolo`, `messaggio`, `stato` (nuovo/letto/archiviato); RLS abilitata senza policy, accesso solo via API con service role |
+| `feedback_risposte`       | Conversazione sui feedback (092): `feedback_id`, `autore_id`, `messaggio`; RLS senza policy, solo service role                                                                 |
+| `security_events`         | Anomalie di sicurezza (082), scritta solo con service role; retention 90 giorni via `purge_security_events()` + pg_cron                                                        |
+| `email_logs`, `email_log` | Esiti invii Resend: il codice scrive su entrambe (007b/034 e 025)                                                                                                              |
 
 ### Oggetti rimossi dalla migrazione 087
 

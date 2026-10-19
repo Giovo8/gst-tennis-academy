@@ -10,6 +10,7 @@ import TournamentScheduleSection, {
   useScheduledTournamentMatches,
 } from '@/components/tournaments/TournamentScheduleSection';
 import PublicNavbar from '@/components/layout/PublicNavbar';
+import Footer from '@/components/layout/Footer';
 import { Trophy, Users, Target, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
@@ -195,9 +196,9 @@ export default function TournamentDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1400px] mx-auto bg-white min-h-screen">
+        <div className="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col">
           <PublicNavbar home flush />
-          <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+          <main className="w-full flex-1 max-w-7xl mx-auto px-6 lg:px-8 py-12">
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center">
                 <Loader2 className="h-10 w-10 animate-spin text-secondary mx-auto" />
@@ -205,6 +206,7 @@ export default function TournamentDetail() {
               </div>
             </div>
           </main>
+          <Footer flush />
         </div>
       </div>
     );
@@ -213,9 +215,9 @@ export default function TournamentDetail() {
   if (!tournament) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1400px] mx-auto bg-white min-h-screen">
+        <div className="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col">
           <PublicNavbar home flush />
-          <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+          <main className="w-full flex-1 max-w-7xl mx-auto px-6 lg:px-8 py-12">
             <div className="text-center py-16">
               <Trophy className="h-16 w-16 text-secondary/40 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-secondary mb-2">Torneo non trovato</h2>
@@ -231,6 +233,7 @@ export default function TournamentDetail() {
               </button>
             </div>
           </main>
+          <Footer flush />
         </div>
       </div>
     );
@@ -258,7 +261,7 @@ export default function TournamentDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1400px] mx-auto bg-white min-h-screen">
+      <div className="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col">
         <PublicNavbar home flush />
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8 sm:py-10 md:py-12">
@@ -461,6 +464,7 @@ export default function TournamentDetail() {
             />
           )}
         </main>
+        <Footer flush />
       </div>
     </div>
   );

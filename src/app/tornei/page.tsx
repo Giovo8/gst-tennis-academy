@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trophy, Target, Users, Loader2 } from 'lucide-react';
 import PublicNavbar from '@/components/layout/PublicNavbar';
+import Footer from '@/components/layout/Footer';
 
 type Tournament = {
   id: string;
@@ -75,9 +76,9 @@ export default function TorneiPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1400px] mx-auto bg-white min-h-screen">
+      <div className="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col">
         <PublicNavbar home flush />
-        <main>
+        <main className="flex-1">
           <section className="py-12 sm:py-16 md:py-20 bg-white">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
               {/* Header */}
@@ -178,6 +179,7 @@ export default function TorneiPage() {
             </div>
           </section>
         </main>
+        <Footer flush />
       </div>
     </div>
   );

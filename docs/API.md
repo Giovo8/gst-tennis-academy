@@ -117,16 +117,21 @@ La chat delle dashboard (`/dashboard/*/mail`, `/dashboard/admin/chat`) legge e s
 
 ## Utenti e amministrazione
 
-| Route                             | Metodi                   | Auth                     | Descrizione                                                                                                                 |
-| --------------------------------- | ------------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `/api/users`                      | GET                      | Bearer                   | Elenco utenti per prenotazioni/iscrizioni (atleti vedono i maestri prenotabili)                                             |
-| `/api/admin/users`                | GET, POST, PATCH, DELETE | Bearer + admin/gestore   | CRUD utenti; il gestore non può promuovere ad admin né eliminare admin                                                      |
-| `/api/admin/users/reset-password` | POST                     | Bearer + admin/gestore   | Reset password di un utente                                                                                                 |
-| `/api/admin/video-lessons`        | GET                      | Bearer + admin/gestore   | Vista amministrativa delle video-lezioni                                                                                    |
-| `/api/invite-codes/[id]/uses`     | GET                      | Sessione + admin/gestore | Utilizzi di un codice invito                                                                                                |
-| `/api/activity-logs`              | GET                      | Sessione + admin/gestore | Log attività (`activity_log`)                                                                                               |
-| `/api/security-events`            | GET                      | Sessione + admin/gestore | Eventi di sicurezza (`security_events`) + riepilogo IP più attivi nelle 24h. Filtri: `limit` (max 1000), `tipo`, `severita` |
-| `/api/recruitment-applications`   | GET, PATCH, DELETE       | Sessione + admin/gestore | Gestione candidature "lavora con noi"                                                                                       |
+| Route                             | Metodi                   | Auth                              | Descrizione                                                                                                                 |
+| --------------------------------- | ------------------------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/api/users`                      | GET                      | Bearer                            | Elenco utenti per prenotazioni/iscrizioni (atleti vedono i maestri prenotabili)                                             |
+| `/api/admin/users`                | GET, POST, PATCH, DELETE | Bearer + admin/gestore            | CRUD utenti; il gestore non può promuovere ad admin né eliminare admin                                                      |
+| `/api/admin/users/reset-password` | POST                     | Bearer + admin/gestore            | Reset password di un utente                                                                                                 |
+| `/api/admin/video-lessons`        | GET                      | Bearer + admin/gestore            | Vista amministrativa delle video-lezioni                                                                                    |
+| `/api/invite-codes/[id]/uses`     | GET                      | Sessione + admin/gestore          | Utilizzi di un codice invito                                                                                                |
+| `/api/activity-logs`              | GET                      | Sessione + admin/gestore          | Log attività (`activity_log`)                                                                                               |
+| `/api/security-events`            | GET                      | Sessione + admin/gestore          | Eventi di sicurezza (`security_events`) + riepilogo IP più attivi nelle 24h. Filtri: `limit` (max 1000), `tipo`, `severita` |
+| `/api/recruitment-applications`   | GET, PATCH, DELETE       | Sessione + admin/gestore          | Gestione candidature "lavora con noi"                                                                                       |
+| `/api/feedback`                   | GET, POST                | Sessione + atleta/maestro         | Invio feedback sulla web app (notifica gli admin) e lista dei propri                                                        |
+| `/api/feedback/[id]`              | GET                      | Sessione + atleta/maestro         | Dettaglio di un proprio feedback (404 se di un altro utente)                                                                |
+| `/api/feedback/[id]/risposte`     | GET, POST                | Sessione + autore o admin/gestore | Conversazione sul feedback; notifica l'altra parte                                                                          |
+| `/api/admin/feedback`             | GET                      | Sessione + admin/gestore          | Elenco feedback con autore; filtri `stato`, `categoria`                                                                     |
+| `/api/admin/feedback/[id]`        | GET, PATCH, DELETE       | Sessione + admin/gestore          | Dettaglio (segna come letto), cambio stato, eliminazione                                                                    |
 
 ## Contenuti
 
