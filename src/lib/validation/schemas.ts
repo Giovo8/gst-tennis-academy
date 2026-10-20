@@ -191,4 +191,31 @@ export const updateFeedbackSchema = z.object({
   stato: z.enum(FEEDBACK_STATI),
 });
 
+export const AVVISO_TIPI = ['generale', 'evento', 'chiusura', 'importante'] as const;
+
+export const createAvvisoSchema = z.object({
+  tipo: z.enum(AVVISO_TIPI).default('generale'),
+  testo: z.string().trim().min(1, 'Titolo vuoto').max(120, 'Titolo troppo lungo'),
+  messaggio: z.string().trim().max(1000, 'Testo troppo lungo').optional(),
+  visibile_fino: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data non valida')
+    .optional()
+    .or(z.literal('')),
+  // Solo percorsi interni all'app ("/..."), mai URL assoluti o "//host"
+  link: z
+    .string()
+    .trim()
+    .max(300, 'Link troppo lungo')
+    .refine((v) => v === '' || (v.startsWith('/') && !v.startsWith('//')), {
+      message: 'Il link deve essere una pagina del sito (es. /tornei)',
+    })
+    .optional(),
+});
+
+// Modifica parziale: solo i campi presenti nel body vengono aggiornati
+export const updateAvvisoSchema = createAvvisoSchema.partial().extend({
+  attivo: z.boolean().optional(),
+});
+
 // ==================== TYPE EXPORTS ====================

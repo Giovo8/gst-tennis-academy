@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import FeedbackThread from './FeedbackThread';
 import FeedbackBanner from './FeedbackBanner';
+import { segnaFeedbackLetto } from '@/lib/feedback/nonLetti';
 
 interface FeedbackDetailData {
   id: string;
@@ -35,7 +36,10 @@ export default function FeedbackDetail({ basePath }: { basePath: string }) {
         const res = await fetch(`/api/feedback/${id}`);
         if (!res.ok) return;
         const json = await res.json();
-        if (!cancelled) setFeedback(json.feedback ?? null);
+        if (cancelled) return;
+        setFeedback(json.feedback ?? null);
+        // Aperto il dettaglio, le risposte dello staff contano come lette
+        if (json.feedback) segnaFeedbackLetto(id).catch(() => {});
       } finally {
         if (!cancelled) setLoading(false);
       }

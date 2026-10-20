@@ -7,6 +7,7 @@ import { getSessionUser } from '@/lib/auth/clientSession';
 import { CalendarPlus, CalendarClock, Trophy, Video, Swords } from 'lucide-react';
 import WeatherCard from '@/components/dashboard/WeatherCard';
 import AthleteNewsCarousel from '@/components/dashboard/AthleteNewsCarousel';
+import AthleteBacheca from '@/components/dashboard/AthleteBacheca';
 import LiveScoresSection from '@/components/landing/LiveScoresSection';
 
 interface UpcomingBooking {
@@ -187,6 +188,8 @@ export default function AtletaDashboard() {
           </span>
         </div>
       </Link>
+
+      <AthleteBacheca />
 
       <div className={dashboardCardClassName}>
         <div className={dashboardCardHeaderClassName}>

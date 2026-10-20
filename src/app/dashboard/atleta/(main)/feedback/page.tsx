@@ -1,5 +1,5 @@
-import FeedbackForm from '@/components/feedback/FeedbackForm';
+import FeedbackList from '@/components/feedback/FeedbackList';
 
 export default function AtletaFeedbackPage() {
-  return <FeedbackForm basePath="/dashboard/atleta" />;
+  return <FeedbackList basePath="/dashboard/atleta" />;
 }

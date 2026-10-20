@@ -23,6 +23,7 @@ import {
   Shield,
   Bell,
   MessageSquarePlus,
+  Megaphone,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -145,6 +146,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Feedback',
       href: '/dashboard/admin/feedback',
       icon: <MessageSquarePlus className="h-5 w-5" />,
+    },
+    {
+      label: 'Avvisi',
+      href: '/dashboard/admin/avvisi',
+      icon: <Megaphone className="h-5 w-5" />,
     },
     {
       label: 'News',

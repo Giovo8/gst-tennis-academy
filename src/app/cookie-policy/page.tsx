@@ -12,7 +12,7 @@ export default function CookiePolicyPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <PublicNavbar home flush />
 
-      <div className="container mx-auto px-4 py-8 sm:py-12 md:py-16 flex-1">
+      <div className="container w-full mx-auto px-4 py-8 sm:py-12 md:py-16 flex-1">
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-secondary mb-3 sm:mb-4 px-2">
             Cookie Policy

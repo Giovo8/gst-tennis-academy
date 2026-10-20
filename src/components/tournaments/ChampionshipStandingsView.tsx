@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Trophy, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
-import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
+import {
+  countSetsWon,
+  getRetiredPlayer,
+  type PlayerNum,
+  type SetScore,
+} from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
 import Avatar from '@/components/ui/Avatar';
@@ -32,11 +37,15 @@ interface Match {
   winner_id?: string;
   status: string;
   scheduled_at?: string;
+  scheduled_time?: string;
+  updated_at?: string;
 }
 
 interface Standing {
   participant: Participant;
   position: number;
+  /** Partite in calendario per il giocatore (giocate + da giocare) */
+  matchesTotal: number;
   matchesPlayed: number;
   matchesWon: number;
   matchesDrawn: number;
@@ -67,6 +76,15 @@ interface ChampionshipStandingsViewProps {
 /** Ultimi match caricati per torneo: evita lo spinner quando si passa da Classifica a Calendario */
 const MATCHES_CACHE = new Map<string, Match[]>();
 
+/** Differenza con segno esplicito: +3, 0, -2 */
+const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+
+/** Data partita con il mese maiuscolo, come nel live score: "12 Ott 2026" */
+const formatMatchDate = (iso: string) =>
+  new Date(iso)
+    .toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
+    .replace(/\b([a-z])/g, (c) => c.toUpperCase());
+
 export default function ChampionshipStandingsView({
   tournamentId,
   participants,
@@ -82,6 +100,7 @@ export default function ChampionshipStandingsView({
   const [matches, setMatches] = useState<Match[]>(() => MATCHES_CACHE.get(tournamentId) ?? []);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(() => !MATCHES_CACHE.has(tournamentId));
   const [generating, setGenerating] = useState(false);
@@ -140,6 +159,7 @@ export default function ChampionshipStandingsView({
       standingsMap.set(participant.id, {
         participant,
         position: 0,
+        matchesTotal: 0,
         matchesPlayed: 0,
         matchesWon: 0,
         matchesDrawn: 0,
@@ -152,6 +172,14 @@ export default function ChampionshipStandingsView({
         gamesDiff: 0,
         points: 0,
       });
+    });
+
+    matches.forEach((match) => {
+      const p1 = standingsMap.get(match.player1_id);
+      const p2 = standingsMap.get(match.player2_id);
+      if (!p1 || !p2) return;
+      p1.matchesTotal++;
+      p2.matchesTotal++;
     });
 
     // Calculate stats from completed matches
@@ -310,6 +338,43 @@ export default function ChampionshipStandingsView({
     !!highlightUserId &&
     (m.player1?.user_id === highlightUserId || m.player2?.user_id === highlightUserId);
   const hasMyMatches = matches.some(isMyMatch);
+
+  const participantName = (p?: Participant) =>
+    p?.profiles?.full_name || p?.player_name || 'Sconosciuto';
+
+  /** Partite di un giocatore dal suo punto di vista: prima le giocate, poi quelle da giocare */
+  const getPlayerMatches = (participantId: string) =>
+    matches
+      .filter(
+        (m) =>
+          (m.player1_id === participantId || m.player2_id === participantId) &&
+          m.player1 &&
+          m.player2,
+      )
+      .map((m) => {
+        const isP1 = m.player1_id === participantId;
+        const completed = m.status === 'completata' && !!m.winner_id;
+        const retiredNum = completed ? getRetiredPlayer(m, bestOf) : null;
+        return {
+          id: m.id,
+          round: m.round_number,
+          playerName: participantName(isP1 ? m.player1 : m.player2),
+          opponentName: participantName(isP1 ? m.player2 : m.player1),
+          completed,
+          won: completed && m.winner_id === participantId,
+          /** Chi si è ritirato, dal punto di vista del giocatore */
+          retired: retiredNum === null ? null : (retiredNum === 1) === isP1 ? 'me' : 'opponent',
+          sets: (m.sets || []).map(
+            (s) =>
+              (isP1 ? [s.player1_score, s.player2_score] : [s.player2_score, s.player1_score]) as [
+                number,
+                number,
+              ],
+          ),
+          date: m.scheduled_time || m.scheduled_at || (completed ? m.updated_at : null) || null,
+        };
+      })
+      .sort((a, b) => Number(b.completed) - Number(a.completed) || a.round - b.round);
 
   const rounds = getRounds();
   const filteredMatches = onlyMine
@@ -584,67 +649,233 @@ export default function ChampionshipStandingsView({
                 else if (pos === 2) rowBg = '#033247';
                 else if (pos === 3) rowBg = '#033d56';
 
+                const isExpanded = expandedId === standing.participant.id;
+                const playerMatches = isExpanded ? getPlayerMatches(standing.participant.id) : [];
+                const form = playerMatches
+                  .filter((m) => m.completed)
+                  .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
+                  .slice(-5);
+
                 return (
                   <li key={`${standing.participant.id}-${index}`}>
-                    <div
-                      className="flex items-center gap-3 py-3 px-3 rounded-lg"
-                      style={{ background: rowBg }}
-                    >
-                      {/* Posizione */}
-                      <div className="flex-shrink-0 flex items-center justify-center bg-white/10 rounded-lg w-10 h-10">
-                        <span className="text-base font-bold text-white leading-none tabular-nums">
-                          {pos}
-                        </span>
-                      </div>
+                    <div className="rounded-lg overflow-hidden" style={{ background: rowBg }}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : standing.participant.id)}
+                        aria-expanded={isExpanded}
+                        className="w-full text-left flex items-center gap-3 py-3 px-3 hover:bg-white/5 transition-colors"
+                      >
+                        {/* Posizione */}
+                        <div className="flex-shrink-0 flex items-center justify-center bg-white/10 rounded-lg w-10 h-10">
+                          <span className="text-base font-bold text-white leading-none tabular-nums">
+                            {pos}
+                          </span>
+                        </div>
 
-                      {/* Nome */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate flex items-center gap-2">
-                          <span className="truncate">{fullName}</span>
-                          {highlightUserId && standing.participant.user_id === highlightUserId && (
-                            <span
-                              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-white"
-                              aria-label="Sei tu"
-                              title="Sei tu"
-                            />
+                        {/* Nome */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white text-sm truncate flex items-center gap-2">
+                            <span className="truncate">{fullName}</span>
+                            {highlightUserId &&
+                              standing.participant.user_id === highlightUserId && (
+                                <span
+                                  className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-white"
+                                  aria-label="Sei tu"
+                                  title="Sei tu"
+                                />
+                              )}
+                          </p>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                          <div className="text-center">
+                            <p className="text-xs text-white/50 uppercase tracking-wide">PG</p>
+                            <p className="text-sm font-bold tabular-nums text-white/70 whitespace-nowrap">
+                              {standing.matchesPlayed}
+                              <span className="text-white/40 font-semibold">
+                                /{standing.matchesTotal}
+                              </span>
+                            </p>
+                          </div>
+                          <div className="text-center hidden sm:block">
+                            <p className="text-xs text-white/50 uppercase tracking-wide">V</p>
+                            <p className="text-sm font-bold tabular-nums text-white/70">
+                              {standing.matchesWon}
+                            </p>
+                          </div>
+                          <div className="text-center hidden sm:block">
+                            <p className="text-xs text-white/50 uppercase tracking-wide">P</p>
+                            <p className="text-sm font-bold tabular-nums text-white/70">
+                              {standing.matchesLost}
+                            </p>
+                          </div>
+                          <div className="text-center hidden sm:block">
+                            <p className="text-xs text-white/50 uppercase tracking-wide">Set</p>
+                            <p className="text-sm font-bold tabular-nums text-white/70">
+                              {signed(standing.setsDiff)}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-white/50 uppercase tracking-wide">Game</p>
+                            <p className="text-sm font-bold tabular-nums text-white/70">
+                              {signed(standing.gamesDiff)}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-white/50 uppercase tracking-wide">Pt</p>
+                            <p className="text-xl font-bold text-white tabular-nums">
+                              {standing.points}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="border-t border-white/10 px-3 pb-3 pt-3 space-y-4">
+                          {/* Riepilogo */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                              {
+                                label: 'Giocate',
+                                value: `${standing.matchesPlayed}/${standing.matchesTotal}`,
+                              },
+                              {
+                                label: 'Vinte – Perse',
+                                value: `${standing.matchesWon} – ${standing.matchesLost}`,
+                              },
+                              {
+                                label: 'Set',
+                                value: `${standing.setsWon} – ${standing.setsLost}`,
+                                diff: standing.setsDiff,
+                              },
+                              {
+                                label: 'Game',
+                                value: `${standing.gamesWon} – ${standing.gamesLost}`,
+                                diff: standing.gamesDiff,
+                              },
+                            ].map((stat) => (
+                              <div key={stat.label} className="rounded-lg bg-white/10 px-3 py-2">
+                                <p className="text-[11px] text-white/50 uppercase tracking-wide">
+                                  {stat.label}
+                                </p>
+                                <p className="text-sm font-bold tabular-nums text-white">
+                                  {stat.value}
+                                  {stat.diff !== undefined && (
+                                    <span className="ml-1.5 text-xs font-semibold text-white/60">
+                                      ({signed(stat.diff)})
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Forma */}
+                          {form.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <p className="text-[11px] text-white/50 uppercase tracking-wide mr-1">
+                                Forma
+                              </p>
+                              {form.map((m) => (
+                                <span
+                                  key={m.id}
+                                  title={m.won ? 'Vinta' : 'Persa'}
+                                  className={`text-sm tabular-nums ${
+                                    m.won ? 'text-white font-bold' : 'text-white/40'
+                                  }`}
+                                >
+                                  {m.won ? 'V' : 'P'}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                        </p>
-                      </div>
 
-                      {/* Stats */}
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <div className="text-center hidden sm:block">
-                          <p className="text-xs text-white/50 uppercase tracking-wide">PG</p>
-                          <p className="text-sm font-bold tabular-nums text-white">
-                            {standing.matchesPlayed}
-                          </p>
+                          {/* Partite */}
+                          {playerMatches.length > 0 && (
+                            <ul className="divide-y divide-white/10 rounded-lg bg-white/5">
+                              {playerMatches.map((m) => {
+                                // Due righe come nel live score: il giocatore sopra, l'avversario sotto
+                                const lines = [
+                                  {
+                                    name: m.playerName,
+                                    winner: m.won,
+                                    retired: m.retired === 'me',
+                                    games: m.sets,
+                                  },
+                                  {
+                                    name: m.opponentName,
+                                    winner: m.completed && !m.won,
+                                    retired: m.retired === 'opponent',
+                                    games: m.sets.map(([mine, theirs]) => [theirs, mine]),
+                                  },
+                                ];
+                                return (
+                                  <li key={m.id} className="px-3 py-2.5">
+                                    <p className="text-[11px] text-white/50 mb-1">
+                                      Giornata {m.round}
+                                      {m.date && ` · ${formatMatchDate(m.date)}`}
+                                    </p>
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        {lines.map((line, idx) => (
+                                          <div key={idx} className="flex items-center gap-2 h-7">
+                                            <span
+                                              className={`truncate text-sm ${
+                                                m.completed && !line.winner
+                                                  ? 'text-white/40'
+                                                  : 'text-white font-semibold'
+                                              }`}
+                                            >
+                                              {line.name}
+                                            </span>
+                                            {line.retired && (
+                                              <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide text-white/50">
+                                                rit.
+                                              </span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                      {m.completed ? (
+                                        <div className="flex-shrink-0">
+                                          {lines.map((line, idx) => (
+                                            <div key={idx} className="flex items-center gap-1 h-7">
+                                              {line.games.map(([own, other], i) => (
+                                                <span
+                                                  key={i}
+                                                  className={`w-6 text-center text-sm tabular-nums ${
+                                                    own > other
+                                                      ? 'text-white font-bold'
+                                                      : 'text-white/40'
+                                                  }`}
+                                                >
+                                                  {own}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="flex-shrink-0" aria-label="Da giocare">
+                                          {lines.map((_, idx) => (
+                                            <div
+                                              key={idx}
+                                              className="h-7 w-6 flex items-center justify-center text-sm text-white/40"
+                                            >
+                                              -
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
                         </div>
-                        <div className="text-center hidden sm:block">
-                          <p className="text-xs text-white/50 uppercase tracking-wide">V</p>
-                          <p className="text-sm font-bold tabular-nums text-white">
-                            {standing.matchesWon}
-                          </p>
-                        </div>
-                        <div className="text-center hidden sm:block">
-                          <p className="text-xs text-white/50 uppercase tracking-wide">P</p>
-                          <p className="text-sm font-bold tabular-nums text-white">
-                            {standing.matchesLost}
-                          </p>
-                        </div>
-                        <div className="text-center hidden sm:block">
-                          <p className="text-xs text-white/50 uppercase tracking-wide">Set</p>
-                          <p className="text-sm font-bold tabular-nums text-white">
-                            {standing.setsDiff > 0 ? '+' : ''}
-                            {standing.setsDiff}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-white/50 uppercase tracking-wide">Pt</p>
-                          <p className="text-xl font-bold text-white tabular-nums">
-                            {standing.points}
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </li>
                 );

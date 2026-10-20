@@ -264,7 +264,7 @@ export default function TournamentDetail() {
       <div className="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col">
         <PublicNavbar home flush />
 
-        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8 sm:py-10 md:py-12">
+        <main className="w-full flex-1 max-w-7xl mx-auto px-6 lg:px-8 py-8 sm:py-10 md:py-12">
           {/* Header con info torneo */}
           <div
             className="bg-secondary rounded-lg border border-black/10 p-6 border-l-4 mb-6"

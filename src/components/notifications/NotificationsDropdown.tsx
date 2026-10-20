@@ -245,11 +245,11 @@ export default function NotificationsDropdown({
       booking: 'var(--secondary)',
       arena_challenge: 'var(--secondary)',
       arena_challenge_booked: 'var(--secondary)',
-      tournament: '#6d28d9',
+      tournament: '#02283a',
       message: '#0369a1',
-      success: '#15803d',
-      warning: '#b45309',
-      error: '#b91c1c',
+      success: '#034863',
+      warning: '#056c94',
+      error: '#023047',
       announcement: 'var(--secondary)',
     };
 

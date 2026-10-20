@@ -1,14 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Bug, Lightbulb, Loader2, MessageCircle } from 'lucide-react';
 import { toastError } from '@/lib/toast';
 
 type Categoria = 'suggerimento' | 'problema' | 'altro';
 
-interface FeedbackItem {
+export interface FeedbackItem {
   id: string;
   categoria: Categoria;
   titolo: string | null;
@@ -19,35 +20,18 @@ interface FeedbackItem {
 
 const MAX_LENGTH = 2000;
 
-const CATEGORIE: { value: Categoria; label: string; color: string; icon: typeof Bug }[] = [
+export const CATEGORIE: { value: Categoria; label: string; color: string; icon: typeof Bug }[] = [
   { value: 'suggerimento', label: 'Suggerimento', color: '#023047', icon: Lightbulb },
   { value: 'problema', label: 'Problema', color: '#023b52', icon: Bug },
   { value: 'altro', label: 'Altro', color: 'var(--color-frozen-lake-900)', icon: MessageCircle },
 ];
 
 export default function FeedbackForm({ basePath }: { basePath: string }) {
+  const router = useRouter();
   const [categoria, setCategoria] = useState<Categoria>('suggerimento');
   const [titolo, setTitolo] = useState('');
   const [messaggio, setMessaggio] = useState('');
   const [sending, setSending] = useState(false);
-  const [items, setItems] = useState<FeedbackItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadItems = useCallback(async () => {
-    try {
-      const res = await fetch('/api/feedback');
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.feedback ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
 
   const canSubmit = titolo.trim().length >= 3 && messaggio.trim().length >= 5 && !sending;
 
@@ -66,16 +50,14 @@ export default function FeedbackForm({ basePath }: { basePath: string }) {
 
       if (!res.ok) {
         toastError(json.error, 'Invio non riuscito');
+        setSending(false);
         return;
       }
 
       toast.success('Feedback inviato, grazie!');
-      setTitolo('');
-      setMessaggio('');
-      if (json.feedback) setItems((prev) => [json.feedback, ...prev]);
+      router.push(`${basePath}/feedback`);
     } catch (error) {
       toastError(error, 'Invio non riuscito');
-    } finally {
       setSending(false);
     }
   };
@@ -84,8 +66,14 @@ export default function FeedbackForm({ basePath }: { basePath: string }) {
     <div className="space-y-6 pt-3">
       {/* Header */}
       <div>
-        <p className="breadcrumb text-secondary/60">Feedback</p>
-        <h1 className="text-4xl font-bold text-secondary">Feedback</h1>
+        <p className="breadcrumb text-secondary/60">
+          <Link href={`${basePath}/feedback`} className="hover:text-secondary/80">
+            Feedback
+          </Link>
+          {' › '}
+          <span>Nuovo Feedback</span>
+        </p>
+        <h1 className="text-4xl font-bold text-secondary">Nuovo Feedback</h1>
       </div>
 
       <form onSubmit={submit} className="space-y-6">
@@ -163,49 +151,6 @@ export default function FeedbackForm({ basePath }: { basePath: string }) {
           </button>
         )}
       </form>
-
-      <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">I tuoi feedback</h2>
-        </div>
-        <div className="p-6 space-y-3">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-secondary" />
-            </div>
-          ) : items.length === 0 ? (
-            <p className="rounded-lg bg-white p-6 text-center text-secondary/60">
-              Non hai ancora inviato feedback
-            </p>
-          ) : (
-            items.map((item) => {
-              const cat = CATEGORIE.find((c) => c.value === item.categoria) ?? CATEGORIE[2];
-              const Icon = cat.icon;
-              return (
-                <Link
-                  key={item.id}
-                  href={`${basePath}/feedback/${item.id}`}
-                  className="w-full flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-95 transition-opacity"
-                  style={{ background: cat.color }}
-                >
-                  <div className="flex items-center justify-center bg-white/10 rounded-lg w-11 h-11 flex-shrink-0">
-                    <Icon className="h-5 w-5 text-white" strokeWidth={2} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-sm truncate">
-                      {item.titolo || item.messaggio}
-                    </p>
-                    {item.titolo && (
-                      <p className="text-xs text-white/70 mt-0.5 truncate">{item.messaggio}</p>
-                    )}
-                  </div>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      </div>
     </div>
   );
 }

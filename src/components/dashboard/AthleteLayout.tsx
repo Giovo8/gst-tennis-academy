@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardShell, { NavItem } from '@/components/dashboard/DashboardShell';
 import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
+import { FEEDBACK_READ_EVENT, getFeedbackNonLetti } from '@/lib/feedback/nonLetti';
 import {
   Calendar,
   Trophy,
@@ -28,6 +29,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
   const [userEmail, setUserEmail] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string>('');
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadFeedback, setUnreadFeedback] = useState(0);
 
   useEffect(() => {
     // Shell e pagina vengono mostrati subito: profilo, controllo ruolo e messaggi
@@ -48,6 +50,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       const [{ data: profile }] = await Promise.all([
         supabase.from('profiles').select('full_name, role, avatar_url').eq('id', user.id).single(),
         isViewAsRequest ? Promise.resolve() : loadUnreadMessages(user.id),
+        isViewAsRequest ? Promise.resolve() : loadUnreadFeedback(),
       ]);
 
       // Gli admin possono aprire le pagine atleta solo in modalità "vedi come" (?viewAs=<id>)
@@ -81,17 +84,30 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       }
     }
 
+    async function loadUnreadFeedback() {
+      try {
+        const nonLetti = await getFeedbackNonLetti();
+        let total = 0;
+        nonLetti.forEach((n) => (total += n));
+        setUnreadFeedback(total);
+      } catch {
+        // badge non essenziale
+      }
+    }
+
     // Listen for message read events
     const handleMessageRead = async () => {
       await loadUnreadMessages();
     };
 
     window.addEventListener('messageRead', handleMessageRead);
+    window.addEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
 
     loadUser();
 
     return () => {
       window.removeEventListener('messageRead', handleMessageRead);
+      window.removeEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
     };
   }, [router]);
 
@@ -130,7 +146,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: 'Chat',
       href: '/dashboard/atleta/mail',
       icon: <MessageSquare className="h-5 w-5" />,
-      badge: unreadMessages > 0 ? unreadMessages : undefined,
+      dot: unreadMessages > 0,
     },
     {
       label: 'Profilo',
@@ -141,6 +157,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: 'Feedback',
       href: '/dashboard/atleta/feedback',
       icon: <MessageSquarePlus className="h-5 w-5" />,
+      dot: unreadFeedback > 0,
     },
     {
       label: 'Centro Notifiche',

@@ -104,7 +104,7 @@ export default function FeedbackThread({
   return (
     <div className="page-card overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-        <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggi</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-secondary">Chat</h2>
       </div>
 
       <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto p-4 bg-white space-y-4">

@@ -16,6 +16,8 @@ export interface NavItem {
   href: string;
   icon: ReactNode;
   badge?: number;
+  /** Puntino "da leggere" al posto del numero */
+  dot?: boolean;
   children?: NavItem[];
   separatorAfter?: boolean;
 }
@@ -150,6 +152,7 @@ export default function DashboardShell({
     'invite-codes': 'Codici Invito',
     'job-applications': 'Lavora con Noi',
     feedback: 'Feedback',
+    avvisi: 'Avvisi',
     notifications: 'Centro Notifiche',
   };
 
@@ -203,6 +206,7 @@ export default function DashboardShell({
     'invite-codes': 'Dettaglio Codice',
     'job-applications': 'Dettaglio Candidatura',
     feedback: 'Dettaglio Feedback',
+    avvisi: 'Dettaglio Avviso',
   };
 
   const dashboardRootHref = dashboardItem?.href || '/dashboard';
@@ -235,11 +239,18 @@ export default function DashboardShell({
   });
 
   const isAdminUsersNewPath = pathname === '/dashboard/admin/users/new';
+  const isAdminAvvisiNewPath = pathname === '/dashboard/admin/avvisi/new';
   const desktopHeaderCrumbs = isAdminUsersNewPath
     ? [
         { label: 'Dashboard', href: dashboardRootHref },
         { label: 'Utenti', href: `${dashboardRootHref}/users` },
         { label: 'Nuovo Utente', href: `${dashboardRootHref}/users/new` },
+      ]
+    : isAdminAvvisiNewPath
+    ? [
+        { label: 'Dashboard', href: dashboardRootHref },
+        { label: 'Avvisi', href: `${dashboardRootHref}/avvisi` },
+        { label: 'Nuovo Avviso', href: `${dashboardRootHref}/avvisi/new` },
       ]
     : desktopCrumbs;
 
@@ -345,6 +356,14 @@ export default function DashboardShell({
                     >
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
+                  )}
+                  {item.dot && (
+                    <span
+                      className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                        active ? 'bg-white' : 'bg-(--secondary) group-hover:bg-white'
+                      }`}
+                      aria-label="Da leggere"
+                    />
                   )}
                 </Link>
                 {index === 0 && <div className="my-2 border-t border-black/10" />}
@@ -462,6 +481,14 @@ export default function DashboardShell({
                       >
                         {item.badge > 99 ? '99+' : item.badge}
                       </span>
+                    )}
+                    {!sidebarCollapsed && item.dot && (
+                      <span
+                        className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                          active ? 'bg-white' : 'bg-(--secondary) group-hover:bg-white'
+                        }`}
+                        aria-label="Da leggere"
+                      />
                     )}
                   </Link>
                   {index === 0 && <div className="my-2 border-t border-black/10" />}

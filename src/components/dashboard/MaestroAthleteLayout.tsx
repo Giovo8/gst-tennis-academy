@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardShell, { NavItem } from '@/components/dashboard/DashboardShell';
 import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
+import { FEEDBACK_READ_EVENT, getFeedbackNonLetti } from '@/lib/feedback/nonLetti';
 import { getSecondaryRoles } from '@/lib/roles';
 import {
   Calendar,
@@ -29,6 +30,7 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
   const [userEmail, setUserEmail] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string>('');
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadFeedback, setUnreadFeedback] = useState(0);
 
   useEffect(() => {
     // Shell e pagina vengono mostrati subito: profilo, controllo ruolo e messaggi
@@ -52,6 +54,7 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
           .eq('id', user.id)
           .single(),
         loadUnreadMessages(user.id),
+        loadUnreadFeedback(),
       ]);
 
       const secondaryRoles = getSecondaryRoles(profile?.metadata);
@@ -85,17 +88,30 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
       }
     }
 
+    async function loadUnreadFeedback() {
+      try {
+        const nonLetti = await getFeedbackNonLetti();
+        let total = 0;
+        nonLetti.forEach((n) => (total += n));
+        setUnreadFeedback(total);
+      } catch {
+        // badge non essenziale
+      }
+    }
+
     // Listen for message read events
     const handleMessageRead = async () => {
       await loadUnreadMessages();
     };
 
     window.addEventListener('messageRead', handleMessageRead);
+    window.addEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
 
     loadUser();
 
     return () => {
       window.removeEventListener('messageRead', handleMessageRead);
+      window.removeEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
     };
   }, [router]);
 
@@ -139,12 +155,13 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
       label: 'Chat',
       href: '/dashboard/maestro/mail',
       icon: <Mail className="h-5 w-5" />,
-      badge: unreadMessages > 0 ? unreadMessages : undefined,
+      dot: unreadMessages > 0,
     },
     {
       label: 'Feedback',
       href: '/dashboard/maestro/feedback',
       icon: <MessageSquarePlus className="h-5 w-5" />,
+      dot: unreadFeedback > 0,
     },
     {
       label: 'Centro Notifiche',

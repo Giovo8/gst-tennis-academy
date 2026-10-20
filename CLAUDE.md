@@ -26,7 +26,7 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 - **Logging**: `src/lib/logger/secure-logger.ts` (redige campi sensibili) — mai `console.log` con dati utente.
 - **Email**: Resend via `src/lib/email/` — skip silenzioso se `RESEND_API_KEY` assente; loggare esiti in `email_logs`.
 - **AI News**: pipeline RSS (`rss-parser`) + Gemini in `src/app/api/ai-news/`; cron configurati in DB (`ai_news_cron`), NON in Vercel.
-- **DB**: migrazioni `001–092` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `093`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
+- **DB**: migrazioni `001–095` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `096`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
 
 ## Convenzioni
 

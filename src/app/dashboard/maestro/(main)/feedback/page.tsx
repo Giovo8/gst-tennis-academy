@@ -1,5 +1,5 @@
-import FeedbackForm from '@/components/feedback/FeedbackForm';
+import FeedbackList from '@/components/feedback/FeedbackList';
 
 export default function MaestroFeedbackPage() {
-  return <FeedbackForm basePath="/dashboard/maestro" />;
+  return <FeedbackList basePath="/dashboard/maestro" />;
 }
