@@ -65,6 +65,10 @@ export async function middleware(request: NextRequest) {
   }
   // --- Fine rate limiting ---
 
+  // Le API si autenticano col Bearer token (verifyAuth): il refresh della
+  // sessione via cookie qui sarebbe solo un round-trip in più verso Supabase Auth.
+  if (isApiRoute) return NextResponse.next();
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -90,9 +94,12 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Refresh session if the access token has expired.
-  // This keeps the session alive across requests.
-  await supabase.auth.getUser();
+  // Rinnova la sessione se l'access token è scaduto, mantenendola viva tra le
+  // richieste. getClaims() verifica il JWT in locale (chiavi asimmetriche) e va
+  // in rete solo per il refresh; getUser() interrogava Supabase Auth ogni volta.
+  // Il middleware non decide nulla sui permessi: la protezione resta in
+  // verifyAuth e nella RLS.
+  await supabase.auth.getClaims();
 
   return supabaseResponse;
 }

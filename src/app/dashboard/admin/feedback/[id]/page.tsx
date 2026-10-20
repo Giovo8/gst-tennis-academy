@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { toastError } from '@/lib/toast';
 import FeedbackThread from '@/components/feedback/FeedbackThread';
 import FeedbackBanner from '@/components/feedback/FeedbackBanner';
+import { segnaFeedbackLetto } from '@/lib/feedback/nonLetti';
 
 interface FeedbackDetail {
   id: string;
@@ -42,6 +43,8 @@ export default function AdminFeedbackDetailPage() {
         if (!res.ok) return;
         const json = await res.json();
         if (!cancelled) setFeedback(json.feedback ?? null);
+        // Notifiche "nuovo feedback"/risposte di questo thread: lette, il puntino in nav bar si aggiorna
+        void segnaFeedbackLetto(id);
       } finally {
         if (!cancelled) setLoading(false);
       }

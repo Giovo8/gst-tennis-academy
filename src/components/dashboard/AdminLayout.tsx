@@ -6,6 +6,7 @@ import DashboardShell, { NavItem } from '@/components/dashboard/DashboardShell';
 import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { getSecondaryRoles } from '@/lib/roles';
+import { FEEDBACK_READ_EVENT, getFeedbackNonLetti } from '@/lib/feedback/nonLetti';
 import {
   LayoutGrid,
   Calendar,
@@ -39,6 +40,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [userRole, setUserRole] = useState<'admin' | 'gestore' | null>(null);
   const [userId, setUserId] = useState<string>('');
   const [hasSecondaryMaestroRole, setHasSecondaryMaestroRole] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadFeedback, setUnreadFeedback] = useState(0);
 
   useEffect(() => {
     async function loadUser() {
@@ -54,11 +57,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setUserEmail(user.email || '');
       setUserId(user.id);
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, role, avatar_url, metadata')
-        .eq('id', user.id)
-        .single();
+      // Badge non letti in parallelo al profilo (i dati restano protetti dalla RLS)
+      const [{ data: profile }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, role, avatar_url, metadata')
+          .eq('id', user.id)
+          .single(),
+        loadUnreadMessages(user.id),
+        loadUnreadFeedback(),
+      ]);
 
       if (!profile || (profile.role !== 'admin' && profile.role !== 'gestore')) {
         router.replace('/login');
@@ -73,7 +81,45 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setHasSecondaryMaestroRole(secondaryRoles.includes('maestro'));
     }
 
+    async function loadUnreadMessages(knownUserId?: string) {
+      try {
+        const userId = knownUserId ?? (await getSessionUser()).data.user?.id;
+        if (!userId) return;
+
+        const { count, error } = await supabase
+          .from('internal_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('recipient_id', userId)
+          .eq('is_read', false);
+
+        if (!error) setUnreadMessages(count || 0);
+      } catch {
+        // badge non essenziale
+      }
+    }
+
+    async function loadUnreadFeedback() {
+      try {
+        const nonLetti = await getFeedbackNonLetti();
+        let total = 0;
+        nonLetti.forEach((n) => (total += n));
+        setUnreadFeedback(total);
+      } catch {
+        // badge non essenziale
+      }
+    }
+
+    const handleMessageRead = () => loadUnreadMessages();
+
+    window.addEventListener('messageRead', handleMessageRead);
+    window.addEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
+
     loadUser();
+
+    return () => {
+      window.removeEventListener('messageRead', handleMessageRead);
+      window.removeEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
+    };
   }, [router]);
 
   const navItems: NavItem[] = [
@@ -125,6 +171,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Chat',
       href: '/dashboard/admin/chat',
       icon: <Mail className="h-5 w-5" />,
+      dot: unreadMessages > 0,
     },
     {
       label: 'Utenti',
@@ -146,6 +193,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Feedback',
       href: '/dashboard/admin/feedback',
       icon: <MessageSquarePlus className="h-5 w-5" />,
+      dot: unreadFeedback > 0,
     },
     {
       label: 'Avvisi',
