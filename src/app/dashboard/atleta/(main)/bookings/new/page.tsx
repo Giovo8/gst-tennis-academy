@@ -97,6 +97,7 @@ function NewBookingPageInner() {
 
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [occupations, setOccupations] = useState<{ start_time: string; end_time: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   // Drag to scroll
@@ -389,6 +390,7 @@ function NewBookingPageInner() {
     }
 
     setSlots(generatedSlots);
+    setOccupations(allOccupations);
     setLoadingSlots(false);
   }
 
@@ -801,6 +803,34 @@ function NewBookingPageInner() {
                     className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative"
                     style={{ minHeight: '70px' }}
                   >
+                    {/* Occupazioni esistenti come blocchi sovrapposti */}
+                    {selectedCourt &&
+                      occupations.map((occupation, index) => {
+                        const start = new Date(occupation.start_time);
+                        const end = new Date(occupation.end_time);
+                        const startSlot =
+                          (start.getHours() - 7) * 2 + (start.getMinutes() === 30 ? 1 : 0);
+                        const endSlot =
+                          (end.getHours() - 7) * 2 + (end.getMinutes() === 30 ? 1 : 0);
+                        const duration = endSlot - startSlot;
+                        if (duration <= 0) return null;
+
+                        return (
+                          <div
+                            key={`${occupation.start_time}-${index}`}
+                            className="absolute rounded-lg z-10 bg-[#9ca3af] cursor-not-allowed"
+                            style={{
+                              left: `${(startSlot / 32) * 100}%`,
+                              width: `calc(${(duration / 32) * 100}% - 4px)`,
+                              top: '4px',
+                              bottom: '4px',
+                              marginLeft: '2px',
+                            }}
+                            title="Occupato"
+                          />
+                        );
+                      })}
+
                     {/* Slot cliccabili */}
                     {Array.from({ length: 16 }, (_, hourIndex) => {
                       const hour = 7 + hourIndex;
