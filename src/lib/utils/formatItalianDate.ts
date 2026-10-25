@@ -13,37 +13,27 @@ function capitalize(value: string): string {
  */
 export function formatShortItalianDate(dateStr: string): string {
   const date = new Date(dateStr);
-  const weekday = capitalize(date.toLocaleDateString("it-IT", { weekday: "short" }));
+  const weekday = capitalize(date.toLocaleDateString('it-IT', { weekday: 'short' }));
   const day = date.getDate();
-  const month = capitalize(date.toLocaleDateString("it-IT", { month: "short" }));
+  const month = capitalize(date.toLocaleDateString('it-IT', { month: 'short' }));
   return `${weekday} ${day} ${month}`;
-}
-
-/**
- * "08:30" — orario locale italiano.
- */
-export function formatItalianTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString("it-IT", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 /**
  * "Lunedì 7 Aprile 2026" — usato nei modali con la data per esteso.
  */
 export function formatLongItalianDate(dateString: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+  return new Intl.DateTimeFormat('it-IT', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   })
     .formatToParts(new Date(dateString))
     .map((part) =>
-      (part.type === "weekday" || part.type === "month") && part.value.length > 0
+      (part.type === 'weekday' || part.type === 'month') && part.value.length > 0
         ? capitalize(part.value)
-        : part.value
+        : part.value,
     )
-    .join("");
+    .join('');
 }

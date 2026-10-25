@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase/serverClient';
 import { getRouteAuth, unauthorized } from '@/lib/auth/routeAuth';
 import { sanitizeUuid } from '@/lib/security/sanitize-server';
 import logger from '@/lib/logger/secure-logger';
+import { upsertChatNotifications } from '@/lib/notifications/chatNotifications';
 
 const SERVER_ERROR = 'Errore interno del server';
 const MAX_TITLE = 200;
@@ -55,6 +56,16 @@ export async function POST(request: NextRequest) {
       link.length <= 500
         ? link
         : null;
+
+    // Messaggi chat: una sola notifica non letta per conversazione
+    if (safeType === 'message' && safeLink) {
+      await upsertChatNotifications(
+        [{ userId: user_id, link: safeLink }],
+        title.trim(),
+        message.trim(),
+      );
+      return NextResponse.json({ success: true });
+    }
 
     const { data, error } = await supabaseServer
       .from('notifications')

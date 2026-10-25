@@ -2,7 +2,7 @@
  * Shared test types
  */
 
-export type UserRole = "atleta" | "maestro" | "gestore" | "admin";
+export type UserRole = 'atleta' | 'maestro' | 'gestore' | 'admin';
 
 export interface User {
   id: string;
@@ -38,4 +38,5 @@ export interface Enrollment {
 export interface Tournament {
   id: string;
   created_by: string;
+  status?: string;
 }

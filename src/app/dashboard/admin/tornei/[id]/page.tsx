@@ -364,7 +364,7 @@ function AdminTournamentDetailInner() {
 
       // Prima elimina i match esistenti
       const deleteRes = await fetch(`/api/tournaments/${id}/delete-matches`, {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
         },

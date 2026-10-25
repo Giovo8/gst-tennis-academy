@@ -508,8 +508,23 @@ export default function UserProfilePage({ basePath = '/dashboard/admin' }: UserP
               return;
             setDeletingUser(true);
             try {
-              const { error } = await supabase.from('profiles').delete().eq('id', userId);
-              if (error) throw error;
+              // Via API: elimina anche l'account Auth, non solo il profilo
+              const {
+                data: { session },
+              } = await supabase.auth.getSession();
+              if (!session?.access_token) throw new Error('Sessione scaduta, accedi di nuovo');
+
+              const response = await fetch(
+                `/api/admin/users?userId=${encodeURIComponent(userId)}`,
+                {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                },
+              );
+              if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data?.error || 'Eliminazione non riuscita');
+              }
               toast.success('Utente eliminato');
               router.push(`${basePath}/users`);
             } catch (err) {

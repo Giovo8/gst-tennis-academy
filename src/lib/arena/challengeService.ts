@@ -4,7 +4,8 @@
  * HTTP concerns (auth, validation, request/response shaping).
  */
 
-import { supabaseServer } from "@/lib/supabase/serverClient";
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import logger from '@/lib/logger/secure-logger';
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -13,13 +14,13 @@ async function fetchEnrichedProfiles(userIds: string[]) {
 
   const [profilesResult, arenaStatsResult] = await Promise.all([
     supabaseServer
-      .from("profiles")
-      .select("id, full_name, avatar_url, email, phone")
-      .in("id", userIds),
+      .from('profiles')
+      .select('id, full_name, avatar_url, email, phone')
+      .in('id', userIds),
     supabaseServer
-      .from("arena_stats")
-      .select("user_id, ranking, points, level")
-      .in("user_id", userIds),
+      .from('arena_stats')
+      .select('user_id, ranking, points, level')
+      .in('user_id', userIds),
   ]);
 
   const profiles = profilesResult.data || [];
@@ -47,9 +48,9 @@ async function fetchEnrichedProfiles(userIds: string[]) {
  */
 export async function fetchEnrichedChallenge(challengeId: string) {
   const { data: challenge, error } = await supabaseServer
-    .from("arena_challenges")
-    .select("*")
-    .eq("id", challengeId)
+    .from('arena_challenges')
+    .select('*')
+    .eq('id', challengeId)
     .single();
 
   if (error) throw error;
@@ -67,9 +68,9 @@ export async function fetchEnrichedChallenge(challengeId: string) {
   let booking = null;
   if (challenge.booking_id) {
     const { data: bookingData } = await supabaseServer
-      .from("bookings")
-      .select("id, court, start_time, end_time, status")
-      .eq("id", challenge.booking_id)
+      .from('bookings')
+      .select('id, court, start_time, end_time, status')
+      .eq('id', challenge.booking_id)
       .single();
     booking = bookingData;
   }
@@ -88,19 +89,16 @@ export async function fetchEnrichedChallenge(challengeId: string) {
  * Fetch the challenge list for a user (or all), enriched with profiles and bookings.
  * Also runs two side-effect transitions: auto-cancel expired pending challenges,
  * and auto-transition accepted challenges past their booking time to awaiting_score.
- * Returns the enriched list (never throws — errors surface through console.error).
+ * Returns the enriched list; the two transitions never make it fail (errors are only logged).
  */
-export async function fetchEnrichedChallenges(
-  userId?: string | null,
-  status?: string | null,
-) {
+export async function fetchEnrichedChallenges(userId?: string | null, status?: string | null) {
   let query = supabaseServer
-    .from("arena_challenges")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .from('arena_challenges')
+    .select('*')
+    .order('created_at', { ascending: false });
 
   if (userId) query = query.or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`);
-  if (status) query = query.eq("status", status);
+  if (status) query = query.eq('status', status);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -122,10 +120,19 @@ export async function fetchEnrichedChallenges(
     fetchEnrichedProfiles(userIds),
     bookingIds.length > 0
       ? supabaseServer
-          .from("bookings")
-          .select("id, court, start_time, end_time, status")
-          .in("id", bookingIds)
-      : Promise.resolve({ data: [] as { id: string; court: string; start_time: string; end_time: string; status: string }[], error: null }),
+          .from('bookings')
+          .select('id, court, start_time, end_time, status')
+          .in('id', bookingIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            court: string;
+            start_time: string;
+            end_time: string;
+            status: string;
+          }[],
+          error: null,
+        }),
   ]);
 
   const bookings = bookingsResult.data || [];
@@ -141,27 +148,27 @@ export async function fetchEnrichedChallenges(
 
   // Auto-cancel pending challenges whose scheduled date has passed
   const toCancel = enriched.filter(
-    (c) => c.status === "pending" && c.scheduled_date && new Date(c.scheduled_date) < now,
+    (c) => c.status === 'pending' && c.scheduled_date && new Date(c.scheduled_date) < now,
   );
   if (toCancel.length > 0) {
     try {
       const cancelIds = toCancel.map((c) => c.id);
       await supabaseServer
-        .from("arena_challenges")
-        .update({ status: "cancelled" })
-        .in("id", cancelIds);
+        .from('arena_challenges')
+        .update({ status: 'cancelled' })
+        .in('id', cancelIds);
       const cancelSet = new Set(cancelIds);
       enriched.forEach((c) => {
-        if (cancelSet.has(c.id)) c.status = "cancelled";
+        if (cancelSet.has(c.id)) c.status = 'cancelled';
       });
     } catch (err) {
-      console.error("Error auto-cancelling expired challenges:", err);
+      logger.error('Error auto-cancelling expired challenges', err);
     }
   }
 
   // Auto-transition accepted challenges to awaiting_score when booking/date has passed
   const toAwaitScore = enriched.filter((c) => {
-    if (c.status !== "accepted") return false;
+    if (c.status !== 'accepted') return false;
     const refDate = c.booking?.start_time || c.scheduled_date;
     return refDate && new Date(refDate) < now;
   });
@@ -169,15 +176,15 @@ export async function fetchEnrichedChallenges(
     try {
       const ids = toAwaitScore.map((c) => c.id);
       await supabaseServer
-        .from("arena_challenges")
-        .update({ status: "awaiting_score" })
-        .in("id", ids);
+        .from('arena_challenges')
+        .update({ status: 'awaiting_score' })
+        .in('id', ids);
       const awaitingSet = new Set(ids);
       enriched.forEach((c) => {
-        if (awaitingSet.has(c.id)) c.status = "awaiting_score";
+        if (awaitingSet.has(c.id)) c.status = 'awaiting_score';
       });
     } catch (err) {
-      console.error("❌ Error auto-transitioning to awaiting_score:", err);
+      logger.error('Error auto-transitioning to awaiting_score', err);
     }
   }
 
@@ -215,60 +222,70 @@ export async function notifyOpponentOfNewChallenge({
 }: NewChallengeNotifParams): Promise<void> {
   try {
     const [challengerResult, opponentResult] = await Promise.all([
-      supabaseServer.from("profiles").select("full_name").eq("id", challengerId).single(),
-      supabaseServer.from("profiles").select("role").eq("id", opponentId).single(),
+      supabaseServer.from('profiles').select('full_name').eq('id', challengerId).single(),
+      supabaseServer.from('profiles').select('role').eq('id', opponentId).single(),
     ]);
 
     const challenger = challengerResult.data;
     const opponent = opponentResult.data;
 
-    const opponentDashboard = opponent?.role === "maestro" ? "maestro" : "atleta";
+    const opponentDashboard = opponent?.role === 'maestro' ? 'maestro' : 'atleta';
     const hasBookedCourt = Boolean(bookingId);
-    const notificationType = hasBookedCourt ? "arena_challenge_booked" : "arena_challenge";
+    const notificationType = hasBookedCourt ? 'arena_challenge_booked' : 'arena_challenge';
     const notificationTitle = hasBookedCourt
-      ? "🎾 Sfida Arena con Campo Prenotato!"
-      : "🏆 Nuova Sfida Arena!";
+      ? '🎾 Sfida Arena con Campo Prenotato!'
+      : '🏆 Nuova Sfida Arena!';
 
-    const challengeTypeLabel = challengeType === "amichevole" ? "Amichevole" : "Ranked";
-    const matchTypeLabel = matchType === "doppio" ? "Doppio" : "Singolo";
+    const challengeTypeLabel = challengeType === 'amichevole' ? 'Amichevole' : 'Ranked';
+    const matchTypeLabel = matchType === 'doppio' ? 'Doppio' : 'Singolo';
 
     const details: string[] = [];
     if (court) details.push(`Campo: ${court}`);
     if (scheduledDate) {
       const scheduled = new Date(scheduledDate);
+      // Fuso esplicito: lato server (Vercel) l'ora locale è UTC
       details.push(
-        `Data: ${scheduled.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`,
+        `Data: ${scheduled.toLocaleDateString('it-IT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          timeZone: 'Europe/Rome',
+        })}`,
       );
       details.push(
-        `Ora: ${scheduled.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`,
+        `Ora: ${scheduled.toLocaleTimeString('it-IT', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Europe/Rome',
+        })}`,
       );
     }
     details.push(`Tipo: ${challengeTypeLabel}`);
     details.push(`Match: ${matchTypeLabel}`);
 
-    const detailsSuffix = details.length > 0 ? ` (${details.join(" · ")})` : "";
-    const challengerName = challenger?.full_name || "Un atleta";
+    const detailsSuffix = details.length > 0 ? ` (${details.join(' · ')})` : '';
+    const challengerName = challenger?.full_name || 'Un atleta';
 
     const notificationMessage = hasBookedCourt
       ? message
         ? `${challengerName} ti ha sfidato e ha gia prenotato il campo!${detailsSuffix} Messaggio: "${message}"`
         : `${challengerName} ti ha sfidato e ha gia prenotato il campo Arena!${detailsSuffix}`
       : message
-        ? `${challengerName} ti ha sfidato!${detailsSuffix} Messaggio: "${message}"`
-        : `${challengerName} ti ha sfidato in Arena!${detailsSuffix}`;
+      ? `${challengerName} ti ha sfidato!${detailsSuffix} Messaggio: "${message}"`
+      : `${challengerName} ti ha sfidato in Arena!${detailsSuffix}`;
 
     await Promise.all([
-      supabaseServer.from("notifications").insert([
+      supabaseServer.from('notifications').insert([
         {
           user_id: opponentId,
           type: notificationType,
           title: notificationTitle,
           message: notificationMessage,
-          action_url: `/dashboard/${opponentDashboard}/arena/challenge/${challengeId}`,
+          link: `/dashboard/${opponentDashboard}/arena/challenge/${challengeId}`,
           is_read: false,
         },
       ]),
-      supabaseServer.from("internal_messages").insert([
+      supabaseServer.from('internal_messages').insert([
         {
           sender_id: challengerId,
           recipient_id: opponentId,
@@ -278,14 +295,23 @@ export async function notifyOpponentOfNewChallenge({
       ]),
     ]);
   } catch (err) {
-    console.error("Error creating notification:", err);
+    logger.error('Error creating new challenge notification', err);
     // Non-fatal: challenge was already created successfully
   }
 }
 
+/** Riga di arena_challenges restituita dall'update, con i profili dei due giocatori. */
+interface ChallengeRowWithPlayers {
+  challenger_id: string;
+  opponent_id: string;
+  winner_id?: string | null;
+  challenger: { full_name: string | null } | null;
+  opponent: { full_name: string | null } | null;
+}
+
 interface StatusChangeNotifParams {
   challengeId: string;
-  data: any; // enriched challenge row returned by DB update
+  data: ChallengeRowWithPlayers;
   status: string;
   previousStatus: string | null;
   winnerId?: string | null;
@@ -307,35 +333,35 @@ export async function notifyChallengeStatusChange({
   linkedBookingId,
 }: StatusChangeNotifParams): Promise<void> {
   try {
-    let notificationTitle = "";
-    let notificationContent = "";
+    let notificationTitle = '';
+    let notificationContent = '';
     let recipientIds: string[] = [];
 
-    if (status === "accepted") {
-      if (previousStatus === "counter_proposal") {
-        notificationTitle = "✅ Modifiche Confermate!";
+    if (status === 'accepted') {
+      if (previousStatus === 'counter_proposal') {
+        notificationTitle = '✅ Modifiche Confermate!';
         notificationContent = `${data.challenger.full_name} ha confermato le tue modifiche alla sfida!`;
         recipientIds = [data.opponent_id];
       } else {
-        notificationTitle = "✅ Sfida Accettata!";
+        notificationTitle = '✅ Sfida Accettata!';
         notificationContent = `${data.opponent.full_name} ha accettato la tua sfida!`;
         recipientIds = [data.challenger_id];
       }
-    } else if (status === "declined") {
-      if (previousStatus === "counter_proposal") {
-        notificationTitle = "❌ Modifiche Rifiutate";
+    } else if (status === 'declined') {
+      if (previousStatus === 'counter_proposal') {
+        notificationTitle = '❌ Modifiche Rifiutate';
         notificationContent = `${data.challenger.full_name} ha rifiutato le tue modifiche alla sfida.`;
         recipientIds = [data.opponent_id];
       } else {
-        notificationTitle = "❌ Sfida Rifiutata";
+        notificationTitle = '❌ Sfida Rifiutata';
         notificationContent = `${data.opponent.full_name} ha rifiutato la tua sfida.`;
         recipientIds = [data.challenger_id];
       }
-    } else if (status === "counter_proposal") {
-      notificationTitle = "✏️ Sfida Modificata";
+    } else if (status === 'counter_proposal') {
+      notificationTitle = '✏️ Sfida Modificata';
       notificationContent = `${data.opponent.full_name} ha proposto delle modifiche alla tua sfida. Rivedi i dettagli e conferma.`;
       recipientIds = [data.challenger_id];
-    } else if (status === "completed") {
+    } else if (status === 'completed') {
       const resolvedWinnerId = winnerId || data.winner_id;
       const loserId =
         resolvedWinnerId === data.challenger_id ? data.opponent_id : data.challenger_id;
@@ -343,14 +369,16 @@ export async function notifyChallengeStatusChange({
         resolvedWinnerId === data.challenger_id
           ? data.challenger.full_name
           : data.opponent.full_name;
-      notificationTitle = "🏁 Sfida Completata";
-      notificationContent = `La sfida è terminata! Vincitore: ${winnerName}${score ? ` (${score})` : ""}`;
+      notificationTitle = '🏁 Sfida Completata';
+      notificationContent = `La sfida è terminata! Vincitore: ${winnerName}${
+        score ? ` (${score})` : ''
+      }`;
       recipientIds = [loserId];
-    } else if (status === "cancelled") {
-      notificationTitle = "🚫 Sfida Annullata";
+    } else if (status === 'cancelled') {
+      notificationTitle = '🚫 Sfida Annullata';
       notificationContent = linkedBookingId
-        ? "La sfida Arena è stata annullata e la prenotazione collegata è stata annullata."
-        : "La sfida Arena è stata annullata.";
+        ? 'La sfida Arena è stata annullata e la prenotazione collegata è stata annullata.'
+        : 'La sfida Arena è stata annullata.';
       recipientIds = [data.challenger_id, data.opponent_id];
     }
 
@@ -359,38 +387,35 @@ export async function notifyChallengeStatusChange({
     const uniqueRecipientIds = Array.from(new Set(recipientIds));
 
     const { data: recipients } = await supabaseServer
-      .from("profiles")
-      .select("id, role")
-      .in("id", uniqueRecipientIds);
+      .from('profiles')
+      .select('id, role')
+      .in('id', uniqueRecipientIds);
 
-    const recipientRoleMap = new Map(
-      (recipients || []).map((r: any) => [r.id, r.role]),
-    );
+    const recipientRoleMap = new Map((recipients || []).map((r) => [r.id, r.role]));
 
     await Promise.all([
-      supabaseServer.from("notifications").insert(
+      supabaseServer.from('notifications').insert(
         uniqueRecipientIds.map((recipientId) => ({
           user_id: recipientId,
-          type: "arena_challenge",
+          type: 'arena_challenge',
           title: notificationTitle,
           message: notificationContent,
-          action_url: `/dashboard/${
-            recipientRoleMap.get(recipientId) === "maestro" ? "maestro" : "atleta"
+          link: `/dashboard/${
+            recipientRoleMap.get(recipientId) === 'maestro' ? 'maestro' : 'atleta'
           }/arena/challenge/${challengeId}`,
           is_read: false,
         })),
       ),
-      supabaseServer.from("internal_messages").insert(
+      supabaseServer.from('internal_messages').insert(
         uniqueRecipientIds.map((recipientId) => ({
-          sender_id:
-            data.challenger_id === recipientId ? data.opponent_id : data.challenger_id,
+          sender_id: data.challenger_id === recipientId ? data.opponent_id : data.challenger_id,
           recipient_id: recipientId,
-          subject: "📢 Aggiornamento Sfida Arena",
+          subject: '📢 Aggiornamento Sfida Arena',
           content: notificationContent,
         })),
       ),
     ]);
   } catch (err) {
-    console.error("Error creating notification:", err);
+    logger.error('Error creating challenge status notification', err);
   }
 }

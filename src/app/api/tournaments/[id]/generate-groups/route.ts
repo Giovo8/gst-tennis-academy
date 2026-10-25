@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
 
 // Genera gironi e match round-robin per torneo girone_eliminazione
 export async function POST(
@@ -10,21 +11,9 @@ export async function POST(
   const tournamentId = params.id;
 
   try {
-    // Verifica autenticazione
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7); // Rimuove "Bearer "
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseServer.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
+    // Solo admin/gestore: prima bastava essere loggati (anche un atleta poteva generare i gironi)
+    const auth = await verifyAuth(request, ['admin', 'gestore']);
+    if (!auth.success) return auth.response;
 
     // Get tournament
     const { data: tournament, error: tournamentError } = await supabaseServer

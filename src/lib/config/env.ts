@@ -6,7 +6,6 @@
 import { z } from 'zod';
 
 const DEFAULT_PRODUCTION_APP_URL = 'https://www.gstacademy.it';
-const DEFAULT_DEVELOPMENT_APP_URL = 'http://localhost:3000';
 
 // Check if we're on the client side
 const isClient = typeof window !== 'undefined';
@@ -33,8 +32,6 @@ const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY è obbligatoria'),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
-  ENABLE_RATE_LIMITING: z.enum(['true', 'false']).default('true'),
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
 // Use appropriate schema based on environment
@@ -61,23 +58,23 @@ class EnvironmentConfig {
       return;
     }
     try {
-      this.config = envSchema.parse(process.env);
+      this.config = envSchema.parse(process.env) as EnvConfig;
       this.isValidated = true;
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Only log errors on server-side
         if (!isClient) {
           console.error('❌ Environment validation failed:');
-          error.errors.forEach((err) => {
+          error.issues.forEach((err) => {
             console.error(`  - ${err.path.join('.')}: ${err.message}`);
           });
         }
-        
+
         // Use fallback values instead of crashing
         if (!isClient) {
           console.warn('⚠️  Continuing with partial configuration');
         }
-        
+
         // Use raw process.env values as fallback
         this.config = {
           NODE_ENV: (process.env.NODE_ENV || 'development') as EnvConfig['NODE_ENV'],
@@ -91,8 +88,6 @@ class EnvironmentConfig {
           SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
           RESEND_API_KEY: process.env.RESEND_API_KEY,
           EMAIL_FROM: process.env.EMAIL_FROM,
-          ENABLE_RATE_LIMITING: (process.env.ENABLE_RATE_LIMITING || 'true') as EnvConfig['ENABLE_RATE_LIMITING'],
-          LOG_LEVEL: (process.env.LOG_LEVEL || 'info') as EnvConfig['LOG_LEVEL'],
         } as EnvConfig;
         this.isValidated = true;
       } else {
@@ -113,32 +108,15 @@ class EnvironmentConfig {
       return this.config[key];
     }
     if (isClient) {
-      return (process.env as Record<string, string | undefined>)[key as string] as EnvConfig[K] | undefined;
+      return (process.env as Record<string, string | undefined>)[key as string] as
+        | EnvConfig[K]
+        | undefined;
     }
     return this.config?.[key];
   }
 
   // Public getters
-  public get nodeEnv(): string {
-    return this.get('NODE_ENV') || 'development';
-  }
-
-  public get isDevelopment(): boolean {
-    return this.nodeEnv === 'development';
-  }
-
-  public get isProduction(): boolean {
-    return this.nodeEnv === 'production';
-  }
-
-  public get isTest(): boolean {
-    return this.nodeEnv === 'test';
-  }
-
-  public get appUrl(): string {
-    return this.get('NEXT_PUBLIC_APP_URL') || (this.isProduction ? DEFAULT_PRODUCTION_APP_URL : DEFAULT_DEVELOPMENT_APP_URL);
-  }
-
+  /** URL pubblico per i link nelle email e nei redirect di Supabase Auth. */
   public get publicSiteUrl(): string {
     const explicitUrl = this.get('NEXT_PUBLIC_APP_URL') || this.get('NEXT_PUBLIC_SITE_URL');
     if (explicitUrl) {
@@ -179,23 +157,9 @@ class EnvironmentConfig {
   public get emailFrom(): string {
     return this.get('EMAIL_FROM') || '';
   }
-
-  // Features
-  public get isRateLimitingEnabled(): boolean {
-    return this.get('ENABLE_RATE_LIMITING') === 'true';
-  }
-
-  public get logLevel(): string {
-    return this.get('LOG_LEVEL') || 'info';
-  }
 }
 
-// Singleton instance
+// Singleton instance: la validazione avviene al primo accesso a un getter
 const env = new EnvironmentConfig();
-
-// Auto-validate only in non-build scenarios and only if explicitly called
-if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
-  // Validation will happen automatically on first config access
-}
 
 export default env;

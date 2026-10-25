@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Revisione del 25 ottobre 2026
+
+#### Fixed
+
+- **Fuso orario** delle notifiche in-app e delle email generate lato server (Vercel gira in UTC): modifica ed eliminazione prenotazioni, lezioni private, prenotazioni eliminate dall'atleta, sfide Arena, data di registrazione nell'email ai gestori. Ora sempre `Europe/Rome`.
+- **"Rigenera calendario"** del campionato: la pagina chiamava `delete-matches` in POST, la route accetta solo DELETE (falliva sempre con 405).
+- **Eliminazione utente** dal pannello admin: cancellava solo la riga `profiles` lasciando attivo l'account Auth. Ora passa da `DELETE /api/admin/users`, che elimina anche l'account; un gestore non può eliminare un admin.
+- Notifiche Arena salvate con `action_url` invece di `link`: dalla campanella e dalle pagine Notifiche non portavano alla sfida. Ora usano `link` (le vecchie restano leggibili) e anche campanella e Centro notifiche aprono la conversazione giusta per i messaggi chat.
+- 6 errori di tipo nei file di test (esclusi dal `tsconfig`, quindi mai segnalati).
+
+#### Security
+
+- `POST /api/tournaments/[id]/generate-groups` verificava solo il login: qualsiasi atleta poteva generare gironi e partite. Ora solo admin/gestore.
+- `POST /api/tournament_participants` inseriva l'intero body del client: ora solo `user_id` e `tournament_id`.
+- `GET /api/tournaments/[id]/group-matches` (pubblico) non espone più le email dei giocatori.
+- Callback `/auth/callback`: `?next=` accetta solo percorsi interni (prima `?next=@host` portava fuori dal sito).
+- Rimosso `PUT /api/video-lessons`, che aggiornava la riga col body del client senza filtrare i campi.
+- Le route tornei, utenti e reset password usano `verifyAuth` invece di 9 copie della verifica manuale del token.
+
+#### Removed
+
+- Route e metodi API senza chiamanti: `/api/arena/challenges/[id]`, `GET /api/bookings`, `POST`/`PUT /api/tournaments` (la creazione usa `/create`), `POST` di `groups` e `group-matches` (il primo era anche rotto), `GET`/`PATCH`/`DELETE` di `matches/[matchId]`, `PATCH /api/tournament_participants`, `GET`/`PATCH /api/admin/users`, `POST`/`PUT`/`DELETE /api/video-lessons`, `POST /api/arena/stats`, `PATCH /api/recruitment-applications`, `POST`/`PATCH /api/chat-groups/[id]/members`.
+- Codice morto: `getOpeningMinutes`, `formatItalianTime`, `buildCoachNotificationForPrivateLessonBatch`, `formatBlockConflictMessage`, `createTournamentSchema` e costanti collegate, getter inutilizzati di `env` e del logger, campo `bannerLabel` dei template email, stili mai letti dei blocchi campo, logo SVG non più referenziato.
+- Variabile `ENABLE_RATE_LIMITING`: non era letta da nessuna parte (il rate limiting è sempre attivo).
+- `.claude/settings.local.json` dal repository (impostazioni personali, ora in `.gitignore`).
+
+#### Changed
+
+- Liste campi hardcoded in 5 pagine (Arena e nuovo blocco campo) sostituite dal nuovo hook `useCourts()`.
+- `bookingService.ts`: risoluzione delle email dei partecipanti e del nome del maestro in due helper invece che ripetute in ogni funzione.
+- `console.error` → `secure-logger` in `logActivity`, `challengeService` e nelle route toccate.
+- Documentazione riallineata al codice: API (inventario completo), architettura, ruoli, database (migrazioni 090–097), funzionalità, frontend, design system, email, Arena, deploy, README, `CLAUDE.md` e istruzioni Copilot.
+
+### Chat: gruppi sicuri e messaggi non letti
+
+- Pagina chat unica (`components/chat/ChatView.tsx`) per atleta, maestro e admin, con link diretti alle conversazioni (`?c=`).
+- Migrazioni `096` (RLS su gruppi e membri, policy dei messaggi riscritte, `last_read_at`, funzioni `get_unread_chat_count` e `mark_chat_group_read`, realtime) e `097` (rimozione di policy duplicate create a mano).
+- `/api/chat-groups` riscritte con validazione Zod; notifiche chat raggruppate (una non letta per conversazione); pallino "Chat" in navigazione con `useUnreadChat`.
+- Dipendenze aggiornate (Next 16.4, React 19.3, Zod 4, supabase-js 2.118…).
+
 ### Removed
 
 - Codice morto: `TopAthletesCard`, `useBookingsRealtime`, `src/lib/security/sanitize.ts`, `formatCurrency`, tipi `ai-news/types.ts`, componenti `ui/Card` e `ui/Input`, schemi Zod e costanti mai usati.

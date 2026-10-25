@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
-
 import { getSessionUser } from '@/lib/auth/clientSession';
+import logger from '@/lib/logger/secure-logger';
+
 type ActivityAction =
   | 'user.register'
   | 'user.login'
@@ -31,7 +32,7 @@ interface LogActivityParams {
   action: ActivityAction | string;
   entityType?: string;
   entityId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -77,13 +78,13 @@ export async function logActivity({
     });
 
     if (error) {
-      console.error('Error logging activity:', error);
+      logger.error('Error logging activity', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Exception logging activity:', error);
+    logger.error('Exception logging activity', error);
     return { success: false, error: String(error) };
   }
 }
@@ -120,13 +121,13 @@ export async function logActivityServer({
     });
 
     if (error) {
-      console.error('Error logging activity (server):', error);
+      logger.error('Error logging activity (server)', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Exception logging activity (server):', error);
+    logger.error('Exception logging activity (server)', error);
     return { success: false, error: String(error) };
   }
 }

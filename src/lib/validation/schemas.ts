@@ -4,14 +4,7 @@
  */
 
 import { z } from 'zod';
-import {
-  USER_ROLES,
-  BOOKING_STATUS,
-  TOURNAMENT_STATUS,
-  COMPETITION_TYPE,
-  COMPETITION_FORMAT,
-  VALIDATION_RULES,
-} from '@/lib/constants/app';
+import { USER_ROLES, BOOKING_STATUS, VALIDATION_RULES } from '@/lib/constants/app';
 
 // ==================== COMMON SCHEMAS ====================
 
@@ -34,7 +27,8 @@ const passwordSchema = z
   .regex(/[0-9]/, 'Password deve contenere almeno un numero')
   .regex(/[^A-Za-z0-9]/, 'Password deve contenere almeno un carattere speciale');
 
-const uuidSchema = z.string().uuid('ID non valido');
+// z.guid() accetta qualsiasi 8-4-4-4-12 esadecimale (come z.string().uuid() di zod 3)
+const uuidSchema = z.guid('ID non valido');
 
 const phoneSchema = z.preprocess(
   (value) => {
@@ -136,42 +130,6 @@ export const createBookingSchema = baseBookingSchema
     path: ['tournament_match_id'],
   });
 
-// ==================== TOURNAMENT SCHEMAS ====================
-
-const tournamentStatusSchema = z.enum([
-  TOURNAMENT_STATUS.DRAFT,
-  TOURNAMENT_STATUS.OPEN_REGISTRATION,
-  TOURNAMENT_STATUS.REGISTRATION_CLOSED,
-  TOURNAMENT_STATUS.IN_PROGRESS,
-  TOURNAMENT_STATUS.COMPLETED,
-  TOURNAMENT_STATUS.CANCELLED,
-] as [string, ...string[]]);
-
-const competitionTypeSchema = z.enum([COMPETITION_TYPE.TORNEO, COMPETITION_TYPE.CAMPIONATO] as [
-  string,
-  ...string[],
-]);
-
-const competitionFormatSchema = z.enum([
-  COMPETITION_FORMAT.ELIMINAZIONE_DIRETTA,
-  COMPETITION_FORMAT.ROUND_ROBIN,
-  COMPETITION_FORMAT.GIRONE_ELIMINAZIONE,
-] as [string, ...string[]]);
-
-export const createTournamentSchema = z.object({
-  title: z.string().min(3, 'Titolo troppo corto').max(200, 'Titolo troppo lungo'),
-  start_date: dateStringSchema,
-  end_date: dateStringSchema.optional(),
-  max_participants: z.number().int().positive('Numero partecipanti deve essere positivo'),
-  status: tournamentStatusSchema.default(TOURNAMENT_STATUS.DRAFT),
-  competition_type: competitionTypeSchema.default(COMPETITION_TYPE.TORNEO),
-  format: competitionFormatSchema.default(COMPETITION_FORMAT.ELIMINAZIONE_DIRETTA),
-  rounds_data: z.array(z.any()).optional(),
-  groups_data: z.array(z.any()).optional(),
-  standings: z.array(z.any()).optional(),
-  description: z.string().max(1000, 'Descrizione troppo lunga').optional(),
-});
-
 // ==================== FEEDBACK ====================
 
 export const FEEDBACK_CATEGORIE = ['suggerimento', 'problema', 'altro'] as const;
@@ -213,9 +171,25 @@ export const createAvvisoSchema = z.object({
     .optional(),
 });
 
-// Modifica parziale: solo i campi presenti nel body vengono aggiornati
+// Modifica parziale: solo i campi presenti nel body vengono aggiornati.
+// tipo ridefinito senza default: zod 4 applica i default anche dentro .partial()
 export const updateAvvisoSchema = createAvvisoSchema.partial().extend({
+  tipo: z.enum(AVVISO_TIPI).optional(),
   attivo: z.boolean().optional(),
 });
 
-// ==================== TYPE EXPORTS ====================
+// ==================== CHAT ====================
+
+export const createChatGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Il nome del gruppo è obbligatorio').max(80, 'Nome troppo lungo'),
+  description: z.string().trim().max(300, 'Descrizione troppo lunga').nullish(),
+  member_ids: z.array(uuidSchema).min(1, 'Seleziona almeno un membro').max(50, 'Troppi membri'),
+});
+
+export const chatMessageSchema = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1, 'Il messaggio non può essere vuoto')
+    .max(2000, 'Messaggio troppo lungo'),
+});

@@ -6,6 +6,7 @@ import DashboardShell, { NavItem } from '@/components/dashboard/DashboardShell';
 import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { FEEDBACK_READ_EVENT, getFeedbackNonLetti } from '@/lib/feedback/nonLetti';
+import { useUnreadChat } from '@/lib/hooks/useUnreadChat';
 import {
   Calendar,
   Trophy,
@@ -28,7 +29,9 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string>('');
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  // Id per il pallino chat: resta null in modalità "vedi come"
+  const [chatUserId, setChatUserId] = useState<string | null>(null);
+  const unreadMessages = useUnreadChat(chatUserId);
   const [unreadFeedback, setUnreadFeedback] = useState(0);
 
   useEffect(() => {
@@ -46,10 +49,10 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
 
       setUserEmail(user.email || '');
       const isViewAsRequest = !!new URLSearchParams(window.location.search).get('viewAs');
+      if (!isViewAsRequest) setChatUserId(user.id);
 
       const [{ data: profile }] = await Promise.all([
         supabase.from('profiles').select('full_name, role, avatar_url').eq('id', user.id).single(),
-        isViewAsRequest ? Promise.resolve() : loadUnreadMessages(user.id),
         isViewAsRequest ? Promise.resolve() : loadUnreadFeedback(),
       ]);
 
@@ -65,25 +68,6 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       setUserAvatar(profile.avatar_url || '');
     }
 
-    async function loadUnreadMessages(knownUserId?: string) {
-      try {
-        const userId = knownUserId ?? (await getSessionUser()).data.user?.id;
-        if (!userId) return;
-
-        const { count, error } = await supabase
-          .from('internal_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('recipient_id', userId)
-          .eq('is_read', false);
-
-        if (!error) {
-          setUnreadMessages(count || 0);
-        }
-      } catch (error) {
-        console.error('Errore nel caricamento messaggi non letti:', error);
-      }
-    }
-
     async function loadUnreadFeedback() {
       try {
         const nonLetti = await getFeedbackNonLetti();
@@ -95,18 +79,11 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       }
     }
 
-    // Listen for message read events
-    const handleMessageRead = async () => {
-      await loadUnreadMessages();
-    };
-
-    window.addEventListener('messageRead', handleMessageRead);
     window.addEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
 
     loadUser();
 
     return () => {
-      window.removeEventListener('messageRead', handleMessageRead);
       window.removeEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
     };
   }, [router]);

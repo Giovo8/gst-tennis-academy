@@ -20,16 +20,6 @@ export const BOOKING_STATUS = {
   CANCELLATION_REQUESTED: 'cancellation_requested',
 } as const;
 
-// ==================== TOURNAMENT STATUS ====================
-export const TOURNAMENT_STATUS = {
-  DRAFT: 'Bozza',
-  OPEN_REGISTRATION: 'Aperte le Iscrizioni',
-  REGISTRATION_CLOSED: 'Iscrizioni Chiuse',
-  IN_PROGRESS: 'In Corso',
-  COMPLETED: 'Completato',
-  CANCELLED: 'Annullato',
-} as const;
-
 // ==================== COMPETITION TYPES ====================
 export const COMPETITION_TYPE = {
   TORNEO: 'torneo',
@@ -37,13 +27,6 @@ export const COMPETITION_TYPE = {
 } as const;
 
 export type CompetitionType = (typeof COMPETITION_TYPE)[keyof typeof COMPETITION_TYPE];
-
-// ==================== COMPETITION FORMATS ====================
-export const COMPETITION_FORMAT = {
-  ELIMINAZIONE_DIRETTA: 'eliminazione_diretta',
-  ROUND_ROBIN: 'round_robin',
-  GIRONE_ELIMINAZIONE: 'girone_eliminazione',
-} as const;
 
 // ==================== VALIDATION RULES ====================
 export const VALIDATION_RULES = {
@@ -86,13 +69,4 @@ export const ERROR_MESSAGES = {
   INVALID_TOKEN: 'Token non valido o scaduto',
   CONFLICT: 'Risorsa già esistente',
   RATE_LIMIT: 'Troppe richieste, riprova più tardi',
-} as const;
-
-// ==================== TOURNAMENT CONFIGURATION ====================
-export const TOURNAMENT_CONFIG = {
-  MIN_PARTICIPANTS: 2,
-  MAX_PARTICIPANTS_BRACKET: 128,
-  VALID_BRACKET_SIZES: [2, 4, 8, 16, 32, 64, 128],
-  MIN_GROUP_SIZE: 3,
-  MAX_GROUP_SIZE: 8,
 } as const;

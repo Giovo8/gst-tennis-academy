@@ -1,36 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: tournamentId } = await params;
 
-    // Extract Bearer token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Non autorizzato' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7);
-
-    // Verify authentication using service role client
-    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Non autorizzato' },
-        { status: 401 }
-      );
-    }
+    const auth = await verifyAuth(request, ['admin', 'gestore']);
+    if (!auth.success) return auth.response;
 
     // Get tournament using service role client
     const { data: tournament, error: tournamentError } = await supabaseServer
@@ -40,35 +21,12 @@ export async function POST(
       .single();
 
     if (tournamentError || !tournament) {
-      return NextResponse.json(
-        { error: 'Torneo non trovato' },
-        { status: 404 }
-      );
-    }
-
-    // Check permissions using service role client
-    const { data: profile } = await supabaseServer
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    const isAdmin = profile?.role === 'admin';
-    const isGestore = profile?.role === 'gestore';
-
-    if (!isAdmin && !isGestore) {
-      return NextResponse.json(
-        { error: 'Non hai i permessi per questa azione' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Torneo non trovato' }, { status: 404 });
     }
 
     // Verify tournament type
     if (tournament.tournament_type !== 'campionato') {
-      return NextResponse.json(
-        { error: 'Questo torneo non è un campionato' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Questo torneo non è un campionato' }, { status: 400 });
     }
 
     // Check if matches already exist
@@ -81,7 +39,7 @@ export async function POST(
     if (existingMatches && existingMatches.length > 0) {
       return NextResponse.json(
         { error: 'Le partite sono già state generate per questo campionato' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -94,14 +52,18 @@ export async function POST(
     if (participantsError) {
       return NextResponse.json(
         { error: `Errore nel recuperare i partecipanti: ${participantsError.message}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (!participants || participants.length < 2) {
       return NextResponse.json(
-        { error: `Servono almeno 2 partecipanti per generare il calendario (trovati: ${participants?.length || 0})` },
-        { status: 400 }
+        {
+          error: `Servono almeno 2 partecipanti per generare il calendario (trovati: ${
+            participants?.length || 0
+          })`,
+        },
+        { status: 400 },
       );
     }
 
@@ -142,7 +104,7 @@ export async function POST(
             player1_id: homeId,
             player2_id: awayId,
             status: 'programmata',
-            scheduled_at: null
+            scheduled_at: null,
           });
         }
       }
@@ -154,25 +116,20 @@ export async function POST(
     }
 
     // Insert matches using service role client
-    const { error: insertError } = await supabaseServer
-      .from('tournament_matches')
-      .insert(matches);
+    const { error: insertError } = await supabaseServer.from('tournament_matches').insert(matches);
 
     if (insertError) {
       console.error('Error inserting matches:', insertError);
-      return NextResponse.json(
-        { error: 'Errore nella creazione delle partite' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Errore nella creazione delle partite' }, { status: 500 });
     }
 
     // Update tournament phase using service role client
     const { error: updateError } = await supabaseServer
       .from('tournaments')
-      .update({ 
+      .update({
         current_phase: 'completato',
         status: 'In Corso',
-        start_date: tournament.start_date || new Date().toISOString()
+        start_date: tournament.start_date || new Date().toISOString(),
       })
       .eq('id', tournamentId);
 
@@ -184,14 +141,10 @@ export async function POST(
       message: 'Calendario del campionato generato con successo',
       matches_created: matches.length,
       rounds: numRounds,
-      participants: participants.length
+      participants: participants.length,
     });
-
   } catch (error) {
     console.error('Error generating championship:', error);
-    return NextResponse.json(
-      { error: 'Errore interno del server' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
   }
 }

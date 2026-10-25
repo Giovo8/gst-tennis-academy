@@ -312,8 +312,7 @@ describe('RLS Policy Validation', () => {
 
     describe('SELECT Policy', () => {
       it('everyone can see profiles', () => {
-        expect(canSelectProfile(atletaUser, otherProfile)).toBe(true);
-        expect(canSelectProfile(adminUser, otherProfile)).toBe(true);
+        expect(canSelectProfile()).toBe(true);
       });
     });
 

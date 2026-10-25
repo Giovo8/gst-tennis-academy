@@ -25,126 +25,6 @@ import { logActivityServer } from '@/lib/activity/logActivity';
 import { TOURNAMENT_BOOKING_TYPE } from '@/lib/bookings/tournamentBookings';
 import { resolveTournamentMatchForBooking } from '@/lib/bookings/tournamentBookingsServer';
 
-export async function GET(req: Request) {
-  const startTime = Date.now();
-
-  const authResult = await verifyAuth(req);
-  if (!authResult.success) {
-    return authResult.response;
-  }
-  const isPrivileged = isAdminOrGestore(authResult.data.profile?.role);
-  const currentUserId = authResult.data.user.id;
-
-  try {
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
-    const user_id = url.searchParams.get('user_id');
-    const coach_id = url.searchParams.get('coach_id');
-
-    // Validate UUID if provided
-    if (id && !sanitizeUuid(id)) {
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.INVALID_INPUT },
-        { status: HTTP_STATUS.BAD_REQUEST },
-      );
-    }
-
-    if (id) {
-      const { data: booking, error: bookingError } = await supabaseServer
-        .from('bookings')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (bookingError) {
-        logger.error('Booking not found', bookingError, { bookingId: id });
-        return NextResponse.json(
-          { error: ERROR_MESSAGES.NOT_FOUND },
-          { status: HTTP_STATUS.NOT_FOUND },
-        );
-      }
-
-      // Non-privileged users may only read their own bookings
-      if (!isPrivileged && booking.user_id !== currentUserId) {
-        return NextResponse.json(
-          { error: ERROR_MESSAGES.FORBIDDEN ?? 'Permessi insufficienti' },
-          { status: 403 },
-        );
-      }
-
-      // Fetch participants
-      const { data: participants } = await supabaseServer
-        .from('booking_participants')
-        .select('*')
-        .eq('booking_id', id)
-        .order('order_index', { ascending: true });
-
-      const duration = Date.now() - startTime;
-      logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
-      return NextResponse.json({
-        booking: {
-          ...booking,
-          participants: participants || [],
-        },
-      });
-    }
-
-    let query = supabaseServer
-      .from('bookings')
-      .select('*')
-      .order('start_time', { ascending: true });
-
-    if (!isPrivileged) {
-      // Non-privileged users are always scoped to their own bookings
-      query = query.eq('user_id', currentUserId);
-    } else if (user_id) {
-      query = query.eq('user_id', user_id);
-    }
-    if (coach_id) query = query.eq('coach_id', coach_id);
-
-    const { data: bookings, error } = await query;
-
-    if (error) {
-      logger.error('Database error fetching bookings', error);
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
-      );
-    }
-
-    // Fetch participants for all bookings
-    const bookingIds = bookings?.map((b) => b.id) || [];
-    let allParticipants: Array<{ booking_id: string; [key: string]: unknown }> = [];
-
-    if (bookingIds.length > 0) {
-      const { data: participants } = await supabaseServer
-        .from('booking_participants')
-        .select('*')
-        .in('booking_id', bookingIds);
-
-      allParticipants = participants || [];
-    }
-
-    // Merge participants with bookings
-    const bookingsWithParticipants = (bookings || []).map((booking) => ({
-      ...booking,
-      participants: allParticipants.filter((p) => p.booking_id === booking.id),
-    }));
-
-    const duration = Date.now() - startTime;
-    logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
-    return NextResponse.json({ bookings: bookingsWithParticipants });
-  } catch (err: unknown) {
-    const duration = Date.now() - startTime;
-    logger.error('Exception in bookings GET', err);
-    logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
-    return NextResponse.json(
-      { error: ERROR_MESSAGES.SERVER_ERROR },
-      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
-    );
-  }
-}
-
 export async function POST(req: Request) {
   const startTime = Date.now();
 
@@ -188,12 +68,12 @@ export async function POST(req: Request) {
     if (!validationResult.success) {
       logger.warn('Booking validation failed', {
         userId: user.id,
-        errors: validationResult.error.errors,
+        errors: validationResult.error.issues,
       });
       return NextResponse.json(
         {
           error: ERROR_MESSAGES.INVALID_INPUT,
-          details: validationResult.error.errors.map((e) => ({
+          details: validationResult.error.issues.map((e) => ({
             field: e.path.join('.'),
             message: e.message,
           })),
@@ -508,7 +388,6 @@ export async function POST(req: Request) {
           booking: data[0],
           user,
           profile,
-          participants,
           userId: user_id,
           ipAddress: req.headers.get('x-forwarded-for'),
           userAgent: req.headers.get('user-agent'),

@@ -224,7 +224,10 @@ export default function NotificationsList({
 
   function resolveNotificationTarget(notification: DashboardNotification): string {
     if (notification.type === 'message' && currentUserRole) {
-      return getMessageNotificationLink(currentUserRole);
+      // Il link salvato porta alla conversazione (?c=...) se è della chat del ruolo
+      const chatPath = getMessageNotificationLink(currentUserRole);
+      const stored = notification.link;
+      return stored && stored.startsWith(chatPath) ? stored : chatPath;
     }
 
     let targetLink = notification.action_url || notification.link || null;

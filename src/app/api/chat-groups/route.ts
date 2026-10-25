@@ -1,145 +1,173 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { verifyAuth } from "@/lib/auth/verifyAuth";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
+import { createChatGroupSchema } from '@/lib/validation/schemas';
+import { upsertChatNotifications } from '@/lib/notifications/chatNotifications';
+import { getMessageNotificationLink } from '@/lib/notifications/links';
+import logger from '@/lib/logger/secure-logger';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-// GET - Fetch user's chat groups
+const SERVER_ERROR = 'Errore interno del server';
+
+const GROUP_SELECT = `
+  *,
+  members:chat_group_members(
+    id,
+    user_id,
+    role,
+    joined_at,
+    user:user_id(id, full_name, avatar_url, role)
+  )
+`;
+
+// GET - Gruppi dell'utente, con ultimo messaggio e numero di messaggi non letti
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (!authResult.success) return authResult.response;
     const user = authResult.data.user;
 
-    // Get groups where user is a member
     const { data: memberships, error: membershipError } = await supabaseServer
-      .from("chat_group_members")
-      .select("group_id")
-      .eq("user_id", user.id);
+      .from('chat_group_members')
+      .select('group_id, last_read_at')
+      .eq('user_id', user.id);
 
     if (membershipError) {
-      return NextResponse.json({ error: membershipError.message }, { status: 400 });
+      logger.error('chat-groups GET memberships failed', membershipError);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
-    const groupIds = memberships?.map(m => m.group_id) || [];
-
-    if (groupIds.length === 0) {
+    if (!memberships || memberships.length === 0) {
       return NextResponse.json([]);
     }
 
-    // Fetch the groups with member count
+    const groupIds = memberships.map((m) => m.group_id);
+
     const { data: groups, error: groupsError } = await supabaseServer
-      .from("chat_groups")
-      .select(`
-        *,
-        members:chat_group_members(
-          id,
-          user_id,
-          role,
-          joined_at,
-          user:user_id(id, full_name, avatar_url)
-        )
-      `)
-      .in("id", groupIds)
-      .order("updated_at", { ascending: false });
+      .from('chat_groups')
+      .select(GROUP_SELECT)
+      .in('id', groupIds);
 
     if (groupsError) {
-      return NextResponse.json({ error: groupsError.message }, { status: 400 });
+      logger.error('chat-groups GET groups failed', groupsError);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
-    return NextResponse.json(groups || []);
+    const lastReadByGroup = new Map(memberships.map((m) => [m.group_id, m.last_read_at]));
+
+    const summaries = await Promise.all(
+      (groups ?? []).map(async (group) => {
+        const lastReadAt = lastReadByGroup.get(group.id);
+        const [lastResult, unreadResult] = await Promise.all([
+          supabaseServer
+            .from('internal_messages')
+            .select('id, sender_id, content, created_at')
+            .eq('group_id', group.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabaseServer
+            .from('internal_messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('group_id', group.id)
+            .neq('sender_id', user.id)
+            .gt('created_at', lastReadAt),
+        ]);
+
+        return {
+          ...group,
+          last_message: lastResult.data ?? null,
+          unread_count: unreadResult.count ?? 0,
+        };
+      }),
+    );
+
+    return NextResponse.json(summaries);
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Errore interno del server";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    logger.error('chat-groups GET exception', error);
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }
 
-// POST - Create a new chat group
+// POST - Crea un gruppo: il creatore ne è admin, i membri ricevono una notifica
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (!authResult.success) return authResult.response;
     const user = authResult.data.user;
 
-    const body = await request.json();
-    const { name, description, member_ids } = body;
-
-    if (!name || name.trim() === "") {
+    const body = await request.json().catch(() => null);
+    const parsed = createChatGroupSchema.safeParse(body ?? {});
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Il nome del gruppo è obbligatorio" },
-        { status: 400 }
+        { error: parsed.error.issues[0]?.message ?? 'Dati non validi' },
+        { status: 400 },
       );
     }
+    const { name, description, member_ids } = parsed.data;
 
-    if (!member_ids || !Array.isArray(member_ids) || member_ids.length === 0) {
-      return NextResponse.json(
-        { error: "Seleziona almeno un membro" },
-        { status: 400 }
-      );
-    }
-
-    // Create the group
     const { data: group, error: groupError } = await supabaseServer
-      .from("chat_groups")
+      .from('chat_groups')
       .insert({
-        name: name.trim(),
-        description: description?.trim() || null,
+        name,
+        description: description || null,
         created_by: user.id,
       })
       .select()
       .single();
 
     if (groupError) {
-      return NextResponse.json({ error: groupError.message }, { status: 400 });
+      logger.error('chat-groups POST insert failed', groupError);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
-    // Add creator as admin
+    const otherMemberIds = [...new Set(member_ids)].filter((id) => id !== user.id);
     const membersToInsert = [
-      { group_id: group.id, user_id: user.id, role: "admin" },
-      ...member_ids
-        .filter((id: string) => id !== user.id)
-        .map((id: string) => ({
-          group_id: group.id,
-          user_id: id,
-          role: "member",
-        })),
+      { group_id: group.id, user_id: user.id, role: 'admin' },
+      ...otherMemberIds.map((id) => ({ group_id: group.id, user_id: id, role: 'member' })),
     ];
 
     const { error: membersError } = await supabaseServer
-      .from("chat_group_members")
+      .from('chat_group_members')
       .insert(membersToInsert);
 
     if (membersError) {
-      // Rollback: delete the group if members insertion fails
-      await supabaseServer.from("chat_groups").delete().eq("id", group.id);
-      return NextResponse.json({ error: membersError.message }, { status: 400 });
+      // Rollback: senza membri il gruppo non ha senso
+      await supabaseServer.from('chat_groups').delete().eq('id', group.id);
+      logger.error('chat-groups POST members failed', membersError);
+      return NextResponse.json({ error: 'Creazione gruppo non riuscita' }, { status: 400 });
     }
 
-    // Fetch the complete group with members
     const { data: completeGroup, error: fetchError } = await supabaseServer
-      .from("chat_groups")
-      .select(`
-        *,
-        members:chat_group_members(
-          id,
-          user_id,
-          role,
-          joined_at,
-          user:user_id(id, full_name, avatar_url)
-        )
-      `)
-      .eq("id", group.id)
+      .from('chat_groups')
+      .select(GROUP_SELECT)
+      .eq('id', group.id)
       .single();
 
     if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 400 });
+      logger.error('chat-groups POST fetch failed', fetchError);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
-    return NextResponse.json(completeGroup, { status: 201 });
+    const creator = completeGroup.members?.find((m) => m.user_id === user.id)?.user;
+    await upsertChatNotifications(
+      (completeGroup.members ?? [])
+        .filter((m) => m.user_id !== user.id)
+        .map((m) => ({
+          userId: m.user_id,
+          link: getMessageNotificationLink(m.user?.role, `group-${group.id}`),
+        })),
+      `Nuovo gruppo: ${name}`,
+      `${creator?.full_name || 'Un utente'} ti ha aggiunto al gruppo`,
+    );
+
+    return NextResponse.json(
+      { ...completeGroup, last_message: null, unread_count: 0 },
+      { status: 201 },
+    );
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Errore interno del server";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    logger.error('chat-groups POST exception', error);
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }

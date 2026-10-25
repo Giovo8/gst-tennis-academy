@@ -1,6 +1,5 @@
 import {
   buildCoachNotificationForPrivateLesson,
-  buildCoachNotificationForPrivateLessonBatch,
   shouldNotifyCoachForPrivateLesson,
 } from '@/lib/bookings/privateLessonNotifications';
 
@@ -48,22 +47,13 @@ describe('privateLessonNotifications', () => {
       });
     });
 
-    it('builds the batch lesson notification payload', () => {
-      const notification = buildCoachNotificationForPrivateLessonBatch({
-        athleteName: 'Mario Rossi',
-        court: 'Campo 3',
-        lessonCount: 3,
-        firstStartTime: '2026-03-18T17:30:00.000Z',
+    it("formats date and time in the academy's time zone", () => {
+      // 17:30 UTC del 18 marzo = 18:30 a Roma (ora solare)
+      const notification = buildCoachNotificationForPrivateLesson({
+        startTime: '2026-03-18T17:30:00.000Z',
       });
 
-      expect(notification).toEqual({
-        type: 'booking',
-        title: 'Nuove lezioni private',
-        message: expect.stringContaining(
-          'Mario Rossi ti ha selezionato per 3 lezioni private su Campo 3',
-        ),
-        link: '/dashboard/maestro/bookings',
-      });
+      expect(notification.message).toContain('il 18/03/2026 alle 18:30');
     });
   });
 });

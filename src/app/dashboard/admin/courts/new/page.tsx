@@ -5,12 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
-import { checkCourtBlockConflicts, formatBlockConflictMessage } from '@/lib/courts/blockConflicts';
+import { useCourts } from '@/lib/hooks/useCourts';
+import { checkCourtBlockConflicts } from '@/lib/courts/blockConflicts';
 import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
-
-const COURTS = ['Campo 1', 'Campo 2', 'Campo 3', 'Campo 4'];
 
 const BLOCK_TYPES = [
   { value: 'corsi_tennis', label: 'Corsi Tennis' },
@@ -49,6 +48,7 @@ const createEmptyPeriod = (): CourtBlockPeriod => ({
 });
 
 export default function NewCourtBlockPage() {
+  const courts = useCourts();
   const router = useRouter();
 
   const [blockName, setBlockName] = useState('');
@@ -593,7 +593,7 @@ export default function NewCourtBlockPage() {
                 </label>
                 <div className="flex-1">
                   <div className="flex flex-col sm:grid sm:grid-cols-4 gap-2">
-                    {COURTS.map((court) => (
+                    {courts.map((court) => (
                       <button
                         key={court}
                         type="button"

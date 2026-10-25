@@ -71,8 +71,8 @@ function redactSensitiveData(obj: unknown): unknown {
     redacted[key] = isSensitive
       ? '[REDACTED]'
       : typeof value === 'object'
-        ? redactSensitiveData(value)
-        : value;
+      ? redactSensitiveData(value)
+      : value;
   }
   return redacted;
 }
@@ -94,7 +94,8 @@ function describeError(error: unknown): string {
     const err = error as Record<string, unknown>;
     const parts: string[] = [];
     if (typeof err.message === 'string' && err.message) parts.push(err.message);
-    if (typeof err.code === 'string' || typeof err.code === 'number') parts.push(`code=${err.code}`);
+    if (typeof err.code === 'string' || typeof err.code === 'number')
+      parts.push(`code=${err.code}`);
     if (typeof err.details === 'string' && err.details) parts.push(`details=${err.details}`);
     if (typeof err.hint === 'string' && err.hint) parts.push(`hint=${err.hint}`);
     if (parts.length > 0) return parts.join(' | ');
@@ -106,27 +107,13 @@ function describeError(error: unknown): string {
 class SecureLogger {
   private readonly isDevelopment: boolean;
   private readonly minLevel: number;
-  private readonly boundContext: LogContext;
 
-  constructor(boundContext: LogContext = {}) {
+  constructor() {
     this.isDevelopment = process.env.NODE_ENV === 'development';
-    this.boundContext = boundContext;
 
     const defaultLevel: LogLevel = this.isDevelopment ? 'debug' : 'info';
     const envLevel = (process.env.LOG_LEVEL ?? defaultLevel) as LogLevel;
     this.minLevel = LOG_LEVEL_PRIORITY[envLevel] ?? LOG_LEVEL_PRIORITY.info;
-  }
-
-  /**
-   * Create a child logger with pre-bound context.
-   * Useful for request-scoped logging without passing userId/requestId to every call.
-   *
-   * @example
-   * const reqLogger = logger.withContext({ userId: user.id, requestId: req.headers['x-request-id'] });
-   * reqLogger.info('Booking created', { bookingId });
-   */
-  public withContext(context: LogContext): SecureLogger {
-    return new SecureLogger({ ...this.boundContext, ...context });
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -145,9 +132,8 @@ class SecureLogger {
     if (userId) logData.userId = userId;
     if (requestId) logData.requestId = requestId;
 
-    const mergedContext = { ...this.boundContext, ...context };
-    if (Object.keys(mergedContext).length > 0) {
-      logData.context = redactSensitiveData(mergedContext);
+    if (context && Object.keys(context).length > 0) {
+      logData.context = redactSensitiveData(context);
     }
 
     if (error) {
@@ -172,7 +158,7 @@ class SecureLogger {
       console.log(
         `${emojis[entry.level]} [${entry.level.toUpperCase()}]`,
         entry.message,
-        entry.context ?? ''
+        entry.context ?? '',
       );
       if (entry.error) console.error(entry.error);
       return;
@@ -209,22 +195,33 @@ class SecureLogger {
 
   public error(message: string, error?: Error | unknown, context?: LogContext): void {
     const errorObj =
-      error instanceof Error ? error : error !== undefined ? new Error(describeError(error)) : undefined;
-    this.write({ level: 'error', message, timestamp: new Date().toISOString(), context, error: errorObj });
+      error instanceof Error
+        ? error
+        : error !== undefined
+        ? new Error(describeError(error))
+        : undefined;
+    this.write({
+      level: 'error',
+      message,
+      timestamp: new Date().toISOString(),
+      context,
+      error: errorObj,
+    });
   }
 
   public fatal(message: string, error?: Error | unknown, context?: LogContext): void {
     const errorObj =
-      error instanceof Error ? error : error !== undefined ? new Error(describeError(error)) : undefined;
-    this.write({ level: 'fatal', message, timestamp: new Date().toISOString(), context, error: errorObj });
-  }
-
-  public apiRequest(method: string, path: string, userId?: string, context?: LogContext): void {
-    this.info(`API ${method} ${path}`, {
-      method,
-      path,
-      ...(userId && { userId }),
-      ...context,
+      error instanceof Error
+        ? error
+        : error !== undefined
+        ? new Error(describeError(error))
+        : undefined;
+    this.write({
+      level: 'fatal',
+      message,
+      timestamp: new Date().toISOString(),
+      context,
+      error: errorObj,
     });
   }
 
@@ -240,14 +237,6 @@ class SecureLogger {
         statusCode,
         ...(duration !== undefined && { duration: `${duration}ms` }),
       },
-    });
-  }
-
-  public dbQuery(query: string, duration?: number): void {
-    if (!this.isDevelopment) return;
-    this.debug('DB Query', {
-      query: query.substring(0, 200),
-      ...(duration !== undefined && { duration: `${duration}ms` }),
     });
   }
 

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { getSecondaryRoles } from '@/lib/roles';
 import { FEEDBACK_READ_EVENT, getFeedbackNonLetti } from '@/lib/feedback/nonLetti';
+import { useUnreadChat } from '@/lib/hooks/useUnreadChat';
 import {
   LayoutGrid,
   Calendar,
@@ -40,8 +41,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [userRole, setUserRole] = useState<'admin' | 'gestore' | null>(null);
   const [userId, setUserId] = useState<string>('');
   const [hasSecondaryMaestroRole, setHasSecondaryMaestroRole] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadFeedback, setUnreadFeedback] = useState(0);
+  const unreadMessages = useUnreadChat(userId || null);
 
   useEffect(() => {
     async function loadUser() {
@@ -57,14 +58,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setUserEmail(user.email || '');
       setUserId(user.id);
 
-      // Badge non letti in parallelo al profilo (i dati restano protetti dalla RLS)
+      // Badge feedback in parallelo al profilo (i dati restano protetti dalla RLS)
       const [{ data: profile }] = await Promise.all([
         supabase
           .from('profiles')
           .select('full_name, role, avatar_url, metadata')
           .eq('id', user.id)
           .single(),
-        loadUnreadMessages(user.id),
         loadUnreadFeedback(),
       ]);
 
@@ -81,23 +81,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setHasSecondaryMaestroRole(secondaryRoles.includes('maestro'));
     }
 
-    async function loadUnreadMessages(knownUserId?: string) {
-      try {
-        const userId = knownUserId ?? (await getSessionUser()).data.user?.id;
-        if (!userId) return;
-
-        const { count, error } = await supabase
-          .from('internal_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('recipient_id', userId)
-          .eq('is_read', false);
-
-        if (!error) setUnreadMessages(count || 0);
-      } catch {
-        // badge non essenziale
-      }
-    }
-
     async function loadUnreadFeedback() {
       try {
         const nonLetti = await getFeedbackNonLetti();
@@ -109,15 +92,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       }
     }
 
-    const handleMessageRead = () => loadUnreadMessages();
-
-    window.addEventListener('messageRead', handleMessageRead);
     window.addEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
 
     loadUser();
 
     return () => {
-      window.removeEventListener('messageRead', handleMessageRead);
       window.removeEventListener(FEEDBACK_READ_EVENT, loadUnreadFeedback);
     };
   }, [router]);

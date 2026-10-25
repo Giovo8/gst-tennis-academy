@@ -145,7 +145,6 @@ export default function AINewsDraftsPage({ basePath }: Props) {
       if (!res.ok) throw new Error(json?.error ?? 'Errore bonifica archivio AI');
 
       const errored = Array.isArray(json?.errors) ? json.errors.length : 0;
-      const translatedCount: number = json?.translated ?? 0;
       toast.success(`${json.updated ?? 0} news aggiornate`);
 
       if (json?.geminiAvailable === false) {

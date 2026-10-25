@@ -30,6 +30,7 @@ interface Notification {
   title: string;
   message: string;
   link?: string;
+  action_url?: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -118,10 +119,14 @@ export default function NotificationsDropdown({
 
   function resolveNotificationLink(notification: Notification): string | null {
     if (notification.type === 'message' && currentUserRole) {
-      return getMessageNotificationLink(currentUserRole);
+      // Il link salvato porta alla conversazione (?c=...) se è della chat del ruolo
+      const chatPath = getMessageNotificationLink(currentUserRole);
+      const stored = notification.link;
+      return stored && stored.startsWith(chatPath) ? stored : chatPath;
     }
 
-    let targetLink = notification.link || null;
+    // action_url: notifiche Arena salvate prima che usassero `link`
+    let targetLink = notification.action_url || notification.link || null;
 
     if (notification.type === 'booking' && notification.link === '/dashboard/admin/bookings') {
       const bookingSearchLink = buildBookingSearchLink(notification.message);

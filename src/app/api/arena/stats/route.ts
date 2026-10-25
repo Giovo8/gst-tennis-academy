@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
-import { getRouteAuth, isAdmin, unauthorized, forbidden } from '@/lib/auth/routeAuth';
+import { getRouteAuth, unauthorized } from '@/lib/auth/routeAuth';
 import logger from '@/lib/logger/secure-logger';
 
 // GET - Fetch arena stats
@@ -107,37 +107,5 @@ export async function GET(req: Request) {
   } catch (error) {
     logger.error('Error in GET /api/arena/stats:', error);
     return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
-  }
-}
-
-// POST - Create or update stats (admin only)
-export async function POST(req: Request) {
-  try {
-    const auth = await getRouteAuth();
-    if (!auth) return unauthorized();
-    if (!isAdmin(auth.role)) return forbidden();
-
-    const body = await req.json();
-    const { user_id, ...statsData } = body;
-
-    if (!user_id) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    const { data, error } = await supabaseServer
-      .from('arena_stats')
-      .upsert([{ user_id, ...statsData }], { onConflict: 'user_id' })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Error upserting stats:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ stats: data });
-  } catch (error) {
-    logger.error('Error in POST /api/arena/stats:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
@@ -19,6 +19,11 @@ export function useNotifications(limit = 6) {
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const notificationsRef = useRef<DashboardNotification[]>([]);
+
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  }, [notifications]);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +81,31 @@ export function useNotifications(limit = 6) {
               return limit > 0 ? next.slice(0, limit) : next;
             });
             if (!newNotif.is_read) setUnreadCount((c) => c + 1);
+          },
+        )
+        // Notifiche aggiornate: chat raggruppate (risalgono in cima) o segnate
+        // come lette da un'altra pagina (es. aprendo la conversazione).
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            const updated = payload.new as DashboardNotification;
+            const previous = notificationsRef.current.find((n) => n.id === updated.id);
+            const wasUnread = previous ? !previous.is_read : false;
+            if (wasUnread !== !updated.is_read) {
+              setUnreadCount((c) => Math.max(0, c + (updated.is_read ? -1 : 1)));
+            }
+            setNotifications((prev) => {
+              const next = [updated, ...prev.filter((n) => n.id !== updated.id)].sort(
+                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+              );
+              return limit > 0 ? next.slice(0, limit) : next;
+            });
           },
         )
         .subscribe();

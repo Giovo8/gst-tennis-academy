@@ -36,7 +36,7 @@ Transizioni automatiche (in `src/lib/arena/challengeService.ts`, eseguite a ogni
 - `pending` con `scheduled_date` passata → `cancelled`
 - `accepted` con orario prenotazione/data passati → `awaiting_score`
 
-Ogni cambio di stato genera notifiche in-app (`notifications`) e messaggi interni (`internal_messages`) ai giocatori coinvolti.
+Ogni cambio di stato genera notifiche in-app (`notifications`, con `link` alla pagina della sfida nella dashboard del destinatario) e messaggi interni (`internal_messages`) ai giocatori coinvolti. Le date nei testi sono formattate nel fuso Europe/Rome.
 
 ### Configurazione match
 
@@ -80,20 +80,19 @@ Nota: la dashboard admin (`src/app/dashboard/admin/(main)/arena/page.tsx`) norma
 
 ## API
 
-Handler in `src/app/api/arena/`. Autenticazione richiesta su tutte le route.
+Handler in `src/app/api/arena/`. Autenticazione richiesta su tutte le route (sessione via cookie, tranne `players` che usa il Bearer token). Il dettaglio di una sfida si legge con `GET /api/arena/challenges?challenge_id=`.
 
-| Route                        | Metodi                        | Note                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/arena/challenges`      | GET, POST, PATCH, PUT, DELETE | GET: lista (filtri `user_id`, `status`) o singola (`challenge_id`). POST: creazione — solo admin/gestore possono creare a nome altrui; le loro sfide nascono `accepted`. PATCH/PUT: cambio stato, risultato (`completed` richiede `winner_id`), controproposta; `cancelled` annulla anche il booking collegato con rollback in caso di errore |
-| `/api/arena/challenges/[id]` | GET, PATCH, DELETE            | Operazioni sulla singola sfida                                                                                                                                                                                                                                                                                                                |
-| `/api/arena/players`         | GET                           | Elenco giocatori sfidabili con `arena_stats`; l'email è inclusa solo per admin/gestore                                                                                                                                                                                                                                                        |
-| `/api/arena/stats`           | GET, POST                     | GET: stats di un utente (`user_id`, creata al volo se assente) o leaderboard (default 100, ordinata per punti). Esclude dalla classifica admin/gestore senza ruolo secondario `maestro`. POST: upsert manuale, solo admin                                                                                                                     |
-| `/api/arena/reset-season`    | POST                          | Solo admin. Richiede `{ "confirm": "RESET_ARENA_SEASON" }` nel body; registra l'operazione in `activity_log`, poi **cancella tutte** le sfide e le statistiche                                                                                                                                                                                |
+| Route                     | Metodi                        | Note                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/arena/challenges`   | GET, POST, PATCH, PUT, DELETE | GET: lista (filtri `user_id`, `status`) o singola (`challenge_id`). POST: creazione — solo admin/gestore possono creare a nome altrui; le loro sfide nascono `accepted`. PATCH/PUT: cambio stato, risultato (`completed` richiede `winner_id`), controproposta; `cancelled` annulla anche il booking collegato con rollback in caso di errore |
+| `/api/arena/players`      | GET                           | Elenco giocatori sfidabili con `arena_stats`; l'email è inclusa solo per admin/gestore                                                                                                                                                                                                                                                        |
+| `/api/arena/stats`        | GET                           | Stats di un utente (`user_id`, create al volo se assenti) o leaderboard (`limit`, default 100, ordinata per punti e vittorie). Esclude dalla classifica admin/gestore senza ruolo secondario `maestro`                                                                                                                                        |
+| `/api/arena/reset-season` | POST                          | Solo admin/gestore. Richiede `{ "confirm": "RESET_ARENA_SEASON" }` nel body; registra l'operazione in `activity_log`, poi **cancella tutte** le sfide e le statistiche                                                                                                                                                                        |
 
 ## Pagine
 
 | Area    | Percorso                                  | Pagine                                                                                                                            |
 | ------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Atleta  | `src/app/dashboard/atleta/(main)/arena/`  | home Arena (classifica), `choose-opponent`, `configure-challenge/[opponentId]`, `challenge/[id]`, `info` (regole e tabella punti) |
-| Maestro | `src/app/dashboard/maestro/(main)/arena/` | come atleta + `statistiche`                                                                                                       |
+| Maestro | `src/app/dashboard/maestro/(main)/arena/` | le stesse pagine dell'atleta (riesportate)                                                                                        |
 | Admin   | `src/app/dashboard/admin/(main)/arena/`   | overview e classifica, `create-challenge`, `challenge/[id]` (+ `edit`), reset stagione                                            |

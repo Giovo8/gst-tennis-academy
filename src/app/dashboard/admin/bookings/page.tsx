@@ -12,7 +12,6 @@ import {
   TOURNAMENT_BOOKING_BACKGROUND,
 } from '@/lib/bookings/tournamentBookings';
 
-import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
 
 type Booking = {

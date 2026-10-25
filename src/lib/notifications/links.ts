@@ -1,17 +1,23 @@
-export function getMessageNotificationLink(role?: string | null): string {
+/**
+ * Pagina chat del ruolo. Con `conversationId` ("direct-<userId>" o
+ * "group-<groupId>") la pagina apre direttamente quella conversazione.
+ */
+export function getMessageNotificationLink(role?: string | null, conversationId?: string): string {
   const normalizedRole = String(role || '').toLowerCase();
 
+  let path: string;
   switch (normalizedRole) {
     case 'atleta':
-      return '/dashboard/atleta/mail';
+      path = '/dashboard/atleta/mail';
+      break;
     case 'maestro':
-      return '/dashboard/maestro/mail';
-    case 'admin':
-    case 'gestore':
-      return '/dashboard/admin/chat';
+      path = '/dashboard/maestro/mail';
+      break;
     default:
-      return '/dashboard/admin/chat';
+      path = '/dashboard/admin/chat';
   }
+
+  return conversationId ? `${path}?c=${encodeURIComponent(conversationId)}` : path;
 }
 
 export function getAdminBookingNotificationLink(bookingId?: string | null): string {

@@ -79,7 +79,7 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
       return;
     }
 
-    const registeredAtLabel = new Date().toLocaleString('it-IT');
+    const registeredAtLabel = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, '');
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const safePhone = params.phone?.trim() || 'n/d';

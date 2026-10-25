@@ -1,1 +1,3 @@
-export { default } from "@/app/dashboard/atleta/(main)/mail/page";
+import ChatView from '@/components/chat/ChatView';
+
+export default ChatView;

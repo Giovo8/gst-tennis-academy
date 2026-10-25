@@ -22,10 +22,7 @@ const urbanist = localFont({
 export const metadata: Metadata = {
   ...defaultMetadata,
   icons: {
-    icon: [
-      { url: '/images/logo-tennis.svg', type: 'image/svg+xml' },
-      { url: '/images/logo-tennis.png', type: 'image/png' },
-    ],
+    icon: [{ url: '/images/logo-tennis.png', type: 'image/png' }],
     apple: '/images/logo-tennis.png',
   },
 };

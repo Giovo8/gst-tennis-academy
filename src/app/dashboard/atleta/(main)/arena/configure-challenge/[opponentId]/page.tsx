@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter, useParams, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import { useCourts } from '@/lib/hooks/useCourts';
+import { DEFAULT_COURTS } from '@/lib/courts/constants';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { format, addDays } from 'date-fns';
@@ -51,8 +53,6 @@ interface SelectedParticipant {
   isRegistered: boolean;
 }
 
-const COURTS = ['Campo 1', 'Campo 2', 'Campo 3', 'Campo 4'];
-
 const MATCH_TYPES = [
   { value: 'singolo', label: 'Singolo' },
   { value: 'doppio', label: 'Doppio' },
@@ -61,6 +61,7 @@ const MATCH_TYPES = [
 const WEEK_DAYS = ['lu', 'ma', 'me', 'gi', 've', 'sa', 'do'];
 
 export default function ConfigureChallengePage() {
+  const courts = useCourts();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -82,7 +83,7 @@ export default function ConfigureChallengePage() {
   const [matchFormat, setMatchFormat] = useState('best_of_3');
   const [matchType, setMatchType] = useState('singolo');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedCourt, setSelectedCourt] = useState(COURTS[0]);
+  const [selectedCourt, setSelectedCourt] = useState(DEFAULT_COURTS[0]);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [myPartner, setMyPartner] = useState('');
   const [opponentPartner, setOpponentPartner] = useState('');
@@ -757,7 +758,7 @@ export default function ConfigureChallengePage() {
                 Campo *
               </label>
               <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                {COURTS.map((court) => (
+                {courts.map((court) => (
                   <button
                     key={court}
                     type="button"

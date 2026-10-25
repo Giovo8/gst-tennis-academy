@@ -47,14 +47,17 @@ export function buildAdminsNotificationForUserBookingDeletion({
   bookingType,
 }: UserBookingDeletionNotificationParams) {
   const bookingDate = new Date(startTime);
+  // Fuso esplicito: lato server (Vercel) l'ora locale è UTC
   const dateLabel = bookingDate.toLocaleDateString('it-IT', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    timeZone: 'Europe/Rome',
   });
   const timeLabel = bookingDate.toLocaleTimeString('it-IT', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Europe/Rome',
   });
 
   return {

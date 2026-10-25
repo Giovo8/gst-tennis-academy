@@ -1,13 +1,18 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/dashboard/atleta";
+  const code = searchParams.get('code');
+  const tokenHash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
+  // Solo percorsi interni: concatenato all'origin, "@host" o "//host" porterebbero fuori dal sito
+  const requestedNext = searchParams.get('next');
+  const next =
+    requestedNext && requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+      ? requestedNext
+      : '/dashboard/atleta';
 
   if (code || (tokenHash && type)) {
     const cookieStore = await cookies();
@@ -26,7 +31,7 @@ export async function GET(request: Request) {
             cookieStore.delete({ name, ...options });
           },
         },
-      }
+      },
     );
 
     let authError: { message?: string } | null = null;
@@ -37,14 +42,14 @@ export async function GET(request: Request) {
     } else if (tokenHash && type) {
       const { error } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: type as "recovery" | "invite" | "email" | "email_change" | "magiclink",
+        type: type as 'recovery' | 'invite' | 'email' | 'email_change' | 'magiclink',
       });
       authError = error;
     }
 
     if (!authError) {
       // If next is an /auth/* path (e.g. reset-password), go there directly
-      if (next.startsWith("/auth/")) {
+      if (next.startsWith('/auth/')) {
         return NextResponse.redirect(`${origin}${next}`);
       }
 
@@ -55,16 +60,16 @@ export async function GET(request: Request) {
 
       if (user) {
         const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
           .single();
 
         let destination = next;
-        if (profile?.role === "admin" || profile?.role === "gestore") {
-          destination = "/dashboard/admin";
-        } else if (profile?.role === "maestro") {
-          destination = "/dashboard/maestro";
+        if (profile?.role === 'admin' || profile?.role === 'gestore') {
+          destination = '/dashboard/admin';
+        } else if (profile?.role === 'maestro') {
+          destination = '/dashboard/maestro';
         }
 
         return NextResponse.redirect(`${origin}${destination}`);
@@ -79,16 +84,16 @@ export async function GET(request: Request) {
     } = await supabase.auth.getUser();
     if (existingUser) {
       const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", existingUser.id)
+        .from('profiles')
+        .select('role')
+        .eq('id', existingUser.id)
         .single();
 
       let destination = next;
-      if (profile?.role === "admin" || profile?.role === "gestore") {
-        destination = "/dashboard/admin";
-      } else if (profile?.role === "maestro") {
-        destination = "/dashboard/maestro";
+      if (profile?.role === 'admin' || profile?.role === 'gestore') {
+        destination = '/dashboard/admin';
+      } else if (profile?.role === 'maestro') {
+        destination = '/dashboard/maestro';
       }
 
       return NextResponse.redirect(`${origin}${destination}`);

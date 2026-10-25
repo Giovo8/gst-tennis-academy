@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
 
 /**
  * API per la creazione dei tornei semplificata
@@ -38,42 +39,11 @@ interface CreateTournamentRequest {
   status?: string;
 }
 
-async function getUserProfile(req: Request) {
-  try {
-    const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return { user: null, profile: null };
-    }
-
-    const { data: userData, error } = await supabaseServer.auth.getUser(token);
-
-    if (error || !userData?.user) {
-      return { user: null, profile: null };
-    }
-
-    const { data: profile } = await supabaseServer
-      .from('profiles')
-      .select('id, role, full_name')
-      .eq('id', userData.user.id)
-      .single();
-
-    return { user: userData.user, profile };
-  } catch (error) {
-    console.error('Error getting user profile:', error);
-    return { user: null, profile: null };
-  }
-}
-
 export async function POST(req: Request) {
   try {
     // Verifica autorizzazione
-    const { profile } = await getUserProfile(req);
-
-    if (!profile || !['gestore', 'admin'].includes(String(profile.role).toLowerCase())) {
-      return NextResponse.json({ error: 'Non hai i permessi per creare tornei' }, { status: 403 });
-    }
+    const auth = await verifyAuth(req, ['admin', 'gestore']);
+    if (!auth.success) return auth.response;
 
     const body: CreateTournamentRequest = await req.json();
 

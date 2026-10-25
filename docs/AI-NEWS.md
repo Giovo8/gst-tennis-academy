@@ -1,6 +1,6 @@
 # AI News — Pipeline notizie tennis (RSS + Gemini)
 
-Il modulo AI News genera automaticamente notizie di tennis per la sezione pubblica `/news`: legge feed RSS configurati a database, riscrive gli articoli in italiano con **Gemini Flash-Lite** (modello gratuito, configurabile con il secret `GEMINI_MODEL`) e li inserisce nella tabella `news` come bozze (o già pubblicate, se abilitata la pubblicazione automatica). L'intero flusso è gestito dalla dashboard admin `/dashboard/admin/news`.
+Il modulo AI News genera automaticamente notizie di tennis per la sezione pubblica `/news`: legge feed RSS configurati a database, riscrive gli articoli in italiano con **Gemini Flash-Lite** (modello gratuito, configurabile con il secret `GEMINI_MODEL`) e li inserisce nella tabella `news` come bozze (o già pubblicate, se abilitata la pubblicazione automatica). L'intero flusso è gestito dalla dashboard admin: bozze in `/dashboard/admin/news/ai`, fonti, orari e impostazioni in `/dashboard/admin/news/ai/configurazione`.
 
 ## Architettura
 
@@ -24,13 +24,13 @@ Dashboard admin: approva / modifica / scarta
 
 ## Tabelle
 
-| Tabella | Contenuto |
-|---|---|
-| `ai_news_fonti` | Feed RSS: `nome`, `url`, `categoria`, `attiva` |
-| `ai_news_cron` | Pianificazioni: `nome`, `ora`, `minuto` (solo 0/15/30/45), `categoria`, `prompt_custom`, `attivo`, `ultimo_eseguito` |
-| `ai_news_config` | Config globale (una riga): `pubblicazione_auto`, `numero_post` (default 5) |
-| `ai_news_generation_logs` | Esiti di ogni run: `tipo` (`manuale`/`cron`), `cron_id`, `generate`, `skippate`, `errori[]` |
-| `news` | Articoli, con `stato` (bozza/pubblicata/scartata), `ai_generated`, `fonte_url`, `fonte_nome`, `image_url` |
+| Tabella                   | Contenuto                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `ai_news_fonti`           | Feed RSS: `nome`, `url`, `categoria`, `attiva`                                                                       |
+| `ai_news_cron`            | Pianificazioni: `nome`, `ora`, `minuto` (solo 0/15/30/45), `categoria`, `prompt_custom`, `attivo`, `ultimo_eseguito` |
+| `ai_news_config`          | Config globale (una riga): `pubblicazione_auto`, `numero_post` (default 5)                                           |
+| `ai_news_generation_logs` | Esiti di ogni run: `tipo` (`manuale`/`cron`), `cron_id`, `generate`, `skippate`, `errori[]`                          |
+| `news`                    | Articoli, con `stato` (bozza/pubblicata/scartata), `ai_generated`, `fonte_url`, `fonte_nome`, `image_url`            |
 
 Tabelle e funzione di sync definite nella migrazione `063_ai_news_generator.sql` (timezone corretta in `065_fix_cron_timezone.sql`). Richiede le estensioni `pg_cron` e `pg_net`.
 
@@ -56,42 +56,42 @@ Se Gemini fallisce su tutti i modelli configurati (quota esaurita, chiave non va
 
 ## Workflow bozza → pubblicazione
 
-Le bozze generate compaiono in `/dashboard/admin/news`:
+Le bozze generate compaiono in `/dashboard/admin/news/ai`:
 
-| Azione | Route | Effetto su `news` |
-|---|---|---|
-| Lista bozze | `GET /api/ai-news/bozze?stato=bozza\|pubblicata\|scartata\|tutte` | Solo righe `ai_generated = true` |
-| Approva | `PATCH /api/ai-news/[id]/approva` | `stato = "pubblicata"`, `is_published = true`, `published_at` valorizzato; titolo/testo risanitizzati |
-| Modifica | `PATCH /api/ai-news/[id]/modifica` | Aggiorna `title`/`content`/`excerpt` (body: `titolo`, `testo`, entrambi obbligatori) |
-| Scarta | `PATCH /api/ai-news/[id]/scarta` | `stato = "scartata"`, `is_published = false` |
+| Azione      | Route                                                             | Effetto su `news`                                                                                     |
+| ----------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Lista bozze | `GET /api/ai-news/bozze?stato=bozza\|pubblicata\|scartata\|tutte` | Solo righe `ai_generated = true`                                                                      |
+| Approva     | `PATCH /api/ai-news/[id]/approva`                                 | `stato = "pubblicata"`, `is_published = true`, `published_at` valorizzato; titolo/testo risanitizzati |
+| Modifica    | `PATCH /api/ai-news/[id]/modifica`                                | Aggiorna `title`/`content`/`excerpt` (body: `titolo`, `testo`, entrambi obbligatori)                  |
+| Scarta      | `PATCH /api/ai-news/[id]/scarta`                                  | `stato = "scartata"`, `is_published = false`                                                          |
 
 ## Cron (configurati in DB, non in Vercel)
 
 Gli orari di generazione sono righe di `ai_news_cron`, gestite dalla dashboard admin. Ogni modifica chiama la funzione SQL `ai_news_sync_cron_job()` che (ri)schedula un job **pg_cron** (`ai-news-<uuid>`); il job invoca la Edge Function via `net.http_post` con la service role key e il `cron_id`. L'ora è convertita da Europe/Rome a UTC calcolando l'offset corrente (gestisce l'ora legale).
 
-| Route | Metodi | Note |
-|---|---|---|
-| `/api/ai-news/cron` | GET, POST | Vincoli: `ora` 0–23, `minuto` ∈ {0, 15, 30, 45}, massimo **8 cron attivi** |
-| `/api/ai-news/cron/[id]` | PATCH, DELETE | Modifica/eliminazione + risincronizzazione pg_cron |
-| `/api/ai-news/cron/[id]/esegui` | POST | Esecuzione manuale immediata (chiama la Edge Function con `cron_id`) |
-| `/api/ai-news/cron/sync` | POST | Risincronizza tutti i job pg_cron dalle righe DB |
+| Route                           | Metodi        | Note                                                                       |
+| ------------------------------- | ------------- | -------------------------------------------------------------------------- |
+| `/api/ai-news/cron`             | GET, POST     | Vincoli: `ora` 0–23, `minuto` ∈ {0, 15, 30, 45}, massimo **8 cron attivi** |
+| `/api/ai-news/cron/[id]`        | PATCH, DELETE | Modifica/eliminazione + risincronizzazione pg_cron                         |
+| `/api/ai-news/cron/[id]/esegui` | POST          | Esecuzione manuale immediata (chiama la Edge Function con `cron_id`)       |
+| `/api/ai-news/cron/sync`        | POST          | Risincronizza tutti i job pg_cron dalle righe DB                           |
 
 ## Altre API
 
-| Route | Metodi | Note |
-|---|---|---|
-| `/api/ai-news/genera` | POST | Generazione manuale (body opzionale: `categoria`, `cron_id`); delega alla Edge Function con fallback RSS locale su quota |
-| `/api/ai-news/fonti` | GET, POST | CRUD fonti RSS |
-| `/api/ai-news/fonti/[id]` | PATCH, DELETE | Modifica/eliminazione fonte |
-| `/api/ai-news/fonti/[id]/test` | GET | Testa il feed: parse RSS e ritorna `titolo_feed` + `articoli_trovati` |
-| `/api/ai-news/config` | GET, POST | Legge/aggiorna `pubblicazione_auto` e `numero_post` (crea la riga se assente) |
-| `/api/ai-news/logs` | GET | Ultimi 20 run da `ai_news_generation_logs` |
-| `/api/ai-news/cleanup` | POST | Bonifica dell'archivio AI (batch da 100, supporta `dryRun`): risanitizza titoli/testi, ripara titoli fallback, e se il testo "sembra inglese" (euristica su stopword) lo **traduce in italiano con Gemini** (`GEMINI_MODEL`, default `gemini-3.5-flash-lite`); senza `GEMINI_API_KEY` esegue solo la sanitizzazione |
+| Route                          | Metodi        | Note                                                                                                                                                                                                                                                                                                                |
+| ------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/ai-news/genera`          | POST          | Generazione manuale (body opzionale: `categoria`, `cron_id`); delega alla Edge Function con fallback RSS locale su quota                                                                                                                                                                                            |
+| `/api/ai-news/fonti`           | GET, POST     | CRUD fonti RSS                                                                                                                                                                                                                                                                                                      |
+| `/api/ai-news/fonti/[id]`      | PATCH, DELETE | Modifica/eliminazione fonte                                                                                                                                                                                                                                                                                         |
+| `/api/ai-news/fonti/[id]/test` | GET           | Testa il feed: parse RSS e ritorna `titolo_feed` + `articoli_trovati`                                                                                                                                                                                                                                               |
+| `/api/ai-news/config`          | GET, POST     | Legge/aggiorna `pubblicazione_auto` e `numero_post` (crea la riga se assente)                                                                                                                                                                                                                                       |
+| `/api/ai-news/logs`            | GET           | Ultimi 20 run da `ai_news_generation_logs`                                                                                                                                                                                                                                                                          |
+| `/api/ai-news/cleanup`         | POST          | Bonifica dell'archivio AI (batch da 100, supporta `dryRun`): risanitizza titoli/testi, ripara titoli fallback, e se il testo "sembra inglese" (euristica su stopword) lo **traduce in italiano con Gemini** (`GEMINI_MODEL`, default `gemini-3.5-flash-lite`); senza `GEMINI_API_KEY` esegue solo la sanitizzazione |
 
 ## Variabili d'ambiente
 
-| Variabile | Dove serve |
-|---|---|
-| `GEMINI_API_KEY` | Secret della Edge Function (senza: solo fallback locale) e `/api/ai-news/cleanup` (opzionale) |
-| `GEMINI_MODEL` | Opzionale: modello/i Gemini, es. `gemini-3.5-flash-lite,gemini-3.1-flash-lite` |
-| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Invocazione Edge Function e sync pg_cron |
+| Variabile                                                                | Dove serve                                                                                    |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY`                                                         | Secret della Edge Function (senza: solo fallback locale) e `/api/ai-news/cleanup` (opzionale) |
+| `GEMINI_MODEL`                                                           | Opzionale: modello/i Gemini, es. `gemini-3.5-flash-lite,gemini-3.1-flash-lite`                |
+| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Invocazione Edge Function e sync pg_cron                                                      |

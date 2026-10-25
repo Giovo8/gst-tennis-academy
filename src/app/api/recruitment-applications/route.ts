@@ -26,35 +26,6 @@ export async function GET() {
   }
 }
 
-export async function PATCH(req: Request) {
-  try {
-    const auth = await getRouteAuth();
-    if (!auth) return unauthorized();
-    if (!isAdmin(auth.role)) return forbidden();
-
-    const { id, status } = await req.json();
-
-    if (!id || !status) {
-      return NextResponse.json({ error: 'Missing required fields: id, status' }, { status: 400 });
-    }
-
-    const { error } = await supabaseServer
-      .from('recruitment_applications')
-      .update({ status })
-      .eq('id', id);
-
-    if (error) {
-      logger.error('Error updating application:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    logger.error('Exception updating application:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
-
 export async function DELETE(req: Request) {
   try {
     const auth = await getRouteAuth();

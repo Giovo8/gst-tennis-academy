@@ -26,7 +26,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { getMessageNotificationLink } from '@/lib/notifications/links';
+import { getMessageNotificationLink, resolveNotificationLink } from '@/lib/notifications/links';
 
 interface Notification {
   id: string;
@@ -35,6 +35,7 @@ interface Notification {
   title: string;
   message: string;
   link?: string | null;
+  action_url?: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -151,8 +152,13 @@ export default function NotificationCenter() {
   }
 
   function resolveLink(n: Notification): string | null {
-    if (n.type === 'message') return getMessageNotificationLink(userRole);
-    return n.link || null;
+    if (n.type === 'message') {
+      // Il link salvato porta alla conversazione (?c=...) se è della chat del ruolo
+      const chatPath = getMessageNotificationLink(userRole);
+      return n.link && n.link.startsWith(chatPath) ? n.link : chatPath;
+    }
+    // action_url: notifiche Arena salvate prima che usassero `link`
+    return resolveNotificationLink(n.action_url || n.link);
   }
 
   const normalizedSearch = search.trim().toLowerCase();

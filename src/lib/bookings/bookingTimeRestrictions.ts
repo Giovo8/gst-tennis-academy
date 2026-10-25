@@ -30,12 +30,6 @@ export function getClosingMinutes(dayOfWeek: number): number {
   return h.close.h * 60 + h.close.m;
 }
 
-/** Orario di apertura in minuti dalla mezzanotte per il giorno dato */
-export function getOpeningMinutes(dayOfWeek: number): number {
-  const h = getCourtHoursForDay(dayOfWeek);
-  return h.open.h * 60 + h.open.m;
-}
-
 /** Label leggibile degli orari per il giorno dato, es. "07:00 - 20:30" */
 export function getCourtHoursLabel(dayOfWeek: number): string {
   const h = getCourtHoursForDay(dayOfWeek);
@@ -49,10 +43,7 @@ export function getCourtHoursLabel(dayOfWeek: number): string {
  *
  * @returns null se l'orario è valido, altrimenti un messaggio di errore localizzato
  */
-export function validateRestrictedBookingHours(
-  startISO: string,
-  endISO: string
-): string | null {
+export function validateRestrictedBookingHours(startISO: string, endISO: string): string | null {
   function getItalyComponents(date: Date): { dayOfWeek: number; minutesFromMidnight: number } {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Europe/Rome',
@@ -64,8 +55,7 @@ export function validateRestrictedBookingHours(
       hour12: false,
     }).formatToParts(date);
 
-    const get = (type: string) =>
-      parseInt(parts.find((p) => p.type === type)?.value ?? '0', 10);
+    const get = (type: string) => parseInt(parts.find((p) => p.type === type)?.value ?? '0', 10);
 
     const hour = get('hour') % 24; // guard against "24" at midnight
     const minute = get('minute');
@@ -86,7 +76,9 @@ export function validateRestrictedBookingHours(
   const closeMin = hours.close.h * 60 + hours.close.m;
 
   if (start.minutesFromMidnight < openMin || end.minutesFromMidnight > closeMin) {
-    return `Orario non consentito. In questo giorno puoi prenotare dalle ${getCourtHoursLabel(start.dayOfWeek)}.`;
+    return `Orario non consentito. In questo giorno puoi prenotare dalle ${getCourtHoursLabel(
+      start.dayOfWeek,
+    )}.`;
   }
 
   return null;
@@ -103,7 +95,9 @@ export function validateRestrictedBookingHours(
  */
 export function parseItalyLocalToUTC(dateStr: string, hh: number, mm: number): Date {
   // Crea una stima UTC trattando l'orario come UTC (sarà sfasata dell'offset Italy)
-  const estimate = new Date(`${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00Z`);
+  const estimate = new Date(
+    `${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00Z`,
+  );
 
   // Trova l'orario Italy (Europe/Rome) corrispondente alla stima UTC
   const parts = new Intl.DateTimeFormat('en-US', {

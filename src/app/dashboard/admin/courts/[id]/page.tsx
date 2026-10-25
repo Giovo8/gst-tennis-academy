@@ -74,6 +74,26 @@ export default function CourtBlockDetailPage() {
     };
   }
 
+  function getBlockTitle(reason?: string) {
+    const text = (reason || '').trim();
+    if (!text) return 'Blocco campo';
+
+    const altroWithParens = text.match(/^Altro\s*\(([^)]+)\)(?:\s*-\s*(.+))?$/i);
+    if (altroWithParens) {
+      const custom = (altroWithParens[1] || '').trim();
+      const notes = (altroWithParens[2] || '').trim();
+      if (custom && notes) return `${custom} - ${notes}`;
+      return custom || notes || 'Altro';
+    }
+
+    const altroSimple = text.match(/^Altro\s*-\s*(.+)$/i);
+    if (altroSimple) {
+      return (altroSimple[1] || '').trim() || 'Altro';
+    }
+
+    return text;
+  }
+
   function getBlockCardBg(type: string) {
     if (type === 'Corso Adulti') return '#023047';
     if (type === 'Corsi Tennis') return '#05384c';
@@ -252,7 +272,7 @@ export default function CourtBlockDetailPage() {
         <div className="flex items-start gap-6">
           <BlockIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{firstBlock.court_id}</h1>
+            <p className="text-2xl font-bold text-white">{getBlockTitle(firstBlock.reason)}</p>{' '}
           </div>
         </div>
       </div>
@@ -284,7 +304,7 @@ export default function CourtBlockDetailPage() {
                       )}
                     </p>
                     <p className="text-xs truncate mt-0.5 text-white/70">
-                      {format(dateStart, 'HH:mm')} - {format(dateEnd, 'HH:mm')}
+                      {format(dateStart, 'HH:mm')} - {format(dateEnd, 'HH:mm')} · {block.court_id}
                     </p>
                   </div>
 
@@ -320,6 +340,15 @@ export default function CourtBlockDetailPage() {
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli blocco</h2>
 
         <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Campo
+            </label>
+            <div className="flex-1">
+              <p className="text-secondary font-semibold">{firstBlock.court_id}</p>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Motivo

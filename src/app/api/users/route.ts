@@ -1,39 +1,21 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
 import { isBookableCoachProfile } from '@/lib/roles';
+import logger from '@/lib/logger/secure-logger';
 
-async function getUserProfile(req: Request) {
-  const authHeader = req.headers.get('authorization') ?? null;
-  const token = authHeader?.replace('Bearer ', '') ?? null;
-  if (!token) return null;
-
-  const { data: userData, error: userErr } = await supabaseServer.auth.getUser(token);
-  if (userErr || !userData?.user) return null;
-
-  const { data: profile } = await supabaseServer
-    .from('profiles')
-    .select('id, role')
-    .eq('id', userData.user.id)
-    .single();
-
-  return profile;
-}
-
+/**
+ * GET /api/users — utenti selezionabili in prenotazioni, iscrizioni e chat.
+ * Gli atleti vedono solo i maestri prenotabili; maestro, gestore e admin vedono tutti.
+ * Ogni utente ha il flag calcolato `is_bookable_coach`.
+ */
 export async function GET(req: Request) {
   try {
-    const profile = await getUserProfile(req);
-    if (!profile) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await verifyAuth(req, ['admin', 'gestore', 'maestro', 'atleta']);
+    if (!auth.success) return auth.response;
 
-    const roleLower = String(profile.role).toLowerCase();
+    const roleLower = String(auth.data.profile?.role).toLowerCase();
 
-    // Athletes can see coaches for booking, maestros/admin/gestore can see everyone
-    if (!['admin', 'gestore', 'maestro', 'atleta'].includes(roleLower)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Get all users that can be enrolled in tournaments
     const { data: users, error } = await supabaseServer
       .from('profiles')
       .select('id, full_name, email, role, avatar_url, metadata')
@@ -41,37 +23,24 @@ export async function GET(req: Request) {
       .order('full_name', { ascending: true, nullsFirst: false });
 
     if (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Filter based on role
-    let filteredUsers = users || [];
+    const filteredUsers =
+      roleLower === 'atleta'
+        ? // Maestri e gestori con ruolo secondario "maestro"
+          (users || []).filter((user) => isBookableCoachProfile(user))
+        : users || [];
 
-    if (roleLower === 'atleta') {
-      // Athletes can only see coach profiles (maestro + gestore con ruolo secondario maestro)
-      filteredUsers = filteredUsers.filter((user) => {
-        return isBookableCoachProfile(user);
-      });
-    } else {
-      // Maestros, admin, and gestore can see all relevant roles
-      filteredUsers = filteredUsers.filter((user) => {
-        const role = String(user.role || '').toLowerCase();
-        return ['atleta', 'maestro', 'admin', 'gestore'].includes(role);
-      });
-    }
-
-    const usersResponse = filteredUsers.map((user: any) => {
-      const { ...safeUser } = user;
-      return {
-        ...safeUser,
-        is_bookable_coach: isBookableCoachProfile(user),
-      };
-    });
+    const usersResponse = filteredUsers.map((user) => ({
+      ...user,
+      is_bookable_coach: isBookableCoachProfile(user),
+    }));
 
     return NextResponse.json({ users: usersResponse });
   } catch (error) {
-    console.error('Error in users API:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logger.error('Error in users API', error);
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
   }
 }

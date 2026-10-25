@@ -77,7 +77,6 @@ describeTests('Tournament System - Full Flows', () => {
 
       expect(error).toBeNull();
       expect(data).toHaveLength(8);
-      participantIds = data?.map((p) => p.id) || [];
     });
 
     it('should generate elimination bracket', async () => {

@@ -1,22 +1,54 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
 import { logActivityServer } from '@/lib/activity/logActivity';
 
-async function getUserProfileFromRequest(req: Request) {
-  const authHeader = req.headers.get('authorization') ?? null;
-  const token = authHeader?.replace('Bearer ', '') ?? null;
-  if (!token) return { user: null, profile: null };
-  const { data: userData, error: userErr } = await supabaseServer.auth.getUser(token);
-  if (userErr || !userData?.user) return { user: null, profile: null };
-  const user = userData.user;
-  const { data: profile } = await supabaseServer
-    .from('profiles')
-    .select('id, role, full_name')
-    .eq('id', user.id)
-    .single();
-  return { user, profile };
+type Requester = { id: string; role: string; full_name: string | null };
+
+/**
+ * Chi può iscrivere o disiscrivere `targetUserId`: l'interessato stesso,
+ * admin/gestore per chiunque, un maestro solo se il destinatario è un atleta.
+ * Restituisce la risposta di errore, oppure null se l'operazione è consentita.
+ */
+async function checkCanManage(
+  requester: Requester,
+  targetUserId: string,
+  forbiddenMessage: string,
+): Promise<NextResponse | null> {
+  if (requester.id === targetUserId) return null;
+
+  const role = requester.role.toLowerCase();
+  if (role === 'admin' || role === 'gestore') return null;
+
+  if (role === 'maestro') {
+    const { data: target, error } = await supabaseServer
+      .from('profiles')
+      .select('role')
+      .eq('id', targetUserId)
+      .single();
+    if (error || !target) {
+      return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 });
+    }
+    if (String(target.role).toLowerCase() === 'atleta') return null;
+    return NextResponse.json({ error: forbiddenMessage }, { status: 403 });
+  }
+
+  return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
 }
 
+async function getRequester(req: Request) {
+  const auth = await verifyAuth(req);
+  if (!auth.success) return { response: auth.response };
+  return {
+    requester: {
+      id: auth.data.user.id,
+      role: auth.data.profile?.role ?? '',
+      full_name: auth.data.profile?.full_name ?? null,
+    } as Requester,
+  };
+}
+
+/** GET — pubblico: iscritti filtrati per user_id e/o tournament_id, con nome e avatar. */
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -34,21 +66,20 @@ export async function GET(req: Request) {
     const { data, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // fetch profile info for listed user_ids (if profiles table exists)
-    const userIds = (data || []).map((r: any) => r.user_id).filter(Boolean);
+    const userIds = (data || []).map((r) => r.user_id).filter(Boolean);
     const profilesMap = new Map();
     if (userIds.length > 0) {
       const { data: profiles } = await supabaseServer
         .from('profiles')
         .select('id, full_name, avatar_url')
         .in('id', userIds);
-      (profiles || []).forEach((p: any) => profilesMap.set(p.id, p));
+      (profiles || []).forEach((p) => profilesMap.set(p.id, p));
     }
 
-    const enriched = (data || []).map((r: any) => ({
+    // player_name resta nella riga per i giocatori esterni senza account
+    const enriched = (data || []).map((r) => ({
       ...r,
       profiles: profilesMap.get(r.user_id) || null,
-      // player_name is already in r for external players without an app account
     }));
     return NextResponse.json({ participants: enriched });
   } catch (err) {
@@ -56,39 +87,20 @@ export async function GET(req: Request) {
   }
 }
 
+/** POST — iscrive `user_id` al torneo, se c'è posto. Body: { user_id, tournament_id }. */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { user_id, tournament_id } = body;
+    const { user_id, tournament_id } = body ?? {};
     if (!user_id || !tournament_id) {
       return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
     }
 
-    const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+    const { requester, response } = await getRequester(req);
+    if (response) return response;
 
-    // If the requester is trying to register someone else, allow gestore/admin.
-    // Allow `maestro` (coach) to register other users only if the target is an `atleta`.
-    if (String(profile.id) !== String(user_id)) {
-      const roleLower = String(profile.role).toLowerCase();
-      if (['gestore', 'admin'].includes(roleLower)) {
-        // allowed
-      } else if (roleLower === 'maestro') {
-        // verify target is atleta
-        const { data: targetProfile, error: tErr } = await supabaseServer
-          .from('profiles')
-          .select('id, role')
-          .eq('id', user_id)
-          .single();
-        if (tErr || !targetProfile)
-          return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 });
-        if (String(targetProfile.role).toLowerCase() !== 'atleta') {
-          return NextResponse.json({ error: 'Puoi iscrivere solo atleti' }, { status: 403 });
-        }
-      } else {
-        return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
-      }
-    }
+    const denied = await checkCanManage(requester, String(user_id), 'Puoi iscrivere solo atleti');
+    if (denied) return denied;
 
     // Check tournament and capacity
     const { data: tournament, error: tErr } = await supabaseServer
@@ -109,10 +121,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Torneo al completo' }, { status: 409 });
     }
 
-    // Create participation
+    // Solo i campi dell'iscrizione: il resto della riga (girone, seed,
+    // statistiche) è gestito dalle route del torneo, non dal client.
     const { data, error } = await supabaseServer
       .from('tournament_participants')
-      .insert([body])
+      .insert([{ user_id, tournament_id }])
       .select();
 
     if (error) {
@@ -120,10 +133,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Log activity
     if (data && data[0]) {
       await logActivityServer({
-        userId: user.id,
+        userId: requester.id,
         action: 'tournament.join',
         entityType: 'tournament',
         entityId: tournament_id,
@@ -131,8 +143,8 @@ export async function POST(req: Request) {
         userAgent: req.headers.get('user-agent') || undefined,
         metadata: {
           participantId: data[0].id,
-          registeredBy: profile.id,
-          registeredByName: profile.full_name,
+          registeredBy: requester.id,
+          registeredByName: requester.full_name,
           targetUserId: user_id,
         },
       });
@@ -144,88 +156,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function PATCH(req: Request) {
-  try {
-    const body = await req.json();
-    const { id, user_id } = body;
-
-    if (!id || !user_id) {
-      return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
-    }
-
-    const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-
-    const roleLower = String(profile.role).toLowerCase();
-    if (!['gestore', 'admin'].includes(roleLower)) {
-      return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
-    }
-
-    // Verify the target user exists in profiles
-    const { data: targetProfile, error: tpErr } = await supabaseServer
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('id', user_id)
-      .single();
-
-    if (tpErr || !targetProfile) {
-      return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 });
-    }
-
-    // Verify participant exists
-    const { data: participant, error: pErr } = await supabaseServer
-      .from('tournament_participants')
-      .select('id, tournament_id, user_id')
-      .eq('id', id)
-      .single();
-
-    if (pErr || !participant) {
-      return NextResponse.json({ error: 'Partecipante non trovato' }, { status: 404 });
-    }
-
-    // Check no duplicate: the target user_id must not already be in the tournament
-    const { data: existing } = await supabaseServer
-      .from('tournament_participants')
-      .select('id')
-      .eq('tournament_id', participant.tournament_id)
-      .eq('user_id', user_id)
-      .neq('id', id)
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      return NextResponse.json({ error: 'Già iscritto al torneo' }, { status: 409 });
-    }
-
-    const { data, error } = await supabaseServer
-      .from('tournament_participants')
-      .update({ user_id })
-      .eq('id', id)
-      .select();
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-    await logActivityServer({
-      userId: user.id,
-      action: 'tournament.participant_update',
-      entityType: 'tournament',
-      entityId: participant.tournament_id,
-      ipAddress: req.headers.get('x-forwarded-for') || undefined,
-      userAgent: req.headers.get('user-agent') || undefined,
-      metadata: {
-        participantId: id,
-        previousUserId: participant.user_id,
-        newUserId: user_id,
-        updatedBy: profile.id,
-        updatedByName: profile.full_name,
-      },
-    });
-
-    return NextResponse.json({ participant: data?.[0] });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
-
+/** DELETE — rimuove un iscritto: ?id=<participantId> oppure ?user_id=&tournament_id=. */
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
@@ -233,113 +164,59 @@ export async function DELETE(req: Request) {
     const user_id = url.searchParams.get('user_id');
     const tournament_id = url.searchParams.get('tournament_id');
 
+    if (!id && !(user_id && tournament_id)) {
+      return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
+    }
+
+    let target: { id?: string; user_id: string | null; tournament_id: string };
     if (id) {
-      // find participant to check permissions
       const { data: part, error: pErr } = await supabaseServer
         .from('tournament_participants')
         .select('id, user_id, tournament_id')
         .eq('id', id)
         .single();
       if (pErr) return NextResponse.json({ error: pErr.message }, { status: 404 });
-
-      const { user, profile } = await getUserProfileFromRequest(req);
-      if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-
-      // Allow owner, gestore/admin, and maestro (coach) if the participant is an atleta
-      if (String(profile.id) === String(part.user_id)) {
-        // owner allowed
-      } else {
-        const roleLower = String(profile.role).toLowerCase();
-        if (['gestore', 'admin'].includes(roleLower)) {
-          // allowed
-        } else if (roleLower === 'maestro') {
-          // check participant's role
-          const { data: pProfile, error: ppErr } = await supabaseServer
-            .from('profiles')
-            .select('id, role')
-            .eq('id', part.user_id)
-            .single();
-          if (ppErr || !pProfile)
-            return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
-          if (String(pProfile.role).toLowerCase() !== 'atleta')
-            return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
-        } else {
-          return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
-        }
-      }
-
-      const { error } = await supabaseServer.from('tournament_participants').delete().eq('id', id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-      await logActivityServer({
-        userId: user.id,
-        action: 'tournament.leave',
-        entityType: 'tournament',
-        entityId: part.tournament_id || undefined,
-        ipAddress: req.headers.get('x-forwarded-for') || undefined,
-        userAgent: req.headers.get('user-agent') || undefined,
-        metadata: {
-          participantId: part.id,
-          removedUserId: part.user_id,
-          removedBy: profile.id,
-          removedByName: profile.full_name,
-        },
-      });
-
-      return NextResponse.json({ success: true });
+      target = part;
+    } else {
+      target = { user_id, tournament_id };
     }
 
-    if (user_id && tournament_id) {
-      const { user, profile } = await getUserProfileFromRequest(req);
-      if (!profile) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+    const { requester, response } = await getRequester(req);
+    if (response) return response;
 
-      if (String(profile.id) === String(user_id)) {
-        // owner allowed to remove self
-      } else {
-        const roleLower = String(profile.role).toLowerCase();
-        if (['gestore', 'admin'].includes(roleLower)) {
-          // allowed
-        } else if (roleLower === 'maestro') {
-          // only if target user is atleta
-          const { data: targetProfile, error: tpErr } = await supabaseServer
-            .from('profiles')
-            .select('id, role')
-            .eq('id', user_id)
-            .single();
-          if (tpErr || !targetProfile)
-            return NextResponse.json({ error: 'Profilo non trovato' }, { status: 404 });
-          if (String(targetProfile.role).toLowerCase() !== 'atleta')
-            return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
-        } else {
-          return NextResponse.json({ error: 'Operazione non consentita' }, { status: 403 });
-        }
-      }
+    const denied = await checkCanManage(
+      requester,
+      String(target.user_id),
+      'Operazione non consentita',
+    );
+    if (denied) return denied;
 
-      const { error } = await supabaseServer
-        .from('tournament_participants')
-        .delete()
-        .eq('user_id', user_id)
-        .eq('tournament_id', tournament_id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const deletion = id
+      ? supabaseServer.from('tournament_participants').delete().eq('id', id)
+      : supabaseServer
+          .from('tournament_participants')
+          .delete()
+          .eq('user_id', user_id)
+          .eq('tournament_id', tournament_id);
+    const { error } = await deletion;
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-      await logActivityServer({
-        userId: user.id,
-        action: 'tournament.leave',
-        entityType: 'tournament',
-        entityId: tournament_id,
-        ipAddress: req.headers.get('x-forwarded-for') || undefined,
-        userAgent: req.headers.get('user-agent') || undefined,
-        metadata: {
-          removedUserId: user_id,
-          removedBy: profile.id,
-          removedByName: profile.full_name,
-        },
-      });
+    await logActivityServer({
+      userId: requester.id,
+      action: 'tournament.leave',
+      entityType: 'tournament',
+      entityId: target.tournament_id || undefined,
+      ipAddress: req.headers.get('x-forwarded-for') || undefined,
+      userAgent: req.headers.get('user-agent') || undefined,
+      metadata: {
+        ...(target.id ? { participantId: target.id } : {}),
+        removedUserId: target.user_id,
+        removedBy: requester.id,
+        removedByName: requester.full_name,
+      },
+    });
 
-      return NextResponse.json({ success: true });
-    }
-
-    return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
+    return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

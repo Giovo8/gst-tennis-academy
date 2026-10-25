@@ -9,10 +9,28 @@ Convenzioni frontend, ottimizzazione mobile e accessibilità per GST Tennis Acad
 - **Mobile-first**: layout progettati prima per smartphone, poi estesi al desktop.
 - **Componenti per dominio**: i componenti sono organizzati per area funzionale in
   `src/components/` (`bookings/`, `tournaments/`, `dashboard/`, `landing/`, `ui/`…).
-- **Stato e dati**: accesso ai dati via client Supabase; hook condivisi in `src/lib/hooks/`
-  (`useNotifications`, `useWeather`, `useBookableTournaments`); le sottoscrizioni realtime
-  sono aperte direttamente nelle pagine che le usano.
+- **Stato e dati**: accesso ai dati via client Supabase (`src/lib/supabase/client.ts`) o via
+  API con header Bearer; nessuno store globale. Hook condivisi in `src/lib/hooks/`:
+
+  | Hook                                                    | Uso                                                           |
+  | ------------------------------------------------------- | ------------------------------------------------------------- |
+  | `useNotifications(limit)`                               | Notifiche dell'utente con realtime, `markRead`, `markAllRead` |
+  | `useUnreadChat(userId)`                                 | Numero di messaggi chat non letti (pallino in navigazione)    |
+  | `useWeather()`                                          | Meteo e previsioni (cache di 10 minuti a livello di modulo)   |
+  | `useBookableTournaments()` / `useTournamentMatches(id)` | Tornei e partite prenotabili (tipo prenotazione "torneo")     |
+  | `useCourts()`                                           | Campi attivi da `courts_settings` per i selettori di campo    |
+
+  Hook di dominio più specifici stanno accanto ai componenti (`components/admin/hooks/`,
+  `components/tournaments/hooks/`).
+
+- **Componenti condivisi tra ruoli**: le pagine maestro riesportano spesso quelle atleta; chat
+  (`components/chat/ChatView`), feedback (`components/feedback/*`) e centro notifiche
+  (`components/notifications/NotificationCenter`) sono un solo componente per tutte le aree,
+  parametrizzato con `basePath` o col ruolo dell'utente.
 - **Composizione classi**: usare `cn()` per unire le classi Tailwind in modo sicuro.
+- **Lista campi**: sempre da `getCourts()` / `useCourts()`, mai una costante con i nomi dei campi.
+- **Toast**: helper `toastError(err, fallback)` di `src/lib/toast.ts` (messaggi brevi, in italiano,
+  dettagli tecnici solo nel logger); stile in `AppToaster` e `globals.css`.
 
 ---
 
@@ -53,10 +71,14 @@ Definita principalmente in `src/app/globals.css`:
 
 ## Performance
 
-- **Ottimizzazione immagini** Next.js (AVIF/WebP) con domini remoti consentiti.
-- **Lazy loading** e fallback data per le sezioni della homepage.
+- **Immagini**: l'ottimizzazione di Next.js vale solo per le immagini locali (WebP). Le immagini
+  remote (news, avatar) sono già convertite in WebP al caricamento (`src/lib/images/optimize.ts`)
+  e vengono mostrate con `unoptimized` tramite `ui/NewsImage` e `ui/Avatar`; `NewsImage` usa
+  `referrerPolicy="no-referrer"` e ripiega su un'immagine locale se il link si rompe.
+- **Home statica**: news e staff letti lato server (`src/lib/landing/getLandingData.ts`) con ISR a 60 s;
+  se la lettura fallisce la sezione ripiega sul caricamento nel browser.
 - **Code splitting** automatico per route; Recharts (grafici maestro) caricato a parte con `next/dynamic` e segnaposto ad altezza fissa.
-- **Caching** sugli endpoint pubblici (es. news, servizi, meteo).
+- **Caching** sugli endpoint pubblici: meteo 5 minuti, live score 30 secondi (header `s-maxage`).
 
 ### Fluidità della dashboard
 
@@ -75,4 +97,7 @@ Definita principalmente in `src/app/globals.css`:
 - ESLint (config Next.js) e Prettier; hook pre-commit Husky + lint-staged, attivo dopo `npm install`.
 - Test con Jest (+ matcher `@testing-library/jest-dom`) in `src/__tests__/`, focalizzati
   sulla logica in `src/lib/`.
-- Date formattate in locale italiano tramite `formatItalianDate.ts`.
+- Date formattate in locale italiano tramite `formatItalianDate.ts`. Lato server indicare sempre
+  `timeZone: 'Europe/Rome'` in `toLocaleDateString` / `toLocaleTimeString`: su Vercel l'ora
+  locale è UTC e senza fuso esplicito notifiche ed email mostrerebbero orari sbagliati.
+- Solo tema chiaro: niente varianti `dark:`.

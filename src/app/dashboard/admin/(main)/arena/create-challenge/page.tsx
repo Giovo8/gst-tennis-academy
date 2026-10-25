@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { useCourts } from '@/lib/hooks/useCourts';
+import { DEFAULT_COURTS } from '@/lib/courts/constants';
 import Link from 'next/link';
 import { Calendar, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
@@ -39,13 +41,13 @@ interface SelectedParticipant {
   isRegistered: boolean;
 }
 
-const COURTS = ['Campo 1', 'Campo 2', 'Campo 3', 'Campo 4'];
 const MATCH_TYPES = [
   { value: 'singles', label: 'Singolo' },
   { value: 'doubles', label: 'Doppio' },
 ];
 
 export default function CreateChallengePage() {
+  const courts = useCourts();
   const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedParticipants, setSelectedParticipants] = useState<SelectedParticipant[]>([]);
@@ -53,7 +55,7 @@ export default function CreateChallengePage() {
   const [challengeType, setChallengeType] = useState('ranked');
   const [matchFormat, setMatchFormat] = useState('best_of_3');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedCourt, setSelectedCourt] = useState('Campo 1');
+  const [selectedCourt, setSelectedCourt] = useState(DEFAULT_COURTS[0]);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
@@ -730,7 +732,7 @@ export default function CreateChallengePage() {
                         Campo *
                       </label>
                       <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                        {COURTS.map((court) => (
+                        {courts.map((court) => (
                           <button
                             key={court}
                             type="button"

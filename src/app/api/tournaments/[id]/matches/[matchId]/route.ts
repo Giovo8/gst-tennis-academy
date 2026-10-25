@@ -1,57 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseServer } from '@/lib/supabase/serverClient';
 import { verifyAuth, isAdminOrGestore } from '@/lib/auth/verifyAuth';
 import logger from '@/lib/logger/secure-logger';
 import { getBestOf } from '@/lib/tournaments/getBestOf';
 import { computeMatchResult } from '@/lib/tournaments/tennisScore';
-
-// GET /api/tournaments/[id]/matches/[matchId] - Get single match details
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string; matchId: string }> },
-) {
-  const params = await context.params;
-  const supabase = supabaseServer;
-
-  try {
-    const { data: match, error } = await supabase
-      .from('tournament_matches')
-      .select(
-        `
-        *,
-        tournament:tournaments(title, match_format, surface_type),
-        player1:player1_id(
-          id,
-          user_id,
-          seeding,
-          profiles(full_name, avatar_url)
-        ),
-        player2:player2_id(
-          id,
-          user_id,
-          seeding,
-          profiles(full_name, avatar_url)
-        ),
-        winner:winner_id(
-          id,
-          user_id,
-          profiles(full_name)
-        )
-      `,
-      )
-      .eq('id', params.matchId)
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({
-      success: true,
-      match,
-    });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
 
 // PUT /api/tournaments/[id]/matches/[matchId] - Update match score (tennis scoring)
 // Body: { sets: [{ player1_score, player2_score }, ...], retired_player?: 1 | 2 }
@@ -171,122 +124,6 @@ export async function PUT(
   }
 }
 
-// PATCH /api/tournaments/[id]/matches/[matchId] - Quick score update (simple scoring, admin only)
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string; matchId: string }> },
-) {
-  const params = await context.params;
-  const supabase = supabaseServer;
-
-  try {
-    const auth = await verifyAuth(request, ['admin', 'gestore']);
-    if (!auth.success) return auth.response;
-
-    const body = await request.json().catch(() => null);
-    const player1_score = body?.player1_score;
-    const player2_score = body?.player2_score;
-
-    if (
-      !Number.isInteger(player1_score) ||
-      !Number.isInteger(player2_score) ||
-      player1_score < 0 ||
-      player2_score < 0
-    ) {
-      return NextResponse.json({ error: 'Punteggi mancanti o non validi' }, { status: 400 });
-    }
-    if (player1_score === player2_score) {
-      return NextResponse.json({ error: 'Il risultato non può essere in parità' }, { status: 400 });
-    }
-
-    // Get current match
-    const { data: currentMatch, error: matchError } = await supabase
-      .from('tournament_matches')
-      .select('*, tournament:tournaments(tournament_type)')
-      .eq('id', params.matchId)
-      .eq('tournament_id', params.id)
-      .maybeSingle();
-
-    if (matchError) throw matchError;
-    if (!currentMatch) {
-      return NextResponse.json({ error: 'Partita non trovata' }, { status: 404 });
-    }
-    if (!currentMatch.player1_id || !currentMatch.player2_id) {
-      return NextResponse.json(
-        { error: 'La partita non ha ancora entrambi i giocatori' },
-        { status: 400 },
-      );
-    }
-
-    const winner_id =
-      player1_score > player2_score ? currentMatch.player1_id : currentMatch.player2_id;
-
-    const { data: updatedMatch, error: updateError } = await supabase
-      .from('tournament_matches')
-      .update({
-        player1_sets: player1_score,
-        player2_sets: player2_score,
-        winner_id: winner_id,
-        match_status: 'completed',
-        status: 'completata',
-        end_time: new Date().toISOString(),
-      })
-      .eq('id', params.matchId)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
-
-    // Avanza il vincitore solo nei tabelloni a eliminazione (non gironi né campionato)
-    const isCampionato = currentMatch.tournament?.tournament_type === 'campionato';
-    if (!isCampionato && !isGroupMatch(currentMatch)) {
-      await advanceWinnerToNextRound(
-        supabase,
-        params.id,
-        updatedMatch.round_number,
-        updatedMatch.match_number,
-        winner_id,
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      match: updatedMatch,
-    });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-
-// DELETE /api/tournaments/[id]/matches/[matchId] - Delete match (admin only)
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string; matchId: string }> },
-) {
-  const params = await context.params;
-  const supabase = supabaseServer;
-
-  try {
-    const auth = await verifyAuth(request, ['admin', 'gestore']);
-    if (!auth.success) return auth.response;
-
-    const { error } = await supabase
-      .from('tournament_matches')
-      .delete()
-      .eq('id', params.matchId)
-      .eq('tournament_id', params.id);
-
-    if (error) throw error;
-
-    return NextResponse.json({
-      success: true,
-      message: 'Match eliminato con successo',
-    });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-
 /**
  * Le partite dei gironi (round 0) non hanno un turno successivo: avanzare il vincitore
  * chiuderebbe il torneo ("Concluso") o sovrascriverebbe il tabellone.
@@ -304,7 +141,7 @@ function isGroupMatch(match: { phase?: string | null; round_number?: number | nu
  * @param winnerId ID del vincitore
  */
 async function advanceWinnerToNextRound(
-  supabase: any,
+  supabase: SupabaseClient,
   tournamentId: string,
   currentRound: number,
   currentMatchNumber: number,
@@ -329,7 +166,7 @@ async function advanceWinnerToNextRound(
       ) ?? -1;
 
     if (positionInRound === -1) {
-      console.error('Could not find current match position');
+      logger.error('Could not find current match position');
       return;
     }
 
@@ -352,7 +189,7 @@ async function advanceWinnerToNextRound(
         .eq('id', tournamentId);
 
       if (tournamentUpdateError) {
-        console.error('Error updating tournament status:', tournamentUpdateError);
+        logger.error('Error updating tournament status', tournamentUpdateError);
       }
 
       return;
@@ -362,7 +199,7 @@ async function advanceWinnerToNextRound(
     const nextMatch = nextRoundMatches[nextMatchPositionInRound];
 
     if (!nextMatch) {
-      console.error('Next match not found at position', nextMatchPositionInRound);
+      logger.error('Next match not found at position', undefined, { nextMatchPositionInRound });
       return;
     }
 
@@ -393,9 +230,9 @@ async function advanceWinnerToNextRound(
       .eq('id', nextMatch.id);
 
     if (updateError) {
-      console.error('Error updating next match:', updateError);
+      logger.error('Error updating next match', updateError);
     }
   } catch (error) {
-    console.error('Error in advanceWinnerToNextRound:', error);
+    logger.error('Error in advanceWinnerToNextRound', error);
   }
 }

@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     if (!validationResult.success) {
       logger.warn('Signup validation failed', {
-        errors: validationResult.error.errors.map((e) => ({
+        errors: validationResult.error.issues.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
         })),
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: ERROR_MESSAGES.INVALID_INPUT,
-          details: validationResult.error.errors.map((e) => ({
+          details: validationResult.error.issues.map((e) => ({
             field: e.path.join('.'),
             message: e.message,
           })),

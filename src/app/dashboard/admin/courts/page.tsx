@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { toast } from 'sonner';
-import { toastError } from '@/lib/toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -12,22 +10,12 @@ import {
   Shield,
   Search,
   SlidersHorizontal,
-  MoreVertical,
-  Eye,
-  Pencil,
-  Trash2,
   GraduationCap,
   Wrench,
   Flag,
+  ArrowUpDown,
+  X,
 } from 'lucide-react';
-import {
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-} from '@/components/ui';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -46,16 +34,11 @@ export default function CourtsBlockPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filterType, setFilterType] = useState('all');
-  const [filterCourt, setFilterCourt] = useState('all');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterStatus, setFilterStatus] = useState<'active' | 'expired' | 'cancelled' | 'all'>(
     'active',
   );
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     loadBlocks();
@@ -79,49 +62,6 @@ export default function CourtsBlockPage() {
       setLoading(false);
     }
   }
-
-  async function handleDeleteBlock(blockIds: string[]) {
-    if (!confirm('Sei sicuro di voler disattivare questo blocco?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('court_blocks')
-        .update({ is_disabled: true })
-        .in('id', blockIds);
-
-      if (error) throw error;
-      setBlocks((prev) => prev.filter((block) => !blockIds.includes(block.id)));
-      toast.success('Blocco disattivato');
-    } catch (err) {
-      console.error('Error deleting block:', err);
-      toastError(err, 'Disattivazione non riuscita');
-    }
-  }
-
-  const closeActionMenu = () => {
-    setOpenMenuId(null);
-    setMenuPosition(null);
-  };
-
-  const openActionMenu = (blockId: string, buttonRect: DOMRect) => {
-    const menuWidth = 176;
-    const menuHeight = 140;
-    const viewportPadding = 8;
-
-    let left = buttonRect.right - menuWidth;
-    left = Math.max(
-      viewportPadding,
-      Math.min(left, window.innerWidth - menuWidth - viewportPadding),
-    );
-
-    let top = buttonRect.bottom + 6;
-    if (top + menuHeight > window.innerHeight - viewportPadding) {
-      top = Math.max(viewportPadding, buttonRect.top - menuHeight - 6);
-    }
-
-    setOpenMenuId(blockId);
-    setMenuPosition({ top, left });
-  };
 
   // Raggruppa TUTTI i blocchi con stesso campo, motivo e orario
   function groupConsecutiveBlocks(blocks: Block[]) {
@@ -184,7 +124,7 @@ export default function CourtsBlockPage() {
 
   const groupedBlocks = groupConsecutiveBlocks(blocks);
 
-  // Determina tipo, colore e icona in base al motivo
+  // Determina tipo e icona in base al motivo
   function getBlockStyle(reason?: string) {
     const reasonText = (reason || '').trim();
     const reasonLower = reasonText.toLowerCase();
@@ -192,9 +132,6 @@ export default function CourtsBlockPage() {
     if (reasonLower.includes('corso adulti')) {
       return {
         type: 'Corso Adulti',
-        borderColor: 'border-frozen-lake-700',
-        iconColor: 'text-frozen-lake-700',
-        bgHover: 'hover:bg-frozen-lake-50',
         icon: GraduationCap,
       };
     }
@@ -202,25 +139,16 @@ export default function CourtsBlockPage() {
     if (reasonLower.includes('corsi') || reasonLower.includes('tennis')) {
       return {
         type: 'Corsi Tennis',
-        borderColor: 'border-frozen-lake-700',
-        iconColor: 'text-frozen-lake-700',
-        bgHover: 'hover:bg-frozen-lake-50',
         icon: GraduationCap,
       };
     } else if (reasonLower.includes('manutenzione')) {
       return {
         type: 'Manutenzione',
-        borderColor: 'border-frozen-lake-800',
-        iconColor: 'text-frozen-lake-800',
-        bgHover: 'hover:bg-frozen-lake-50',
         icon: Wrench,
       };
     } else if (reasonLower.includes('evento')) {
       return {
         type: 'Evento',
-        borderColor: 'border-frozen-lake-900',
-        iconColor: 'text-frozen-lake-900',
-        bgHover: 'hover:bg-frozen-lake-50',
         icon: Flag,
       };
     }
@@ -228,9 +156,6 @@ export default function CourtsBlockPage() {
     if (reasonLower.startsWith('altro')) {
       return {
         type: 'Altro',
-        borderColor: 'border-frozen-lake-700',
-        iconColor: 'text-frozen-lake-700',
-        bgHover: 'hover:bg-frozen-lake-50',
         icon: Shield,
       };
     }
@@ -238,27 +163,11 @@ export default function CourtsBlockPage() {
     // Default
     return {
       type: reasonText ? 'Altro' : 'Blocco',
-      borderColor: 'border-frozen-lake-700',
-      iconColor: 'text-frozen-lake-700',
-      bgHover: 'hover:bg-frozen-lake-50',
       icon: Shield,
     };
   }
 
-  const typeOptions = Array.from(
-    new Set(groupedBlocks.map((block) => getBlockStyle(block.reason).type)),
-  ).sort((a, b) => a.localeCompare(b));
-
-  const courtOptions = Array.from(new Set(groupedBlocks.map((block) => block.court_id))).sort(
-    (a, b) => a.localeCompare(b),
-  );
-
-  const hasActiveFilters =
-    filterType !== 'all' ||
-    filterCourt !== 'all' ||
-    filterDateFrom !== '' ||
-    filterDateTo !== '' ||
-    filterStatus !== 'active';
+  const hasActiveFilters = filterStatus !== 'active' || sortOrder !== 'desc';
 
   const nowMs = Date.now();
 
@@ -273,21 +182,13 @@ export default function CourtsBlockPage() {
     const blockType = getBlockStyle(block.reason).type;
     const blockSearch = `${block.court_id} ${block.reason || ''} ${blockType}`.toLowerCase();
     const matchesSearch = search.trim().length === 0 || blockSearch.includes(search.toLowerCase());
-    if (!matchesSearch) return false;
-
-    if (filterType !== 'all' && blockType !== filterType) return false;
-    if (filterCourt !== 'all' && block.court_id !== filterCourt) return false;
-
-    const blockDate = block.start_time.split('T')[0];
-    if (filterDateFrom && blockDate < filterDateFrom) return false;
-    if (filterDateTo && blockDate > filterDateTo) return false;
-
-    return true;
+    return matchesSearch;
   });
 
-  const sortedBlocks = [...filteredBlocks].sort(
-    (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
-  );
+  const sortedBlocks = [...filteredBlocks].sort((a, b) => {
+    const diff = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    return sortOrder === 'asc' ? diff : -diff;
+  });
 
   const formatBlockDateTime = (start: Date, end: Date) => {
     const startDate = format(start, 'd/MM/yy', { locale: it });
@@ -323,30 +224,93 @@ export default function CourtsBlockPage() {
   };
 
   const renderSearchWithFilter = () => (
-    <div className="flex items-center gap-2 w-full">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-        <input
-          type="text"
-          placeholder="Cerca per campo, motivo o tipo blocco..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-        />
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex items-center gap-2 w-full">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+          <input
+            type="text"
+            placeholder="Cerca per campo, motivo o tipo blocco..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsFilterPanelOpen((prev) => !prev)}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+            hasActiveFilters || isFilterPanelOpen
+              ? 'border-secondary bg-secondary text-white hover:opacity-90'
+              : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
+          }`}
+          aria-label="Mostra o nascondi chips filtri"
+          title="Filtri"
+        >
+          <SlidersHorizontal className="h-5 w-5" />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => setIsFilterModalOpen(true)}
-        className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
-          hasActiveFilters
-            ? 'border-secondary bg-secondary text-white hover:opacity-90'
-            : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
-        }`}
-        aria-label="Apri filtri blocchi campi"
-        title="Filtri"
-      >
-        <SlidersHorizontal className="h-5 w-5" />
-      </button>
+
+      {isFilterPanelOpen && (
+        <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
+            <button
+              type="button"
+              onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+                sortOrder === 'asc'
+                  ? 'border-[#023047] bg-[#023047] text-white hover:opacity-90'
+                  : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
+              }`}
+              aria-label="Inverti ordinamento"
+              title="Inverti ordinamento"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
+              {(
+                [
+                  { value: 'active', label: 'Attivi' },
+                  { value: 'expired', label: 'Scaduti' },
+                  { value: 'cancelled', label: 'Annullati' },
+                  { value: 'all', label: 'Tutti' },
+                ] as const
+              ).map((option) => {
+                const isSelected = filterStatus === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFilterStatus(option.value)}
+                    className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
+                      isSelected
+                        ? 'border-secondary bg-secondary text-white'
+                        : 'border-black/10 bg-white text-secondary hover:bg-gray-50'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setFilterStatus('active');
+                setSortOrder('desc');
+              }}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
+              aria-label="Reset filtri"
+              title="Reset filtri"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -387,7 +351,9 @@ export default function CourtsBlockPage() {
       ) : filteredBlocks.length === 0 ? (
         <div className="text-center py-20 rounded-lg bg-white">
           <Shield className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
-          <h3 className="text-xl font-semibold text-secondary mb-2">Nessun blocco attivo</h3>
+          <h3 className="text-xl font-semibold text-secondary mb-2">
+            {search || hasActiveFilters ? 'Nessun blocco trovato' : 'Nessun blocco attivo'}
+          </h3>
           <p className="text-secondary/60 mb-6">Prova a modificare i filtri di ricerca</p>
           <Link
             href="/dashboard/admin/courts/new"
@@ -443,222 +409,12 @@ export default function CourtsBlockPage() {
                   <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
                     {blockStyle.type}
                   </span>
-
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (openMenuId === block.id) {
-                          closeActionMenu();
-                          return;
-                        }
-                        openActionMenu(block.id, e.currentTarget.getBoundingClientRect());
-                      }}
-                      className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]"
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </button>
-                    {openMenuId === block.id && menuPosition && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            closeActionMenu();
-                          }}
-                        />
-                        <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
-                          style={{ top: menuPosition.top, left: menuPosition.left }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              router.push(`/dashboard/admin/courts/${block.id}`);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Visualizza
-                          </button>
-                          <Link
-                            href={`/dashboard/admin/courts/modifica?id=${block.id}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              closeActionMenu();
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Modifica
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              void handleDeleteBlock(block.blockIds);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Elimina
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-
-      <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-        <ModalContent
-          size="md"
-          showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
-        >
-          <ModalHeader
-            withCloseButton
-            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
-            className="px-4 py-3 bg-secondary border-b border-secondary"
-          >
-            <ModalTitle className="text-white text-lg">Filtra Blocchi Campi</ModalTitle>
-          </ModalHeader>
-
-          <ModalBody className="px-4 py-4 bg-white space-y-4">
-            <div className="space-y-1">
-              <label
-                htmlFor="courts-type-filter"
-                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
-              >
-                Tipo
-              </label>
-              <select
-                id="courts-type-filter"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-              >
-                <option value="all">Tutti i tipi</option>
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="courts-court-filter"
-                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
-              >
-                Campo
-              </label>
-              <select
-                id="courts-court-filter"
-                value={filterCourt}
-                onChange={(e) => setFilterCourt(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-              >
-                <option value="all">Tutti i campi</option>
-                {courtOptions.map((court) => (
-                  <option key={court} value={court}>
-                    {court}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="courts-status-filter"
-                className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
-              >
-                Stato
-              </label>
-              <select
-                id="courts-status-filter"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-              >
-                <option value="active">Attivi</option>
-                <option value="expired">Scaduti</option>
-                <option value="cancelled">Annullati</option>
-                <option value="all">Tutti</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label
-                  htmlFor="courts-date-from-filter"
-                  className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
-                >
-                  Data da
-                </label>
-                <input
-                  id="courts-date-from-filter"
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                />
-              </div>
-              <div className="space-y-1">
-                <label
-                  htmlFor="courts-date-to-filter"
-                  className="text-xs font-semibold uppercase tracking-wide text-secondary/70"
-                >
-                  Data a
-                </label>
-                <input
-                  id="courts-date-to-filter"
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                />
-              </div>
-            </div>
-          </ModalBody>
-
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
-            <button
-              type="button"
-              onClick={() => {
-                setFilterType('all');
-                setFilterCourt('all');
-                setFilterDateFrom('');
-                setFilterDateTo('');
-                setFilterStatus('active');
-              }}
-              className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Rimuovi filtri
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsFilterModalOpen(false)}
-              className="w-1/2 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-br-lg"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </div>
   );
 }

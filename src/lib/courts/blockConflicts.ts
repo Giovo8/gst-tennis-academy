@@ -108,20 +108,3 @@ export async function checkCourtBlockConflicts(
     courseConflict,
   };
 }
-
-export function formatBlockConflictMessage(result: BlockConflictResult): string {
-  const parts: string[] = [];
-  if (result.bookingConflicts > 0) {
-    parts.push(
-      `${result.bookingConflicts} prenotazione${result.bookingConflicts > 1 ? 'i' : ''} esistente${
-        result.bookingConflicts > 1 ? 'i' : ''
-      }`,
-    );
-  }
-  if (result.courseConflict) {
-    parts.push(`il corso "${result.courseConflict.name ?? 'programmato'}"`);
-  }
-  return `Impossibile creare il blocco: ${parts.join(
-    ' e ',
-  )} nello stesso periodo. Annulla le prenotazioni o modifica il periodo del blocco.`;
-}

@@ -1,93 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { verifyAuth } from '@/lib/auth/verifyAuth';
+import logger from '@/lib/logger/secure-logger';
 
-// Admin client with service role key
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
-
-export async function GET(request: NextRequest) {
-  try {
-    // Verify admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    // Check if user is admin or gestore
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'gestore')) {
-      return NextResponse.json({ error: 'Permessi insufficienti' }, { status: 403 });
-    }
-
-    // Get all users using service role to bypass RLS
-    const { data: users, error: usersError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (usersError) {
-      console.error('Errore caricamento utenti:', usersError);
-      return NextResponse.json({ error: 'Errore caricamento utenti' }, { status: 500 });
-    }
-
-    return NextResponse.json({ users: users || [] });
-  } catch (error) {
-    console.error('Errore GET utenti:', error);
-    return NextResponse.json({ error: error.message || 'Errore interno' }, { status: 500 });
-  }
-}
-
+/** POST /api/admin/users — crea un utente (account Auth + profilo) dal pannello admin. */
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'gestore')) {
-      return NextResponse.json({ error: 'Permessi insufficienti' }, { status: 403 });
-    }
+    const auth = await verifyAuth(request, ['admin', 'gestore']);
+    if (!auth.success) return auth.response;
+    const actorRole = auth.data.profile?.role;
 
     const body = await request.json();
     const {
@@ -132,15 +53,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Impedisci a gestore di creare admin
-    if (profile.role === 'gestore' && role === 'admin') {
+    if (actorRole === 'gestore' && role === 'admin') {
       return NextResponse.json(
         { error: 'I gestori non possono creare utenti admin' },
         { status: 403 },
       );
     }
 
-    // Create user with admin client
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: newUser, error: createError } = await supabaseServer.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
       email_confirm: true,
@@ -151,16 +71,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (createError) {
-      console.error('Errore auth.admin.createUser:', createError.message, createError);
+      logger.error('Creazione utente Auth non riuscita', createError);
       return NextResponse.json({ error: createError.message }, { status: 400 });
     }
 
     if (!newUser.user) {
-      console.error('newUser.user è null');
+      logger.error('Creazione utente Auth senza utente restituito');
       return NextResponse.json({ error: 'Errore creazione utente' }, { status: 500 });
     }
 
-    // Create or update profile with role using upsert
+    // Il trigger handle_new_user crea il profilo: qui lo si completa (upsert)
     const profileData = {
       id: newUser.user.id,
       email: email.toLowerCase(),
@@ -179,13 +99,13 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const { error: profileError } = await supabaseAdmin.from('profiles').upsert(profileData, {
+    const { error: profileError } = await supabaseServer.from('profiles').upsert(profileData, {
       onConflict: 'id',
     });
 
     if (profileError) {
-      // Tenta di eliminare l'utente auth se il profilo fallisce
-      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+      // Senza profilo l'account non è utilizzabile: si annulla la creazione
+      await supabaseServer.auth.admin.deleteUser(newUser.user.id);
       return NextResponse.json(
         { error: 'Errore creazione profilo. Utente non creato.' },
         { status: 500 },
@@ -193,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize arena_stats
-    await supabaseAdmin.from('arena_stats').upsert(
+    await supabaseServer.from('arena_stats').upsert(
       {
         user_id: newUser.user.id,
         points: 0,
@@ -215,149 +135,62 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Errore creazione utente:', error);
-    return NextResponse.json({ error: error.message || 'Errore interno' }, { status: 500 });
+    logger.error('Errore creazione utente', error);
+    return NextResponse.json({ error: 'Errore interno' }, { status: 500 });
   }
 }
 
-export async function PATCH(request: NextRequest) {
-  try {
-    // Verify admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    // Check if user is admin or gestore
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'gestore')) {
-      return NextResponse.json({ error: 'Permessi insufficienti' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { userId, full_name, phone, date_of_birth, address, city, postal_code, notes, role } =
-      body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId richiesto' }, { status: 400 });
-    }
-
-    // Check if gestore is trying to modify an admin
-    if (profile.role === 'gestore') {
-      const { data: targetUser } = await supabaseAdmin
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single();
-
-      if (targetUser?.role === 'admin') {
-        return NextResponse.json({ error: 'Non puoi modificare un admin' }, { status: 403 });
-      }
-    }
-
-    // Update user profile using service role
-    const { error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        full_name,
-        phone,
-        date_of_birth,
-        address,
-        city,
-        postal_code,
-        notes,
-        role,
-      })
-      .eq('id', userId);
-
-    if (updateError) {
-      console.error('Errore aggiornamento profilo:', updateError);
-      return NextResponse.json({ error: 'Errore aggiornamento profilo' }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, message: 'Utente aggiornato con successo' });
-  } catch (error) {
-    console.error('Errore PATCH utente:', error);
-    return NextResponse.json({ error: error.message || 'Errore interno' }, { status: 500 });
-  }
-}
-
+/**
+ * DELETE /api/admin/users?userId=<id> — elimina l'account Auth e, a cascata,
+ * il profilo. Eliminare solo la riga `profiles` lascerebbe attivo il login.
+ */
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
+    const auth = await verifyAuth(request, ['admin', 'gestore']);
+    if (!auth.success) return auth.response;
+    const { user, profile } = auth.data;
 
-    const token = authHeader.replace('Bearer ', '');
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'gestore')) {
-      return NextResponse.json({ error: 'Permessi insufficienti' }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
+    const userId = new URL(request.url).searchParams.get('userId');
     if (!userId) {
       return NextResponse.json({ error: 'userId mancante' }, { status: 400 });
     }
 
-    // Prevent self-deletion
     if (userId === user.id) {
       return NextResponse.json({ error: 'Non puoi eliminare il tuo account' }, { status: 400 });
     }
 
-    // Delete profile first
-    const { error: profileDeleteError } = await supabaseAdmin
+    // Come in creazione: un gestore non può agire su un admin
+    if (profile?.role === 'gestore') {
+      const { data: target } = await supabaseServer
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (target?.role === 'admin') {
+        return NextResponse.json({ error: 'Non puoi eliminare un admin' }, { status: 403 });
+      }
+    }
+
+    const { error: profileDeleteError } = await supabaseServer
       .from('profiles')
       .delete()
       .eq('id', userId);
 
     if (profileDeleteError) {
-      console.error('Errore eliminazione profilo:', profileDeleteError);
-      // Continua comunque a eliminare l'utente auth
+      // Si prosegue comunque: l'account Auth va eliminato in ogni caso
+      logger.error('Eliminazione profilo non riuscita', profileDeleteError, { userId });
     }
 
-    // Delete auth user
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
+    const { error: deleteError } = await supabaseServer.auth.admin.deleteUser(userId);
     if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 400 });
+      logger.error('Eliminazione account Auth non riuscita', deleteError, { userId });
+      return NextResponse.json({ error: 'Eliminazione non riuscita' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Errore interno' }, { status: 500 });
+    logger.error('Errore eliminazione utente', error);
+    return NextResponse.json({ error: 'Errore interno' }, { status: 500 });
   }
 }
