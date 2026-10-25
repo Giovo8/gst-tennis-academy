@@ -14,6 +14,7 @@ type ActivityAction =
   | 'tournament.create'
   | 'tournament.join'
   | 'tournament.leave'
+  | 'tournament.replace_participant'
   | 'tournament.start'
   | 'tournament.complete'
   | 'email.send'

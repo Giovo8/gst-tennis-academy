@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
 import { verifyAuth } from '@/lib/auth/verifyAuth';
 import { logActivityServer } from '@/lib/activity/logActivity';
+import { sanitizeObject } from '@/lib/security/sanitize-server';
+import { replaceTournamentParticipantSchema } from '@/lib/validation/schemas';
+import { isMatchPlayed, MATCH_PLAYED_COLUMNS } from '@/lib/tournaments/matchPlayed';
 
 type Requester = { id: string; role: string; full_name: string | null };
 
@@ -151,6 +154,131 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ participant: data?.[0] }, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH — admin/gestore: sostituisce l'atleta di un iscritto a un campionato, anche in corso.
+ * Body: { id: participantId, user_id: nuovo atleta }. La riga resta la stessa, quindi le
+ * partite del calendario passano al nuovo atleta. Consentito solo se l'iscritto non ha
+ * ancora giocato partite e nessuna sua partita ha una prenotazione attiva.
+ */
+export async function PATCH(req: Request) {
+  try {
+    const auth = await verifyAuth(req, ['admin', 'gestore']);
+    if (!auth.success) return auth.response;
+
+    const body = await req.json().catch(() => null);
+    const parsed = replaceTournamentParticipantSchema.safeParse(sanitizeObject(body ?? {}));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || 'Dati non validi' },
+        { status: 400 },
+      );
+    }
+    const { id, user_id } = parsed.data;
+
+    const { data: participant, error: pErr } = await supabaseServer
+      .from('tournament_participants')
+      .select('id, user_id, player_name, tournament_id')
+      .eq('id', id)
+      .single();
+    if (pErr || !participant) {
+      return NextResponse.json({ error: 'Iscritto non trovato' }, { status: 404 });
+    }
+
+    const { data: tournament } = await supabaseServer
+      .from('tournaments')
+      .select('tournament_type, status')
+      .eq('id', participant.tournament_id)
+      .single();
+    if (!tournament || tournament.tournament_type !== 'campionato') {
+      return NextResponse.json(
+        { error: 'Sostituzione possibile solo nei campionati' },
+        { status: 400 },
+      );
+    }
+    if (String(tournament.status).toLowerCase() === 'concluso') {
+      return NextResponse.json({ error: 'Il campionato è concluso' }, { status: 400 });
+    }
+
+    if (participant.user_id === user_id) {
+      return NextResponse.json({ error: 'Seleziona un atleta diverso' }, { status: 400 });
+    }
+
+    const { data: newProfile } = await supabaseServer
+      .from('profiles')
+      .select('id, role, full_name')
+      .eq('id', user_id)
+      .single();
+    if (!newProfile || String(newProfile.role).toLowerCase() !== 'atleta') {
+      return NextResponse.json({ error: 'Atleta non trovato' }, { status: 404 });
+    }
+
+    const { count: alreadyEnrolled } = await supabaseServer
+      .from('tournament_participants')
+      .select('id', { count: 'exact', head: true })
+      .eq('tournament_id', participant.tournament_id)
+      .eq('user_id', user_id);
+    if ((alreadyEnrolled ?? 0) > 0) {
+      return NextResponse.json({ error: 'Atleta già iscritto' }, { status: 409 });
+    }
+
+    const { data: matches, error: mErr } = await supabaseServer
+      .from('tournament_matches')
+      .select(`id, ${MATCH_PLAYED_COLUMNS}`)
+      .eq('tournament_id', participant.tournament_id)
+      .or(`player1_id.eq.${id},player2_id.eq.${id}`);
+    if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 });
+
+    if ((matches || []).some((m) => isMatchPlayed(m))) {
+      return NextResponse.json({ error: 'Ha già giocato delle partite' }, { status: 409 });
+    }
+
+    // Le prenotazioni torneo copiano i giocatori nei partecipanti: vanno annullate prima
+    const matchIds = (matches || []).map((m) => m.id);
+    if (matchIds.length > 0) {
+      const { count: activeBookings } = await supabaseServer
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .in('tournament_match_id', matchIds)
+        .not('status', 'in', '(cancelled,rejected)');
+      if ((activeBookings ?? 0) > 0) {
+        return NextResponse.json(
+          { error: 'Ha partite prenotate: annulla prima le prenotazioni' },
+          { status: 409 },
+        );
+      }
+    }
+
+    const { data: updated, error: uErr } = await supabaseServer
+      .from('tournament_participants')
+      .update({ user_id, player_name: null })
+      .eq('id', id)
+      .select()
+      .single();
+    if (uErr) return NextResponse.json({ error: uErr.message }, { status: 400 });
+
+    await logActivityServer({
+      userId: auth.data.user.id,
+      action: 'tournament.replace_participant',
+      entityType: 'tournament',
+      entityId: participant.tournament_id,
+      ipAddress: req.headers.get('x-forwarded-for') || undefined,
+      userAgent: req.headers.get('user-agent') || undefined,
+      metadata: {
+        participantId: id,
+        previousUserId: participant.user_id,
+        previousPlayerName: participant.player_name,
+        newUserId: user_id,
+        replacedBy: auth.data.user.id,
+        replacedByName: auth.data.profile?.full_name ?? null,
+      },
+    });
+
+    return NextResponse.json({ participant: updated });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

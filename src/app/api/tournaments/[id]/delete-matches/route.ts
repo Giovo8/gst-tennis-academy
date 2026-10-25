@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
 import { verifyAuth } from '@/lib/auth/verifyAuth';
+import { isMatchPlayed, MATCH_PLAYED_COLUMNS } from '@/lib/tournaments/matchPlayed';
 
 /**
  * API per eliminare tutti i match di un torneo
  * DELETE /api/tournaments/[id]/delete-matches
+ * Rifiutata se almeno una partita è già stata giocata (i risultati andrebbero persi).
  */
 
 export async function DELETE(
@@ -19,16 +21,27 @@ export async function DELETE(
     const params = context.params instanceof Promise ? await context.params : context.params;
     const tournamentId = params.id;
 
-    // Conta i match da eliminare
-    const { count } = await supabaseServer
+    const { data: matches, error: matchesError } = await supabaseServer
       .from('tournament_matches')
-      .select('*', { count: 'exact', head: true })
+      .select(MATCH_PLAYED_COLUMNS)
       .eq('tournament_id', tournamentId);
 
-    if (!count || count === 0) {
+    if (matchesError) {
+      return NextResponse.json({ error: matchesError.message }, { status: 500 });
+    }
+
+    const count = matches?.length ?? 0;
+    if (count === 0) {
       return NextResponse.json(
         { message: 'Nessun match da eliminare', deleted: 0 },
         { status: 200 },
+      );
+    }
+
+    if (matches.some((m) => isMatchPlayed(m))) {
+      return NextResponse.json(
+        { error: 'Ci sono partite già giocate: calendario non rigenerabile' },
+        { status: 409 },
       );
     }
 

@@ -178,6 +178,14 @@ export const updateAvvisoSchema = createAvvisoSchema.partial().extend({
   attivo: z.boolean().optional(),
 });
 
+// ==================== TORNEI ====================
+
+// Sostituzione di un iscritto a campionato in corso: la riga resta (stesse partite), cambia l'atleta.
+export const replaceTournamentParticipantSchema = z.object({
+  id: uuidSchema,
+  user_id: uuidSchema,
+});
+
 // ==================== CHAT ====================
 
 export const createChatGroupSchema = z.object({

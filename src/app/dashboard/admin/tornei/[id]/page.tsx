@@ -13,6 +13,11 @@ import TournamentScheduleSection, {
 } from '@/components/tournaments/TournamentScheduleSection';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import {
+  getParticipantsWithPlayedMatches,
+  isMatchPlayed,
+  MATCH_PLAYED_COLUMNS,
+} from '@/lib/tournaments/matchPlayed';
 
 function AdminTournamentDetailInner() {
   const params = useParams();
@@ -58,24 +63,48 @@ function AdminTournamentDetailInner() {
     loadTournamentData();
   }, [id, reloadKey]);
 
-  // Iscritti con account, per la vista "come atleta" (sempre disponibile, anche a torneo in corso)
-  const [athletes, setAthletes] = useState<{ user_id: string; name: string }[]>([]);
+  // Iscritti (anche ospiti), per la vista "come atleta" e la sostituzione nel campionato
+  const [participantsList, setParticipantsList] = useState<
+    { id: string; user_id: string | null; name: string }[]
+  >([]);
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
     fetch(`/api/tournament_participants?tournament_id=${id}`)
       .then((r) => r.json())
       .then((json) => {
         const list = (json.participants || [])
-          .filter((p: any) => p.user_id)
           .map((p: any) => ({
-            user_id: p.user_id as string,
-            name: (p.profiles?.full_name || 'Atleta') as string,
+            id: p.id as string,
+            user_id: (p.user_id ?? null) as string | null,
+            name: (p.profiles?.full_name || p.player_name || 'Atleta') as string,
           }))
           .sort((a: any, b: any) => a.name.localeCompare(b.name));
-        setAthletes(list);
+        setParticipantsList(list);
       })
-      .catch(() => setAthletes([]));
+      .catch(() => setParticipantsList([]));
   }, [id, reloadKey]);
+  const athletes = participantsList.filter(
+    (p): p is { id: string; user_id: string; name: string } => Boolean(p.user_id),
+  );
+
+  // Campionato: chi ha già giocato (non sostituibile) e se il calendario è ancora rigenerabile.
+  // null finché non caricato: i pulsanti che ne dipendono restano nascosti.
+  const isCampionatoType = tournament?.tournament_type === 'campionato';
+  const [playedParticipantIds, setPlayedParticipantIds] = useState<Set<string> | null>(null);
+  const [hasPlayedMatches, setHasPlayedMatches] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!id || typeof id !== 'string' || !isCampionatoType) return;
+    supabase
+      .from('tournament_matches')
+      .select(`player1_id, player2_id, ${MATCH_PLAYED_COLUMNS}`)
+      .eq('tournament_id', id)
+      .then(({ data, error }) => {
+        if (error) return;
+        const matches = data || [];
+        setPlayedParticipantIds(getParticipantsWithPlayedMatches(matches));
+        setHasPlayedMatches(matches.some((m) => isMatchPlayed(m)));
+      });
+  }, [id, reloadKey, isCampionatoType]);
 
   // Partite con prenotazione campo in arrivo: tab "In programma" (prima tab, selezionata all'apertura)
   const isStarted = Boolean(
@@ -343,7 +372,7 @@ function AdminTournamentDetailInner() {
 
     if (
       !confirm(
-        'Sei sicuro di voler rigenerare il calendario? Questa operazione eliminerà tutti i match e i risultati esistenti.',
+        'Sei sicuro di voler rigenerare il calendario? Questa operazione eliminerà tutte le partite del calendario attuale.',
       )
     ) {
       return;
@@ -373,6 +402,8 @@ function AdminTournamentDetailInner() {
       if (!deleteRes.ok) {
         const deleteData = await deleteRes.json().catch(() => null);
         toastError(deleteData?.error, 'Rigenerazione non riuscita');
+        // 409: nel frattempo è stato inserito un risultato, il pulsante non è più disponibile
+        if (deleteRes.status === 409) setReloadKey((prev) => prev + 1);
         return;
       }
 
@@ -746,7 +777,22 @@ function AdminTournamentDetailInner() {
           {meta &&
             meta.tournamentType === 'campionato' &&
             (meta.currentPhase === 'campionato' || meta.currentPhase === 'completato') &&
-            meta.status !== 'Concluso' && (
+            meta.status !== 'Concluso' &&
+            playedParticipantIds &&
+            participantsList.some((p) => !playedParticipantIds.has(p.id)) && (
+              <Link
+                href={`/dashboard/admin/tornei/${id}/sostituisci`}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
+              >
+                Sostituisci Atleta
+              </Link>
+            )}
+
+          {meta &&
+            meta.tournamentType === 'campionato' &&
+            (meta.currentPhase === 'campionato' || meta.currentPhase === 'completato') &&
+            meta.status !== 'Concluso' &&
+            hasPlayedMatches === false && (
               <button
                 onClick={handleRegenerateCalendar}
                 disabled={regeneratingCalendar}

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Campionato: sostituzione iscritti
+
+- **Sostituisci Atleta** (admin, campionato in corso, pagina `/dashboard/admin/tornei/[id]/sostituisci`): un iscritto che non ha ancora giocato partite può essere sostituito con un altro atleta, che eredita le sue partite del calendario (`PATCH /api/tournament_participants`). Bloccata se una sua partita ha una prenotazione attiva.
+- **Rigenera Calendario** disponibile solo se nessuna partita è stata giocata; `DELETE /api/tournaments/[id]/delete-matches` rifiuta (409) se esistono risultati.
+
 ### Revisione del 25 ottobre 2026
 
 #### Fixed
