@@ -1084,7 +1084,8 @@ export default function BookingDetailPage({
               Vai al torneo
             </Link>
           )}
-          {!isPastBooking && booking.status !== 'cancelled' && (
+          {/* Admin/gestore possono modificare anche le prenotazioni passate (contabilità) */}
+          {booking.status !== 'cancelled' && (
             <Link
               href={`${basePath}/bookings/modifica?id=${booking.id}`}
               className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"

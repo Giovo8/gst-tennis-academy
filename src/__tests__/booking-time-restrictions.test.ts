@@ -10,6 +10,7 @@ import {
   getCourtHoursLabel,
   validateRestrictedBookingHours,
   parseItalyLocalToUTC,
+  isBookingEnded,
 } from '@/lib/bookings/bookingTimeRestrictions';
 
 // 0=Dom, 1=Lun, 2=Mar, 3=Mer, 4=Gio, 5=Ven, 6=Sab
@@ -172,5 +173,28 @@ describe('parseItalyLocalToUTC', () => {
     const result = parseItalyLocalToUTC('2026-01-15', 0, 0);
     expect(result).toBeInstanceOf(Date);
     expect(isNaN(result.getTime())).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────
+// isBookingEnded
+// ─────────────────────────────────────────────
+describe('isBookingEnded', () => {
+  const now = new Date('2026-10-28T10:00:00Z');
+
+  it('true se la fine è nel passato', () => {
+    expect(isBookingEnded('2026-10-27T10:00:00Z', now)).toBe(true);
+  });
+
+  it('true se la fine coincide con adesso', () => {
+    expect(isBookingEnded('2026-10-28T10:00:00Z', now)).toBe(true);
+  });
+
+  it('false se la prenotazione non è ancora finita', () => {
+    expect(isBookingEnded('2026-10-28T10:30:00Z', now)).toBe(false);
+  });
+
+  it('false per una data non valida', () => {
+    expect(isBookingEnded('non-una-data', now)).toBe(false);
   });
 });

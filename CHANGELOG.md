@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Prenotazioni passate (admin/gestore)
+
+- Nel dettaglio di una prenotazione passata (non annullata) compare il pulsante **Modifica**: admin e gestore possono correggere campo, orario, tipo, atleti e note anche a prenotazione conclusa.
+- Nella **nuova prenotazione** e nella **modifica** admin gli slot di oggi già trascorsi sono selezionabili (i giorni precedenti lo erano già): si possono registrare a posteriori prenotazioni passate per la contabilità. Restano attivi i controlli su conflitti, blocchi campo e corsi.
+- `POST`/`PUT /api/bookings`: se admin/gestore creano una prenotazione già conclusa, o ne correggono una che resta nel passato, non partono email né notifiche ad atleti, maestro e admin (solo log attività). Le aree atleta e maestro non cambiano.
+
 ### Modifica competizione
 
 - **Ospiti senza account** (admin/gestore): si possono iscrivere con il solo nome, sia in fase iscrizioni (campo "Aggiungi ospite" nella finestra Iscrivi Atleta, `POST /api/tournament_participants` con `player_name`) sia a campionato in corso (tasto "+" nella barra Partecipanti di Modifica, `POST /api/tournaments/[id]/add-participant` con `player_name`). Usano la colonna `player_name` già prevista dalla migrazione 035; niente notifica, i risultati li inserisce l'admin. Nome unico nel torneo (senza distinguere le maiuscole).

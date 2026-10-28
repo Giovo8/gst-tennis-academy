@@ -114,3 +114,13 @@ export function parseItalyLocalToUTC(dateStr: string, hh: number, mm: number): D
   const diffMs = ((hh - italyHour) * 60 + (mm - italyMin)) * 60_000;
   return new Date(estimate.getTime() + diffMs);
 }
+
+/**
+ * True se la prenotazione è già conclusa (fine <= adesso). Admin e gestore possono
+ * registrare o correggere prenotazioni passate per la contabilità: in quel caso
+ * non si inviano email né notifiche.
+ */
+export function isBookingEnded(endISO: string, now: Date = new Date()): boolean {
+  const end = new Date(endISO).getTime();
+  return !Number.isNaN(end) && end <= now.getTime();
+}

@@ -9,7 +9,10 @@ import { BOOKING_DELETE_SNAPSHOT_FIELDS } from '@/lib/bookings/bookingDeletionEm
 import logger from '@/lib/logger/secure-logger';
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from '@/lib/constants/app';
 import { normalizeBookingMutation } from '@/lib/bookings/normalizeBookingMutation';
-import { validateRestrictedBookingHours } from '@/lib/bookings/bookingTimeRestrictions';
+import {
+  validateRestrictedBookingHours,
+  isBookingEnded,
+} from '@/lib/bookings/bookingTimeRestrictions';
 import { findCourseConflict, COURSE_CONFLICT_SELECT } from '@/lib/bookings/courseConflicts';
 import {
   resolveBookingUpdatePermission,
@@ -403,6 +406,9 @@ export async function POST(req: Request) {
           ipAddress: req.headers.get('x-forwarded-for'),
           userAgent: req.headers.get('user-agent'),
           participantsInserted,
+          // Prenotazione già conclusa inserita da admin/gestore (registrazione a posteriori
+          // per contabilità): niente email né notifiche, solo log attività.
+          skipNotifications: canBookForOthers && isBookingEnded(end_time),
         });
       }
     }
@@ -695,18 +701,27 @@ export async function PUT(req: Request) {
     // ricostruiamo lo stato finale unendo i valori precedenti alla modifica.
     const updatedBooking = data?.[0] || { ...booking, ...normalizedUpdate };
 
-    await handleBookingUpdatedSideEffects({
-      booking: updatedBooking,
-      previous: {
-        court: booking.court,
-        start_time: booking.start_time,
-        end_time: booking.end_time,
-      },
-      bookingId: id,
-      user,
-      profile,
-      shouldNotifyAthlete,
-    });
+    // Correzione da parte di admin/gestore di una prenotazione già conclusa (e che resta
+    // nel passato): niente email né notifiche, solo log attività.
+    const isPastCorrection =
+      isAdminOrGestore(profile?.role) &&
+      isBookingEnded(booking.end_time) &&
+      isBookingEnded(updatedBooking.end_time);
+
+    if (!isPastCorrection) {
+      await handleBookingUpdatedSideEffects({
+        booking: updatedBooking,
+        previous: {
+          court: booking.court,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+        },
+        bookingId: id,
+        user,
+        profile,
+        shouldNotifyAthlete,
+      });
+    }
 
     await logActivityServer({
       userId: user.id,

@@ -478,8 +478,6 @@ export default function AdminEditBookingPage({
 
         // Generate slots every 30 minutes (07:00 - 22:00)
         const generatedSlots: TimeSlot[] = [];
-        const now = new Date();
-        const isToday = selectedDate.toDateString() === now.toDateString();
 
         for (let hour = 7; hour <= 22; hour++) {
           for (const minute of [0, 30]) {
@@ -489,17 +487,9 @@ export default function AdminEditBookingPage({
               .toString()
               .padStart(2, '0')}`;
 
-            // Slot disponibile se non è già occupato
-            let available = !occupiedSlots.has(time);
-
-            // If today, check if slot is in the past
-            if (isToday) {
-              const slotTime = new Date(selectedDate);
-              slotTime.setHours(hour, minute, 0, 0);
-              if (slotTime <= now) {
-                available = false;
-              }
-            }
+            // Slot disponibile se non è già occupato. Anche gli orari passati restano
+            // selezionabili: admin/gestore correggono prenotazioni già concluse.
+            const available = !occupiedSlots.has(time);
 
             generatedSlots.push({ time, available });
           }

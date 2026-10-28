@@ -157,8 +157,41 @@ function getCourtBookingMode(
 
 // ─── POST side effects ────────────────────────────────────────────────────────
 
+async function logBookingCreateActivity({
+  booking,
+  userId,
+  ipAddress,
+  userAgent,
+  participantsInserted,
+}: {
+  booking: BookingRow;
+  userId: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  participantsInserted: number;
+}): Promise<void> {
+  await logActivityServer({
+    userId,
+    action: 'booking.create',
+    entityType: 'booking',
+    entityId: booking.id,
+    ipAddress: ipAddress ?? undefined,
+    userAgent: userAgent ?? undefined,
+    metadata: {
+      court: booking.court,
+      type: booking.type,
+      startTime: booking.start_time,
+      endTime: booking.end_time,
+      status: booking.status,
+      participantsCount: participantsInserted,
+    },
+  });
+}
+
 /**
  * After a booking is inserted into DB, send notifications, emails, and log activity.
+ * Con `skipNotifications` (prenotazione già conclusa registrata dallo staff) si scrive
+ * solo il log attività.
  */
 export async function handleBookingCreatedSideEffects({
   booking,
@@ -169,6 +202,7 @@ export async function handleBookingCreatedSideEffects({
   ipAddress,
   userAgent,
   participantsInserted,
+  skipNotifications = false,
 }: {
   booking: BookingRow;
   user: AuthUser;
@@ -178,7 +212,13 @@ export async function handleBookingCreatedSideEffects({
   ipAddress: string | null;
   userAgent: string | null;
   participantsInserted: number;
+  skipNotifications?: boolean;
 }): Promise<void> {
+  if (skipNotifications) {
+    await logBookingCreateActivity({ booking, userId, ipAddress, userAgent, participantsInserted });
+    return;
+  }
+
   const { date: startDate, time: startTimeLabel } = formatRomeDateTime(booking.start_time);
 
   // Fetch user profile for notification and email building
@@ -372,22 +412,7 @@ export async function handleBookingCreatedSideEffects({
   }
 
   // Activity log
-  await logActivityServer({
-    userId,
-    action: 'booking.create',
-    entityType: 'booking',
-    entityId: booking.id,
-    ipAddress: ipAddress ?? undefined,
-    userAgent: userAgent ?? undefined,
-    metadata: {
-      court: booking.court,
-      type: booking.type,
-      startTime: booking.start_time,
-      endTime: booking.end_time,
-      status: booking.status,
-      participantsCount: participantsInserted,
-    },
-  });
+  await logBookingCreateActivity({ booking, userId, ipAddress, userAgent, participantsInserted });
 }
 
 /**
@@ -456,22 +481,7 @@ export async function handleBookingPendingSideEffects({
   }
 
   // Activity log
-  await logActivityServer({
-    userId,
-    action: 'booking.create',
-    entityType: 'booking',
-    entityId: booking.id,
-    ipAddress: ipAddress ?? undefined,
-    userAgent: userAgent ?? undefined,
-    metadata: {
-      court: booking.court,
-      type: booking.type,
-      startTime: booking.start_time,
-      endTime: booking.end_time,
-      status: booking.status,
-      participantsCount: participantsInserted,
-    },
-  });
+  await logBookingCreateActivity({ booking, userId, ipAddress, userAgent, participantsInserted });
 }
 
 // ─── PUT side effects ─────────────────────────────────────────────────────────

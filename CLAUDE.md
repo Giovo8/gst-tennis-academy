@@ -9,7 +9,7 @@ npm run dev            # dev server (Turbopack; Webpack in automatico se Windows
 npm run build          # build produzione
 npm run lint           # ESLint (debito noto: ~230 errori preesistenti, soprattutto any e regole React Compiler)
 npm run format         # Prettier
-npm test               # Jest (326 passing, 17 skipped) — compilato con TypeScript (jest.transform.js), non SWC
+npm test               # Jest (330 passing, 17 skipped) — compilato con TypeScript (jest.transform.js), non SWC
 npx tsc --noEmit       # type check (deve restare a 0 errori)
 ```
 
