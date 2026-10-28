@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
 import { verifyAuth } from '@/lib/auth/verifyAuth';
+import {
+  getTournamentStructureError,
+  type TournamentType,
+} from '@/lib/tournaments/tournamentStructure';
 
 /**
  * API per la creazione dei tornei semplificata
@@ -10,8 +14,6 @@ import { verifyAuth } from '@/lib/auth/verifyAuth';
  * 2. girone_eliminazione - Fase a gironi + eliminazione
  * 3. campionato - Campionato round-robin (tutti contro tutti)
  */
-
-type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
 interface CreateTournamentRequest {
   // Informazioni base
@@ -55,79 +57,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validazione tournament_type
-    const validTypes: TournamentType[] = [
-      'eliminazione_diretta',
-      'girone_eliminazione',
-      'campionato',
-    ];
-    if (!validTypes.includes(body.tournament_type)) {
-      return NextResponse.json(
-        { error: `tournament_type deve essere uno di: ${validTypes.join(', ')}` },
-        { status: 400 },
-      );
-    }
-
-    // Validazione specifica per ogni tipo
-    if (body.tournament_type === 'eliminazione_diretta') {
-      const validSizes = [2, 4, 8, 16, 32, 64, 128];
-      if (!validSizes.includes(body.max_participants)) {
-        return NextResponse.json(
-          {
-            error: `Per eliminazione diretta, max_participants deve essere: ${validSizes.join(
-              ', ',
-            )}`,
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    if (body.tournament_type === 'girone_eliminazione') {
-      if (!body.num_groups || body.num_groups < 1) {
-        return NextResponse.json(
-          { error: 'Per girone_eliminazione, num_groups deve essere almeno 1' },
-          { status: 400 },
-        );
-      }
-
-      if (!body.teams_per_group || body.teams_per_group < 3) {
-        return NextResponse.json(
-          { error: 'Per girone_eliminazione, teams_per_group deve essere almeno 3' },
-          { status: 400 },
-        );
-      }
-
-      if (
-        !body.teams_advancing ||
-        body.teams_advancing < 1 ||
-        body.teams_advancing >= body.teams_per_group
-      ) {
-        return NextResponse.json(
-          { error: 'teams_advancing deve essere tra 1 e teams_per_group-1' },
-          { status: 400 },
-        );
-      }
-
-      // Verifica che max_participants sia coerente
-      const expectedMax = body.num_groups * body.teams_per_group;
-      if (body.max_participants !== expectedMax) {
-        return NextResponse.json(
-          {
-            error: `Per ${body.num_groups} gironi con ${body.teams_per_group} squadre, max_participants deve essere ${expectedMax}`,
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    if (body.tournament_type === 'campionato') {
-      if (body.max_participants < 3) {
-        return NextResponse.json(
-          { error: 'Per un campionato, max_participants deve essere almeno 3' },
-          { status: 400 },
-        );
-      }
+    // Tipo, numero partecipanti e gironi: stesse regole della modifica (PATCH /api/tournaments/[id])
+    const structureError = getTournamentStructureError(body);
+    if (structureError) {
+      return NextResponse.json({ error: structureError }, { status: 400 });
     }
 
     // Prepara i dati per l'inserimento

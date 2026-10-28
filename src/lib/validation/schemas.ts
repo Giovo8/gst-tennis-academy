@@ -180,11 +180,57 @@ export const updateAvvisoSchema = createAvvisoSchema.partial().extend({
 
 // ==================== TORNEI ====================
 
-// Sostituzione di un iscritto a campionato in corso: la riga resta (stesse partite), cambia l'atleta.
-export const replaceTournamentParticipantSchema = z.object({
-  id: uuidSchema,
-  user_id: uuidSchema,
+// Giocatore esterno senza account (tournament_participants.player_name)
+const guestPlayerNameSchema = z
+  .string()
+  .trim()
+  .min(2, 'Il nome deve avere almeno 2 caratteri')
+  .max(100, 'Nome troppo lungo');
+
+// Nuovo iscritto a campionato in corso: atleta registrato (user_id) oppure ospite (player_name).
+// Si aggiungono solo le sue partite al calendario.
+export const addTournamentParticipantSchema = z
+  .object({
+    user_id: uuidSchema.optional(),
+    player_name: guestPlayerNameSchema.optional(),
+  })
+  .refine((d) => Boolean(d.user_id) !== Boolean(d.player_name), {
+    message: 'Indica un atleta oppure il nome di un ospite',
+  });
+
+// Iscrizione di un ospite a un torneo in fase iscrizioni
+export const enrollGuestSchema = z.object({
+  tournament_id: uuidSchema,
+  player_name: guestPlayerNameSchema,
 });
+
+const tournamentDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data non valida');
+const optionalCountSchema = z.number().int().min(0).max(128).nullable().optional();
+
+// Modifica torneo: il form manda tutti i campi; la route rifiuta i cambi di quelli bloccati
+// dalla fase (struttura dopo l'avvio, formato dopo la prima partita giocata).
+export const updateTournamentSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Il nome è obbligatorio').max(200, 'Nome troppo lungo'),
+    description: z.string().max(5000, 'Descrizione troppo lunga').default(''),
+    start_date: tournamentDateSchema,
+    end_date: tournamentDateSchema.nullable().default(null),
+    category: z.string().trim().max(50).default('Open'),
+    match_format: z.enum(['best_of_1', 'best_of_3', 'best_of_5'], 'Formato non valido'),
+    tournament_type: z.enum(
+      ['eliminazione_diretta', 'girone_eliminazione', 'campionato'],
+      'Tipo non valido',
+    ),
+    // Il minimo per tipo lo controlla getTournamentStructureError, solo se la struttura cambia
+    max_participants: z.number().int().min(0).max(128),
+    num_groups: optionalCountSchema,
+    teams_per_group: optionalCountSchema,
+    teams_advancing: optionalCountSchema,
+  })
+  .refine((d) => !d.end_date || d.end_date >= d.start_date, {
+    message: 'La data di fine precede quella di inizio',
+    path: ['end_date'],
+  });
 
 // ==================== CHAT ====================
 

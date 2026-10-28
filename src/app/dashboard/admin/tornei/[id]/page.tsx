@@ -13,11 +13,7 @@ import TournamentScheduleSection, {
 } from '@/components/tournaments/TournamentScheduleSection';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
-import {
-  getParticipantsWithPlayedMatches,
-  isMatchPlayed,
-  MATCH_PLAYED_COLUMNS,
-} from '@/lib/tournaments/matchPlayed';
+import { isMatchPlayed, MATCH_PLAYED_COLUMNS } from '@/lib/tournaments/matchPlayed';
 
 function AdminTournamentDetailInner() {
   const params = useParams();
@@ -63,7 +59,7 @@ function AdminTournamentDetailInner() {
     loadTournamentData();
   }, [id, reloadKey]);
 
-  // Iscritti (anche ospiti), per la vista "come atleta" e la sostituzione nel campionato
+  // Iscritti (anche ospiti), per la vista "come atleta"
   const [participantsList, setParticipantsList] = useState<
     { id: string; user_id: string | null; name: string }[]
   >([]);
@@ -87,22 +83,19 @@ function AdminTournamentDetailInner() {
     (p): p is { id: string; user_id: string; name: string } => Boolean(p.user_id),
   );
 
-  // Campionato: chi ha già giocato (non sostituibile) e se il calendario è ancora rigenerabile.
-  // null finché non caricato: i pulsanti che ne dipendono restano nascosti.
+  // Campionato: il calendario è rigenerabile solo se nessuna partita è stata giocata.
+  // null finché non caricato: il pulsante resta nascosto.
   const isCampionatoType = tournament?.tournament_type === 'campionato';
-  const [playedParticipantIds, setPlayedParticipantIds] = useState<Set<string> | null>(null);
   const [hasPlayedMatches, setHasPlayedMatches] = useState<boolean | null>(null);
   useEffect(() => {
     if (!id || typeof id !== 'string' || !isCampionatoType) return;
     supabase
       .from('tournament_matches')
-      .select(`player1_id, player2_id, ${MATCH_PLAYED_COLUMNS}`)
+      .select(MATCH_PLAYED_COLUMNS)
       .eq('tournament_id', id)
       .then(({ data, error }) => {
         if (error) return;
-        const matches = data || [];
-        setPlayedParticipantIds(getParticipantsWithPlayedMatches(matches));
-        setHasPlayedMatches(matches.some((m) => isMatchPlayed(m)));
+        setHasPlayedMatches((data || []).some((m) => isMatchPlayed(m)));
       });
   }, [id, reloadKey, isCampionatoType]);
 
@@ -774,19 +767,13 @@ function AdminTournamentDetailInner() {
               </button>
             )}
 
-          {meta &&
-            meta.tournamentType === 'campionato' &&
-            (meta.currentPhase === 'campionato' || meta.currentPhase === 'completato') &&
-            meta.status !== 'Concluso' &&
-            playedParticipantIds &&
-            participantsList.some((p) => !playedParticipantIds.has(p.id)) && (
-              <Link
-                href={`/dashboard/admin/tornei/${id}/sostituisci`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
-              >
-                Sostituisci Atleta
-              </Link>
-            )}
+          {/* Dati del torneo e, nel campionato in corso, partecipanti (aggiungi/rimuovi) */}
+          <Link
+            href={`/dashboard/admin/tornei/${id}/modifica`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
+          >
+            Modifica
+          </Link>
 
           {meta &&
             meta.tournamentType === 'campionato' &&

@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Campionato: sostituzione iscritti
+### Modifica competizione
 
-- **Sostituisci Atleta** (admin, campionato in corso, pagina `/dashboard/admin/tornei/[id]/sostituisci`): un iscritto che non ha ancora giocato partite può essere sostituito con un altro atleta, che eredita le sue partite del calendario (`PATCH /api/tournament_participants`). Bloccata se una sua partita ha una prenotazione attiva.
+- **Ospiti senza account** (admin/gestore): si possono iscrivere con il solo nome, sia in fase iscrizioni (campo "Aggiungi ospite" nella finestra Iscrivi Atleta, `POST /api/tournament_participants` con `player_name`) sia a campionato in corso (tasto "+" nella barra Partecipanti di Modifica, `POST /api/tournaments/[id]/add-participant` con `player_name`). Usano la colonna `player_name` già prevista dalla migrazione 035; niente notifica, i risultati li inserisce l'admin. Nome unico nel torneo (senza distinguere le maiuscole).
+- **Modifica** (admin/gestore, pagina `/dashboard/admin/tornei/[id]/modifica`, un solo pulsante nel dettaglio torneo al posto di "Sostituisci Atleta" e "Aggiungi Atleta"): nome, descrizione, date e categoria sempre; formato partita finché nessuna partita è giocata; tipo e numero partecipanti in fase iscrizioni. Nel campionato in corso, sezione Partecipanti con la barra di ricerca per aggiungere un atleta e la X per rimuoverlo (solo chi non ha giocato). Rimuovere un atleta e aggiungerne un altro assegna al nuovo le stesse giornate. Nuova `PATCH /api/tournaments/[id]`; le regole di struttura sono condivise con la creazione (`src/lib/tournaments/tournamentStructure.ts`).
+
+### Campionato: aggiunta e rimozione iscritti
+
+- **Aggiungi atleta** (admin/gestore, campionato in corso, dalla barra di ricerca della sezione Partecipanti in Modifica): iscrive un nuovo atleta e crea solo le sue partite, una contro ogni partecipante (`POST /api/tournaments/[id]/add-participant`). Con iscritti dispari gioca nella giornata di riposo di ciascun avversario; con iscritti pari una partita per giornata esistente più una giornata nuova. Le partite già in calendario, giocate o no, non cambiano. L'atleta riceve una notifica; `max_participants` si adegua se il campionato era al completo. Prima di confermare compare il numero di partite che verranno create.
+- A competizione avviata la lista iscritti la modifica solo admin/gestore: `POST /api/tournament_participants` rifiuta (409) fuori dalla fase `iscrizioni`; `DELETE` è consentito solo ad admin/gestore, solo nei campionati e solo per iscritti senza partite giocate né prenotate (prima l'eliminazione a cascata cancellava anche i risultati, falsando la classifica degli avversari).
+- **Sostituisci Atleta** (pagina `/dashboard/admin/tornei/[id]/sostituisci` e `PATCH /api/tournament_participants`, introdotte nel commit precedente) rimossa: si sostituisce un atleta che non ha giocato togliendolo con la X e aggiungendo il nuovo dalla barra Partecipanti di Modifica; con iscritti pari il nuovo prende le stesse giornate.
 - **Rigenera Calendario** disponibile solo se nessuna partita è stata giocata; `DELETE /api/tournaments/[id]/delete-matches` rifiuta (409) se esistono risultati.
+
+### Avvio in locale e test
+
+- `npm run dev` e `npm run build` passano da `scripts/next.mjs`: se Windows (Smart App Control) blocca il compilatore nativo di Next, usano Webpack al posto di Turbopack, che senza binario nativo non parte. Su Vercel e sugli altri sistemi il comando è quello di prima.
+- Jest compila i test con il compilatore TypeScript (`jest.transform.js`) invece che con SWC di Next: su Windows con Smart App Control il binario nativo di SWC viene bloccato e in Next 16 Jest non ripiega sulla versione WASM. Nessuna nuova dipendenza.
 
 ### Revisione del 25 ottobre 2026
 

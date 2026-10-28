@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
 import AthletesSelector, {
   type Athlete,
   type PreviousGuest,
+  type AthletesSelectorProps,
   type SelectedAthlete,
-} from "@/components/bookings/AthletesSelector";
+} from '@/components/bookings/AthletesSelector';
 
 interface ParticipantsCardProps {
   athletes: Athlete[];
@@ -16,6 +17,10 @@ interface ParticipantsCardProps {
   title?: string;
   allowGuestParticipants?: boolean;
   searchPlaceholder?: string;
+  nonRemovableIndexes?: number[];
+  guestNameOnly?: boolean;
+  participantLabelByIndex?: AthletesSelectorProps['participantLabelByIndex'];
+  participantToneByIndex?: AthletesSelectorProps['participantToneByIndex'];
 }
 
 export default function ParticipantsCard({
@@ -25,9 +30,13 @@ export default function ParticipantsCard({
   onAthleteRemove,
   maxAthletes,
   previousGuests = [],
-  title = "Partecipanti",
+  title = 'Partecipanti',
   allowGuestParticipants = true,
   searchPlaceholder,
+  nonRemovableIndexes,
+  guestNameOnly,
+  participantLabelByIndex,
+  participantToneByIndex,
 }: ParticipantsCardProps) {
   return (
     <div className="bg-white border border-black/10 rounded-lg overflow-hidden overflow-visible relative z-20">
@@ -48,6 +57,10 @@ export default function ParticipantsCard({
           previousGuests={previousGuests}
           allowGuestParticipants={allowGuestParticipants}
           searchPlaceholder={searchPlaceholder}
+          nonRemovableIndexes={nonRemovableIndexes}
+          guestNameOnly={guestNameOnly}
+          participantLabelByIndex={participantLabelByIndex}
+          participantToneByIndex={participantToneByIndex}
         />
       </div>
     </div>

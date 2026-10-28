@@ -5,11 +5,11 @@ Piattaforma gestionale per accademia di tennis. Next.js 16 (App Router) + Supaba
 ## Comandi
 
 ```bash
-npm run dev            # dev server (Turbopack)
+npm run dev            # dev server (Turbopack; Webpack in automatico se Windows blocca il compilatore nativo: scripts/next.mjs)
 npm run build          # build produzione
 npm run lint           # ESLint (debito noto: ~230 errori preesistenti, soprattutto any e regole React Compiler)
 npm run format         # Prettier
-npm test               # Jest (307 passing, 17 skipped)
+npm test               # Jest (326 passing, 17 skipped) — compilato con TypeScript (jest.transform.js), non SWC
 npx tsc --noEmit       # type check (deve restare a 0 errori)
 ```
 

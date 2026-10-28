@@ -36,12 +36,15 @@ export default function ManualEnrollment({
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [guestName, setGuestName] = useState('');
+  const [addingGuest, setAddingGuest] = useState(false);
 
   useEffect(() => {
     if (showModal) {
       loadUsers();
       setSelectedUserIds(new Set());
       setSearchQuery('');
+      setGuestName('');
     }
   }, [showModal]);
 
@@ -181,6 +184,54 @@ export default function ManualEnrollment({
     }
   };
 
+  // Ospite senza account: si iscrive con il solo nome (solo admin/gestore)
+  const handleAddGuest = async () => {
+    const name = guestName.trim();
+    if (name.length < 2) {
+      toast.warning("Inserisci il nome dell'ospite");
+      return;
+    }
+    if (currentParticipants + selectedUserIds.size >= maxParticipants) {
+      toast.warning('Torneo al completo');
+      return;
+    }
+
+    setAddingGuest(true);
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Sessione scaduta, accedi di nuovo');
+        return;
+      }
+
+      const res = await fetch('/api/tournament_participants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ tournament_id: tournamentId, player_name: name }),
+      });
+
+      if (res.ok) {
+        toast.success('Ospite iscritto');
+        setGuestName('');
+        onEnrollmentSuccess();
+      } else {
+        const data = await res.json().catch(() => null);
+        toastError(data?.error, 'Iscrizione non riuscita');
+      }
+    } catch (error) {
+      console.error('Error enrolling guest:', error);
+      toast.error('Iscrizione non riuscita');
+    } finally {
+      setAddingGuest(false);
+    }
+  };
+
   const modalContent = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -223,6 +274,32 @@ export default function ManualEnrollment({
               className="w-full rounded-lg border border-black/10 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
             />
           </div>
+        </div>
+
+        {/* Ospite senza account */}
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            placeholder="Nome e cognome dell'ospite (senza account)..."
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddGuest();
+              }
+            }}
+            className="flex-1 rounded-lg border border-black/10 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+          />
+          <button
+            type="button"
+            onClick={handleAddGuest}
+            disabled={addingGuest || guestName.trim().length < 2}
+            className="flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {addingGuest && <Loader2 className="h-4 w-4 animate-spin" />}
+            Aggiungi ospite
+          </button>
         </div>
 
         {/* User List */}

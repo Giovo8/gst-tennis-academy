@@ -27,12 +27,16 @@ export interface PreviousGuest {
   phone?: string;
 }
 
-interface AthletesSelectorProps {
+export interface AthletesSelectorProps {
   athletes: Athlete[];
   selectedAthletes: SelectedAthlete[];
   onAthleteAdd: (athlete: SelectedAthlete) => void;
   onAthleteRemove: (index: number) => void;
   nonRemovableUserIds?: string[];
+  /** Come nonRemovableUserIds, ma per posizione: serve agli ospiti, che non hanno userId. */
+  nonRemovableIndexes?: number[];
+  /** Modulo ospite con il solo nome (niente email e telefono). */
+  guestNameOnly?: boolean;
   participantLabelByIndex?: (index: number, athlete: SelectedAthlete) => string | null;
   participantToneByIndex?: (index: number, athlete: SelectedAthlete) => 'secondary' | 'dark';
   selectedDisplayOrder?: number[];
@@ -54,6 +58,8 @@ export default function AthletesSelector({
   onAthleteAdd,
   onAthleteRemove,
   nonRemovableUserIds = [],
+  nonRemovableIndexes = [],
+  guestNameOnly = false,
   participantLabelByIndex,
   participantToneByIndex,
   selectedDisplayOrder,
@@ -452,20 +458,24 @@ export default function AthletesSelector({
                         onChange={(e) => setGuestName(e.target.value)}
                         className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        value={guestEmail}
-                        onChange={(e) => setGuestEmail(e.target.value)}
-                        className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                      />
-                      <input
-                        type="tel"
-                        placeholder="Telefono"
-                        value={guestPhone}
-                        onChange={(e) => setGuestPhone(e.target.value)}
-                        className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                      />
+                      {!guestNameOnly && (
+                        <>
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={guestEmail}
+                            onChange={(e) => setGuestEmail(e.target.value)}
+                            className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                          />
+                          <input
+                            type="tel"
+                            placeholder="Telefono"
+                            value={guestPhone}
+                            onChange={(e) => setGuestPhone(e.target.value)}
+                            className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                          />
+                        </>
+                      )}
                       <button
                         type="button"
                         onClick={handleAddGuest}
@@ -495,9 +505,9 @@ export default function AthletesSelector({
                 : tone === 'dark'
                 ? '#023047'
                 : 'var(--secondary)';
-              const isNonRemovable = Boolean(
-                athlete.userId && nonRemovableUserIds.includes(athlete.userId),
-              );
+              const isNonRemovable =
+                nonRemovableIndexes.includes(originalIndex) ||
+                Boolean(athlete.userId && nonRemovableUserIds.includes(athlete.userId));
               return (
                 <li key={`${athlete.userId || athlete.fullName}-${originalIndex}`}>
                   <div
