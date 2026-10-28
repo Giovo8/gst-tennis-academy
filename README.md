@@ -110,16 +110,16 @@ npm run dev
 
 ### Comandi
 
-| Comando                                | Descrizione                   |
-| -------------------------------------- | ----------------------------- |
-| `npm run dev`                          | Dev server (Turbopack)        |
-| `npm run build`                        | Build di produzione           |
-| `npm start`                            | Avvio build di produzione     |
-| `npm run lint`                         | ESLint                        |
-| `npm run format`                       | Prettier su ts/tsx/js/json/md |
-| `npm test`                             | Test Jest                     |
-| `npm run test:watch` / `test:coverage` | Test in watch / con coverage  |
-| `npx tsc --noEmit`                     | Type check                    |
+| Comando                                | Descrizione                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------ |
+| `npm run dev`                          | Dev server (Turbopack, oppure Webpack se Windows blocca il compilatore nativo) |
+| `npm run build`                        | Build di produzione                                                            |
+| `npm start`                            | Avvio build di produzione                                                      |
+| `npm run lint`                         | ESLint                                                                         |
+| `npm run format`                       | Prettier su ts/tsx/js/json/md                                                  |
+| `npm test`                             | Test Jest                                                                      |
+| `npm run test:watch` / `test:coverage` | Test in watch / con coverage                                                   |
+| `npx tsc --noEmit`                     | Type check                                                                     |
 
 Pre-commit: Husky + lint-staged (Prettier sui file staged), attivato automaticamente da `npm install`.
 
