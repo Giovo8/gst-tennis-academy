@@ -85,10 +85,10 @@ export default function TextHeroSection() {
                 style={{ gap: '3rem', paddingRight: '3rem' }}
               >
                 <img
-                  src="/images/logo/1729263756_adidas-logo-png-210379511.png"
-                  alt="Adidas"
+                  src="/images/logo/australian-logo.svg"
+                  alt="Australian"
                   style={{
-                    height: '28px',
+                    height: '40px',
                     width: 'auto',
                     objectFit: 'contain',
                     flexShrink: 0,

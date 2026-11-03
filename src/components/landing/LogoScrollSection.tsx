@@ -6,9 +6,9 @@ export default function LogoScrollSection() {
       mobileClass: 'w-[100px] h-[38px]',
     },
     {
-      src: '/images/logo/1729263756_adidas-logo-png-210379511.png',
-      alt: 'Adidas',
-      mobileClass: 'w-[80px] h-[32px]',
+      src: '/images/logo/australian-logo.svg',
+      alt: 'Australian',
+      mobileClass: 'w-[100px] h-[38px]',
     },
     { src: '/images/logo/FITP-LOGO-2501270168.png', alt: 'FITP', mobileClass: 'w-[96px] h-[38px]' },
   ];
