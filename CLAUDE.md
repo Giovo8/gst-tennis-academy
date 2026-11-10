@@ -9,13 +9,15 @@ npm run dev            # dev server (Turbopack; Webpack in automatico se Windows
 npm run build          # build produzione
 npm run lint           # ESLint (debito noto: ~230 errori preesistenti, soprattutto any e regole React Compiler)
 npm run format         # Prettier
-npm test               # Jest (330 passing, 17 skipped) — compilato con TypeScript (jest.transform.js), non SWC
+npm test               # Jest — compilato con TypeScript (jest.transform.js), non SWC
 npx tsc --noEmit       # type check (deve restare a 0 errori)
 ```
 
-Il `tsconfig` esclude `src/__tests__`: per controllare anche i test usare un tsconfig temporaneo che li includa (oggi passano senza errori).
+Dopo ogni modifica al codice: `npx tsc --noEmit` e `npm test` devono passare. Una suite (`tournament-flows.test.ts`) è saltata senza credenziali Supabase reali: è normale.
 
-Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l'hook si attiva da solo con `npm install` (script `prepare`). Il codice esistente non è ancora tutto formattato: si allinea file per file ai commit.
+Il `tsconfig` esclude `src/__tests__`: per controllare anche i test usare un tsconfig temporaneo che li includa (e cancellare poi il file `.tsbuildinfo` generato).
+
+Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l'hook si attiva da solo con `npm install`. Il codice esistente non è ancora tutto formattato: si allinea file per file ai commit.
 
 ## Architettura in breve
 
@@ -35,6 +37,24 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 - **AI News**: generazione nella Edge Function Supabase `supabase/functions/genera-news` (Gemini via REST); le route `src/app/api/ai-news/` gestiscono fonti, cron, bozze e delegano la generazione. Cron configurati in DB (`ai_news_cron` + pg_cron), NON in Vercel.
 - **DB**: migrazioni `001–097` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `098`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
 
+## Codice condiviso: cercare prima di scrivere
+
+Le pagine sono grandi e simili tra aree (admin, atleta, maestro): prima di scrivere una funzione di utilità in una pagina, controllare se esiste già in `src/lib/`. Se serve a più di una pagina va in `src/lib/`, non copiata.
+
+| Serve                                                    | Usare                                                                            |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Date delle lezioni di un corso, campo/orario in una data | `src/lib/courses/schedule.ts`                                                    |
+| Conflitti corso ↔ prenotazione, campi di un corso        | `src/lib/bookings/courseConflicts.ts`                                            |
+| Orari prenotabili, conversione ora italiana ↔ UTC        | `src/lib/bookings/bookingTimeRestrictions.ts`                                    |
+| Etichette e punteggio delle sfide Arena                  | `src/lib/arena/challengeDisplay.ts`                                              |
+| Punteggio tennis dei tornei, "best of", struttura torneo | `src/lib/tournaments/`                                                           |
+| News pubblicata, titolo, data della news                 | `src/lib/news/display.ts`                                                        |
+| ID di un video YouTube                                   | `src/lib/utils/youtube.ts`                                                       |
+| Date in italiano                                         | `src/lib/utils/formatItalianDate.ts`                                             |
+| Controlli sul ruolo                                      | `src/lib/roles.ts` (`isAdminOrGestore`, `isStaffRole`, `isBookableCoachProfile`) |
+| Lista dei campi                                          | `getCourts()` (`src/lib/courts/getCourts.ts`) o l'hook `useCourts()`             |
+| Classi CSS composte, URL avatar                          | `cn()`, `getAvatarUrl()` in `src/lib/utils.ts`                                   |
+
 ## Convenzioni
 
 - TypeScript con `strict: false` (non introdurre `any` nuovi; il debito `no-explicit-any` è già ampio).
@@ -42,8 +62,9 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 - UI: Tailwind v4, componenti condivisi in `src/components/ui/`, icone lucide-react, toast sonner (`toastError` di `src/lib/toast.ts` per gli errori), animazioni in CSS. Solo tema chiaro: non usare la variante `dark:` né aggiungere dark mode. Una sola palette blu brand (scala Tailwind `frozen-*`) per tutte le aree; niente rosso per errori e avvisi. Le classi `*-frozen-lake-*` non generano stili (token solo in `:root`).
 - Testi UI e messaggi in italiano.
 - Campi/valori DB spesso in italiano (es. `news.stato`: bozza/pubblicata/scartata) — non "tradurli".
-- Per la lista campi usare `getCourts()` (`src/lib/courts/getCourts.ts`) o l'hook `useCourts()`, mai costanti hardcoded.
 - Le pagine maestro spesso riesportano quelle atleta: una modifica alla pagina atleta vale anche per il maestro.
+- Niente codice morto: export, route, componenti e dipendenze senza un utilizzatore vanno rimossi, non lasciati "per dopo". `npx knip` aiuta a trovarli (falsi positivi noti: `supabase/functions/genera-news`, `lint-staged`, `@next/swc-win32-x64-msvc`).
+- Documentazione: aggiornare il file di `docs/` interessato e `CHANGELOG.md` insieme al codice; non scrivere nei documenti conteggi (pagine, route, test) o date che invecchiano.
 
 ## Cosa NON fare senza conferma esplicita
 
@@ -55,7 +76,8 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 
 ## Riferimenti
 
-- `README.md` — panoramica, setup, deploy
-- `docs/` — documentazione dettagliata (indice in `docs/README.md`: API, DATABASE, ROLES, FEATURES, AI-NEWS…)
+- `README.md` — panoramica, setup, comandi, indice della documentazione
+- `docs/` — `ARCHITECTURE`, `FEATURES`, `ROLES`, `API`, `DATABASE`, `FRONTEND` (convenzioni e design system), `DEPLOYMENT`, `ARENA`, `EMAIL`, `AI-NEWS`
 - `.env.example` — tutte le variabili d'ambiente effettivamente usate
 - `CHANGELOG.md` — storico delle modifiche
+- `.github/copilot-instructions.md` — versione ridotta di queste regole per GitHub Copilot: tenerla allineata

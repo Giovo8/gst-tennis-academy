@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
-import { type UserRole, isAdminOrGestore, canManageUsers } from "@/lib/roles";
-import { logSecurityEvent } from "@/lib/security/securityEvents";
+import { NextResponse } from 'next/server';
+import { supabaseServer } from '@/lib/supabase/serverClient';
+import { type UserRole, isAdminOrGestore } from '@/lib/roles';
+import { logSecurityEvent } from '@/lib/security/securityEvents';
 
 export type { UserRole };
-export { isAdminOrGestore, canManageUsers };
+export { isAdminOrGestore };
 
-export interface AuthResult {
+interface AuthResult {
   user: {
     id: string;
     email: string;
@@ -35,26 +35,23 @@ export interface AuthSuccessResponse {
  */
 export async function verifyAuth(
   req: Request,
-  allowedRoles?: UserRole[]
+  allowedRoles?: UserRole[],
 ): Promise<AuthSuccessResponse | AuthErrorResponse> {
-  const authHeader = req.headers.get("authorization");
+  const authHeader = req.headers.get('authorization');
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     await logSecurityEvent({
-      tipo: "auth.token_mancante",
+      tipo: 'auth.token_mancante',
       request: req,
       statusCode: 401,
     });
     return {
       success: false,
-      response: NextResponse.json(
-        { error: "Non autorizzato: token mancante" },
-        { status: 401 }
-      ),
+      response: NextResponse.json({ error: 'Non autorizzato: token mancante' }, { status: 401 }),
     };
   }
 
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace('Bearer ', '');
 
   try {
     const {
@@ -64,28 +61,28 @@ export async function verifyAuth(
 
     if (authError || !user) {
       await logSecurityEvent({
-        tipo: "auth.token_non_valido",
+        tipo: 'auth.token_non_valido',
         request: req,
         statusCode: 401,
       });
       return {
         success: false,
         response: NextResponse.json(
-          { error: "Non autorizzato: token non valido" },
-          { status: 401 }
+          { error: 'Non autorizzato: token non valido' },
+          { status: 401 },
         ),
       };
     }
 
     // Fetch profile to get role
     const { data: profile, error: profileError } = await supabaseServer
-      .from("profiles")
-      .select("role, full_name")
-      .eq("id", user.id)
+      .from('profiles')
+      .select('role, full_name')
+      .eq('id', user.id)
       .single();
 
     if (profileError) {
-      console.error("Error fetching profile:", profileError);
+      console.error('Error fetching profile:', profileError);
     }
 
     // Check role authorization if specified
@@ -95,7 +92,7 @@ export async function verifyAuth(
         // Un utente autenticato che tenta una route non sua è il segnale più
         // interessante del registro: qui l'identità è nota.
         await logSecurityEvent({
-          tipo: "auth.ruolo_insufficiente",
+          tipo: 'auth.ruolo_insufficiente',
           request: req,
           statusCode: 403,
           userId: user.id,
@@ -104,8 +101,8 @@ export async function verifyAuth(
         return {
           success: false,
           response: NextResponse.json(
-            { error: "Non autorizzato: permessi insufficienti" },
-            { status: 403 }
+            { error: 'Non autorizzato: permessi insufficienti' },
+            { status: 403 },
           ),
         };
       }
@@ -116,7 +113,7 @@ export async function verifyAuth(
       data: {
         user: {
           id: user.id,
-          email: user.email ?? "",
+          email: user.email ?? '',
         },
         profile: profile
           ? {
@@ -127,12 +124,12 @@ export async function verifyAuth(
       },
     };
   } catch (err) {
-    console.error("Auth verification error:", err);
+    console.error('Auth verification error:', err);
     return {
       success: false,
       response: NextResponse.json(
         { error: "Errore durante la verifica dell'autenticazione" },
-        { status: 500 }
+        { status: 500 },
       ),
     };
   }

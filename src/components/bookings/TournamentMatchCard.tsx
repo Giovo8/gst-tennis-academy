@@ -101,6 +101,14 @@ export default function TournamentMatchCard({
     if (selectedMatch) onSelectMatchRef.current(selectedMatch);
   }, [selectedMatch]);
 
+  // Una sola partita da prenotare nella giornata/turno mostrato: selezionata in automatico,
+  // così l'atleta non resta con il pulsante di conferma disattivato senza capire perché.
+  const openRoundMatches = round?.matches.filter((match) => !match.booking) ?? [];
+  const onlyMatch = openRoundMatches.length === 1 ? openRoundMatches[0] : null;
+  useEffect(() => {
+    if (onlyMatch && !selectedMatchId) onSelectMatchRef.current(onlyMatch);
+  }, [onlyMatch, selectedMatchId]);
+
   return (
     <div className="bg-white border border-black/10 rounded-lg overflow-hidden">
       <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50">
@@ -186,37 +194,36 @@ export default function TournamentMatchCard({
                 <div className={rowClassName}>
                   <label className={labelClassName}>Partita</label>
                   <ul className="flex-1 flex flex-col gap-2">
-                    {round?.matches
-                      .filter((match) => !match.booking)
-                      .map((match) => {
-                        const isSelected = match.id === selectedMatchId;
+                    {openRoundMatches.map((match) => {
+                      const isSelected = match.id === selectedMatchId;
 
-                        return (
-                          <li key={match.id}>
-                            <button
-                              type="button"
-                              onClick={() => onSelectMatch(isSelected ? null : match)}
-                              // Selezionata: stesso colore delle lezioni private (#023047)
-                              style={isSelected ? { background: '#023047' } : undefined}
-                              className={`w-full text-left py-3 px-3 rounded-lg transition flex items-center gap-4 text-sm text-white ${
-                                isSelected ? '' : 'bg-secondary hover:opacity-90'
-                              }`}
-                            >
-                              <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                                <TypeIcon className="h-5 w-5 text-white" strokeWidth={2} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-white text-sm truncate">
-                                  {match.player1.full_name}
-                                </p>
-                                <p className="font-semibold text-white text-sm truncate mt-0.5">
-                                  {match.player2.full_name}
-                                </p>
-                              </div>
-                            </button>
-                          </li>
-                        );
-                      })}
+                      return (
+                        <li key={match.id}>
+                          <button
+                            type="button"
+                            // L'unica partita disponibile resta selezionata (niente deselezione)
+                            onClick={() => onSelectMatch(isSelected && !onlyMatch ? null : match)}
+                            // Selezionata: stesso colore delle lezioni private (#023047)
+                            style={isSelected ? { background: '#023047' } : undefined}
+                            className={`w-full text-left py-3 px-3 rounded-lg transition flex items-center gap-4 text-sm text-white ${
+                              isSelected ? '' : 'bg-secondary hover:opacity-90'
+                            }`}
+                          >
+                            <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                              <TypeIcon className="h-5 w-5 text-white" strokeWidth={2} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-white text-sm truncate">
+                                {match.player1.full_name}
+                              </p>
+                              <p className="font-semibold text-white text-sm truncate mt-0.5">
+                                {match.player2.full_name}
+                              </p>
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </>

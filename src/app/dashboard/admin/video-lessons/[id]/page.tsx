@@ -10,6 +10,7 @@ import { Clock, Loader2, Play } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import { getYouTubeVideoId } from '@/lib/utils/youtube';
 
 type VideoLesson = {
   id: string;
@@ -133,14 +134,6 @@ export default function VideoDetailPage() {
       setNotesSaving(false);
     }
   }
-
-  // Extract YouTube video ID
-  const getYouTubeVideoId = (url: string) => {
-    const match = url.match(
-      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
-    );
-    return match ? match[1] : null;
-  };
 
   if (loading) {
     return (

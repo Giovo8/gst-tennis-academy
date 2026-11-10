@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import { getYouTubeVideoId } from '@/lib/utils/youtube';
 
 interface VideoLesson {
   id: string;
@@ -210,13 +211,6 @@ export default function VideoPlayerPage() {
     } catch {
       return dateString;
     }
-  };
-
-  const getYouTubeVideoId = (url: string) => {
-    const match = url.match(
-      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
-    );
-    return match ? match[1] : null;
   };
 
   if (loading) {

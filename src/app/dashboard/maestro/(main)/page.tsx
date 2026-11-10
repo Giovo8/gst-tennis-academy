@@ -10,12 +10,7 @@ import NotificationsList from '@/components/dashboard/NotificationsList';
 import { UpcomingCommitmentsCard } from '@/components/dashboard/UpcomingCommitmentsCard';
 import BookingsTimeline from '@/components/admin/BookingsTimeline';
 import { resolveCourseCourtsForDate } from '@/lib/bookings/courseConflicts';
-
-function localDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`;
-}
+import { localDateStr } from '@/lib/courses/schedule';
 
 interface TimelineBooking {
   id: string;

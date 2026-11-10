@@ -1,71 +1,71 @@
 # Architettura
 
-Panoramica tecnica di GST Tennis Academy: stack, struttura del progetto, middleware, pattern di autenticazione/autorizzazione, accesso ai dati e configurazioni notevoli.
+Panoramica tecnica di GST Tennis Academy: stack, struttura del progetto, middleware, autenticazione e autorizzazione, accesso ai dati e configurazioni notevoli.
 
-## Stack tecnologico
+## Stack
 
-| Tecnologia                                               | Versione (package.json)         | Uso                                                           |
-| -------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------- |
-| Next.js                                                  | ^16.4.3                         | Framework full-stack (App Router, Turbopack in sviluppo)      |
-| React / React DOM                                        | ^19.3.1                         | UI                                                            |
-| TypeScript                                               | ^5.9.3                          | Linguaggio (`strict: false`, vedi sotto)                      |
-| Tailwind CSS                                             | ^4.3.3 (`@tailwindcss/postcss`) | Styling                                                       |
-| @supabase/supabase-js                                    | ^2.118.0                        | Auth, PostgreSQL, Storage, Realtime                           |
-| @supabase/ssr                                            | ^0.8.0                          | Sessione via cookie (browser + server)                        |
-| Zod                                                      | ^4.6.7                          | Validazione input (API)                                       |
-| Resend                                                   | ^6.34.1                         | Email transazionali                                           |
-| @google/generative-ai                                    | ^0.24.1                         | Traduzione nella bonifica notizie AI (`/api/ai-news/cleanup`) |
-| rss-parser                                               | ^3.13.0                         | Test dei feed RSS delle notizie AI                            |
-| recharts                                                 | ^3.10.1                         | Grafici della dashboard maestro (caricati con `next/dynamic`) |
-| sharp                                                    | ^0.35.5                         | Ottimizzazione in WebP delle immagini caricate                |
-| lucide-react / sonner / date-fns / clsx / tailwind-merge | —                               | Icone, toast, date, utility CSS (animazioni in CSS puro)      |
-| Jest ^30.5.2 + Testing Library / jest-dom                | —                               | Test (307 passing, 17 skipped)                                |
+| Tecnologia                                                     | Uso                                                           |
+| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| Next.js 16 (App Router)                                        | Framework full-stack; Turbopack in sviluppo                   |
+| React 19, TypeScript (`strict: false`)                         | UI e linguaggio                                               |
+| Tailwind CSS v4 (`@tailwindcss/postcss`)                       | Stile                                                         |
+| `@supabase/supabase-js`, `@supabase/ssr`                       | Auth, PostgreSQL, Storage, Realtime; sessione via cookie      |
+| Zod                                                            | Validazione dei body delle API                                |
+| Resend                                                         | Email transazionali                                           |
+| `@google/generative-ai`                                        | Traduzione nella bonifica notizie AI (`/api/ai-news/cleanup`) |
+| `rss-parser`                                                   | Test dei feed RSS delle notizie AI                            |
+| `recharts`                                                     | Grafici della dashboard maestro (caricati con `next/dynamic`) |
+| `sharp`                                                        | Conversione in WebP delle immagini caricate                   |
+| `lucide-react`, `sonner`, `date-fns`, `clsx`, `tailwind-merge` | Icone, toast, date, utility CSS                               |
+| Jest + `@testing-library/jest-dom`                             | Test                                                          |
 
-La generazione vera delle notizie AI avviene nella Edge Function Supabase `genera-news` (Deno, Gemini via REST), non nel processo Next.js: vedi [AI-NEWS.md](AI-NEWS.md).
+Le versioni esatte sono in `package.json`. La generazione delle notizie AI avviene nella Edge Function Supabase `genera-news` (Deno, Gemini via REST), non nel processo Next.js: vedi [AI-NEWS.md](AI-NEWS.md).
 
-Non integrati: **Stripe** e **Sentry**. I pagamenti sono tracciati solo a livello dati (tabella `payments`, nessun provider collegato).
+Non integrati: **Stripe** e **Sentry**. I pagamenti sono solo registrati nella tabella `payments`.
 
 ## Struttura del progetto
 
 ```
 .
 ├── src/
-│   ├── app/                      # App Router: 119 pagine, 68 API route (93 handler)
+│   ├── app/
 │   │   ├── page.tsx              # Landing pubblica (ISR, revalidate 60 s)
 │   │   ├── login/ register/ news/ tornei/ live/ lavora-con-noi/ privacy/ terms/ cookie-policy/
 │   │   ├── auth/                 # callback (route Supabase Auth) e reset-password
 │   │   ├── dashboard/
 │   │   │   ├── page.tsx          # smistamento verso la dashboard del ruolo
 │   │   │   ├── atleta/(main)/    # bookings, corsi, arena, tornei, videos, mail, avvisi, feedback, profile, notifications
-│   │   │   ├── maestro/(main)/   # come atleta (molte pagine riesportano quelle atleta) + maestro/ ("Area Maestro": impegni e grafici lezioni)
+│   │   │   ├── maestro/(main)/   # come atleta (molte pagine riesportano quelle atleta) + maestro/ ("Area Maestro")
 │   │   │   └── admin/            # users, bookings, corsi, courts, tornei, news (+ ai), staff, avvisi, feedback, chat, …
-│   │   └── api/                  # route handler REST (vedi docs/API.md)
+│   │   └── api/                  # route handler REST (vedi API.md)
 │   ├── components/               # admin, auth, avvisi, bookings, chat, dashboard, feedback, landing,
 │   │                             # layout, live-tennis, maestro, news, notifications, tournaments, ui
 │   ├── lib/
 │   │   ├── auth/                 # verifyAuth (Bearer), routeAuth (cookie), clientSession, logout
 │   │   ├── supabase/             # client.ts, server.ts, serverClient.ts (vedi sotto)
 │   │   ├── bookings/             # conflitti con corsi, orari, permessi, side effect (email/notifiche), prenotazioni torneo
-│   │   ├── email/                # client Resend, template, logging su email_logs
+│   │   ├── courses/              # calendario dei corsi: date delle lezioni, campo e orario per data
+│   │   ├── arena/                # servizio sfide, costanti, helper di presentazione e punteggio
+│   │   ├── tournaments/          # punteggio tennis, struttura, calendario del campionato
+│   │   ├── email/                # client Resend, template, log su email_logs
 │   │   ├── notifications/        # notifyAdmins/notifyAthletes, notifiche chat raggruppate, link
-│   │   ├── security/             # rate limiter in-memory, regole per path, sanitize-server, security events
+│   │   ├── security/             # rate limiter in memoria, regole per path, sanitize-server, security events
 │   │   ├── hooks/                # useNotifications, useUnreadChat, useWeather, useBookableTournaments, useCourts
 │   │   ├── validation/           # schemi Zod (schemas.ts)
-│   │   ├── logger/               # secure-logger (redazione dati sensibili)
-│   │   └── activity/ ai-news/ arena/ avvisi/ config/ constants/ courts/ feedback/ images/
-│   │       landing/ live-tennis/ seo/ tournaments/ utils/ roles.ts toast.ts utils.ts
+│   │   ├── logger/               # secure-logger (redazione dei dati sensibili)
+│   │   └── activity/ ai-news/ avvisi/ config/ constants/ courts/ feedback/ images/ landing/
+│   │       live-tennis/ news/ seo/ utils/ roles.ts toast.ts utils.ts
 │   ├── __tests__/                # test Jest
 │   └── middleware.ts             # CSRF + rate limiting + refresh sessione
 ├── supabase/
-│   ├── migrations/               # migrazioni SQL 001–097 + archive/ (prossima: 098)
+│   ├── migrations/               # migrazioni SQL numerate + archive/
 │   ├── functions/genera-news/    # Edge Function per la generazione notizie AI
 │   ├── scripts/                  # script una tantum necessari al setup da zero
 │   └── schema.sql                # schema base iniziale
-├── docs/                         # documentazione (indice: docs/README.md)
+├── scripts/next.mjs              # avvia next con Webpack se Windows blocca il compilatore nativo
+├── docs/                         # documentazione (indice nel README)
 ├── public/                       # asset statici (logo, immagini landing, robots.txt, sitemap.xml)
 ├── next.config.ts                # security headers, immagini, redirect
-├── tsconfig.json                 # strict: false
-├── jest.config.js                # next/jest, jsdom, coverage threshold 10%
 └── .env.example                  # variabili d'ambiente lette dal codice
 ```
 
@@ -146,15 +146,15 @@ Le tabelle devono essere nella publication `supabase_realtime` (vedi [DATABASE.m
 
 ### `tsconfig.json`
 
-`strict: false` e `noImplicitAny: false`: type-checking permissivo (debito tecnico noto). Alias `@/*` → `./src/*`. Le cartelle `__tests__` e `supabase/functions` sono escluse dal check del build; i test si possono verificare a parte con un tsconfig che le includa (oggi passano senza errori).
+`strict: false` e `noImplicitAny: false`: type-checking permissivo (debito tecnico noto). Alias `@/*` → `./src/*`. Le cartelle `__tests__` e `supabase/functions` sono escluse dal check del build; i test si possono verificare a parte con un tsconfig temporaneo che le includa.
 
 ### `jest.config.js`
 
-`next/jest`, ambiente `jsdom`, alias `@/*`. **Coverage threshold globale al 10%**: soglia minima di sicurezza. I test coprono soprattutto la logica pura di `src/lib/` (conflitti, orari, punteggi tennis, ruoli, notifiche, rate limiting) più alcune route con Supabase simulato; `tournament-flows.test.ts` gira solo con credenziali Supabase reali.
+`next/jest`, ambiente `jsdom`, alias `@/*`; i test sono compilati con il compilatore TypeScript (`jest.transform.js`) e non con SWC, che Windows può bloccare. Soglia di coverage globale al 10%. I test coprono soprattutto la logica pura di `src/lib/` (conflitti, orari, punteggi tennis, ruoli, notifiche, rate limiting) più alcune route con Supabase simulato; `tournament-flows.test.ts` gira solo con credenziali Supabase reali.
 
 ### Qualità del codice
 
 - ESLint 9 (`eslint-config-next`) + Prettier; hook pre-commit Husky + lint-staged (Prettier sui file staged), attivo dopo `npm install`.
-- Debito ESLint noto (ottobre 2026): circa 230 errori e 90 warning, quasi tutti `no-explicit-any` e regole del React Compiler (`react-hooks/immutability`, `set-state-in-effect`, `exhaustive-deps`) sparse nelle pagine più grandi, più alcuni `<img>` e `window.location`. Non bloccano il build; vanno ridotti file per file quando si toccano.
+- Debito ESLint noto: circa 230 errori e 90 warning, quasi tutti `no-explicit-any` e regole del React Compiler (`react-hooks/immutability`, `set-state-in-effect`, `exhaustive-deps`) sparse nelle pagine più grandi, più alcuni `<img>` e `window.location`. Non bloccano il build; vanno ridotti file per file quando si toccano.
 - Next.js 16 segnala in build che la convenzione `middleware.ts` è deprecata a favore di `proxy.ts`: la migrazione (rinomina del file e della funzione esportata) va fatta con attenzione, perché il middleware contiene CSRF e rate limiting.
 - Logger (`src/lib/logger/secure-logger.ts`): JSON strutturato in produzione, redazione automatica di campi come password, token, cookie; livello minimo da `LOG_LEVEL`.

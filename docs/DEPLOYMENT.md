@@ -26,7 +26,7 @@ supabase functions deploy genera-news
 
 Flusso: le schedulazioni sono salvate nella tabella `ai_news_cron` (gestite da `/dashboard/admin/news/ai/configurazione`); la funzione DB `ai_news_sync_cron_job()` le registra su `pg_cron`, che all'orario configurato invoca via `pg_net` l'endpoint `https://<project>.supabase.co/functions/v1/genera-news` con la service role key.
 
-**Non esistono cron Vercel**: il file `vercel.json` è stato rimosso (puntava a un endpoint mai implementato). Tutta la schedulazione vive lato Supabase.
+**Non esistono cron Vercel**: tutta la schedulazione vive lato Supabase.
 
 ## 3. Variabili d'ambiente
 

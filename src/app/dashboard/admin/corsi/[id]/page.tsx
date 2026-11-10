@@ -29,6 +29,11 @@ import { getCourts } from '@/lib/courts/getCourts';
 import { DEFAULT_COURTS } from '@/lib/courts/constants';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import {
+  computeLessonDates,
+  getCourseCourtsForDate,
+  getCourseTimeForDate,
+} from '@/lib/courses/schedule';
 
 type Athlete = {
   id: string;
@@ -96,74 +101,8 @@ const DAYS: Record<string, string> = {
   dom: 'Domenica',
 };
 
-const DAY_INDEX: Record<string, number> = {
-  dom: 0,
-  lun: 1,
-  mar: 2,
-  mer: 3,
-  gio: 4,
-  ven: 5,
-  sab: 6,
-};
-const DAY_CODE: Record<number, string> = {
-  0: 'dom',
-  1: 'lun',
-  2: 'mar',
-  3: 'mer',
-  4: 'gio',
-  5: 'ven',
-  6: 'sab',
-};
-
-function getPeriodForDate(course: Course, dateStr: string) {
-  if (!course.schedule_periods?.length) return null;
-  const dayCode = DAY_CODE[new Date(dateStr + 'T12:00:00').getDay()];
-  return course.schedule_periods.find((p) => p.days?.includes(dayCode)) ?? null;
-}
-
-function getCourtsForDate(course: Course, dateStr: string): string[] {
-  if (course.lesson_overrides?.[dateStr]) return [course.lesson_overrides[dateStr]];
-  const period = getPeriodForDate(course, dateStr);
-  if (period?.courts && period.courts.length > 0) return period.courts;
-  if (period?.court) return [period.court];
-  return course.court_name ? [course.court_name] : [];
-}
-
 function getCourtForDate(course: Course, dateStr: string): string | null {
-  return getCourtsForDate(course, dateStr)[0] ?? null;
-}
-
-function getTimeForDate(course: Course, dateStr: string): string | null {
-  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
-  const period = getPeriodForDate(course, dateStr);
-  if (period?.time) return period.time;
-  return course.schedule_time;
-}
-
-function computeLessonDates(course: {
-  start_date: string | null;
-  end_date: string | null;
-  schedule_days: string[] | null;
-  cancelled_dates?: string[] | null;
-  extra_dates?: string[] | null;
-}): Date[] {
-  if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
-  const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
-  const cancelled = new Set(course.cancelled_dates ?? []);
-  const start = new Date(course.start_date);
-  const end = new Date(course.end_date);
-  const result: Date[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    const dateStr = cur.toISOString().split('T')[0];
-    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  for (const d of course.extra_dates ?? []) {
-    result.push(new Date(d));
-  }
-  result.sort((a, b) => a.getTime() - b.getTime());
-  return result;
+  return getCourseCourtsForDate(course, dateStr)[0] ?? null;
 }
 
 export default function CorsoDetailPage() {
@@ -500,7 +439,7 @@ export default function CorsoDetailPage() {
 
   if (!course) return null;
 
-  const lessonDates = computeLessonDates(course);
+  const lessonDates = computeLessonDates(course, { includeExtra: true });
 
   return (
     <div className="space-y-6 pt-3">
@@ -803,12 +742,12 @@ export default function CorsoDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {(getCourtsForDate(course, dateStr).length > 0 ||
-                          getTimeForDate(course, dateStr)) && (
+                        {(getCourseCourtsForDate(course, dateStr).length > 0 ||
+                          getCourseTimeForDate(course, dateStr)) && (
                           <p className="text-xs text-white/70 mt-0.5">
                             {[
-                              getCourtsForDate(course, dateStr).join(', '),
-                              getTimeForDate(course, dateStr),
+                              getCourseCourtsForDate(course, dateStr).join(', '),
+                              getCourseTimeForDate(course, dateStr),
                             ]
                               .filter(Boolean)
                               .join(' · ')}
@@ -852,7 +791,7 @@ export default function CorsoDetailPage() {
                             setEditingNewDate(dateStr);
                             setEditingNewDateText(isoToDisplay(dateStr));
                             setEditingNewCourt(getCourtForDate(course, dateStr) ?? '');
-                            const _t = parseTimeRange(getTimeForDate(course, dateStr) ?? '');
+                            const _t = parseTimeRange(getCourseTimeForDate(course, dateStr) ?? '');
                             setEditingStartTime(_t.start);
                             setEditingEndTime(_t.end);
                           }}

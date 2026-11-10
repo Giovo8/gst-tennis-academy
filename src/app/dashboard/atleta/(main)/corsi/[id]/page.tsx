@@ -7,6 +7,7 @@ import { Loader2, GraduationCap } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
+import { computeLessonDates } from '@/lib/courses/schedule';
 type Course = {
   id: string;
   name: string;
@@ -15,6 +16,8 @@ type Course = {
   schedule_days: string[] | null;
   start_date: string | null;
   end_date: string | null;
+  cancelled_dates: string[] | null;
+  extra_dates: string[] | null;
   instructor_name: string | null;
   price_per_month: number | null;
 };
@@ -29,16 +32,6 @@ type Payment = {
   metadata: { note?: string } | null;
 };
 
-const DAY_INDEX: Record<string, number> = {
-  dom: 0,
-  lun: 1,
-  mar: 2,
-  mer: 3,
-  gio: 4,
-  ven: 5,
-  sab: 6,
-};
-
 const DAYS: Record<string, string> = {
   lun: 'Lunedì',
   mar: 'Martedì',
@@ -48,19 +41,6 @@ const DAYS: Record<string, string> = {
   sab: 'Sabato',
   dom: 'Domenica',
 };
-
-function computeLessonDates(course: Course): Date[] {
-  if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
-  const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
-  const cur = new Date(course.start_date);
-  const end = new Date(course.end_date);
-  const result: Date[] = [];
-  while (cur <= end) {
-    if (allowed.has(cur.getDay())) result.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return result;
-}
 
 const methodLabel = (m: string | null) => {
   if (m === 'cash') return 'Contanti';
@@ -102,7 +82,7 @@ export default function AtletaCorsoDetailPage() {
       supabase
         .from('courses')
         .select(
-          'id, name, description, schedule_time, schedule_days, start_date, end_date, instructor_name, price_per_month',
+          'id, name, description, schedule_time, schedule_days, start_date, end_date, cancelled_dates, extra_dates, instructor_name, price_per_month',
         )
         .eq('id', courseId)
         .single(),
@@ -150,7 +130,7 @@ export default function AtletaCorsoDetailPage() {
 
   if (!course) return null;
 
-  const lessonDates = computeLessonDates(course);
+  const lessonDates = computeLessonDates(course, { includeExtra: true });
   const presentCount = lessonDates.filter(
     (d) => attendance[d.toISOString().split('T')[0]] === true,
   ).length;

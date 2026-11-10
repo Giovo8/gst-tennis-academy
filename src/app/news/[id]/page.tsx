@@ -8,6 +8,7 @@ import NewsImage from '@/components/ui/NewsImage';
 import env from '@/lib/config/env';
 import { createClient } from '@/lib/supabase/server';
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from '@/lib/ai-news/contentSanitizer';
+import { isPublishedNews, normalizeLegacyTitle } from '@/lib/news/display';
 
 type NewsPost = {
   id: string;
@@ -30,18 +31,6 @@ function buildAbsoluteUrl(pathOrUrl: string): string {
   }
   const normalizedPath = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
   return `${baseUrl}${normalizedPath}`;
-}
-
-function isPublishedNews(
-  post: (Partial<NewsPost> & { stato?: string | null }) | null | undefined,
-): boolean {
-  if (!post) return false;
-  if (typeof post.is_published === 'boolean') return post.is_published;
-  return String(post.stato ?? '').toLowerCase() === 'pubblicata';
-}
-
-function normalizeLegacyTitle(title: string): string {
-  return title.replace(/\s*\.\.\.$/, '').trim();
 }
 
 function formatCategoryLabel(category: string | null | undefined): string {

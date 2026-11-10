@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import NewsImage from "@/components/ui/NewsImage";
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import NewsImage from '@/components/ui/NewsImage';
+import { isPublishedNews, normalizeLegacyTitle } from '@/lib/news/display';
 
 type NewsItem = {
   id: string;
@@ -19,23 +20,13 @@ type NewsItem = {
   created_at: string;
 };
 
-function isPublishedNews(item: Partial<NewsItem> | null | undefined): boolean {
-  if (!item) return false;
-  if (typeof item.is_published === "boolean") return item.is_published;
-  return String(item.stato ?? "").toLowerCase() === "pubblicata";
-}
-
-function normalizeLegacyTitle(title: string): string {
-  return title.replace(/\s*\.\.\.$/, "").trim();
-}
-
 function formatNewsDate(dateString: string | undefined): string {
-  if (!dateString) return "";
+  if (!dateString) return '';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  return new Intl.DateTimeFormat('it-IT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   }).format(date);
 }
 
@@ -55,14 +46,16 @@ export default function AthleteNewsCarousel() {
 
   async function loadNews() {
     const { data, error } = await supabase
-      .from("news")
-      .select("id, title, category, content, excerpt, image_url, is_published, stato, published_at, created_at")
-      .eq("is_published", true)
-      .order("published_at", { ascending: false })
+      .from('news')
+      .select(
+        'id, title, category, content, excerpt, image_url, is_published, stato, published_at, created_at',
+      )
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
       .limit(10);
 
     if (error) {
-      console.error("Error loading dashboard news:", error);
+      console.error('Error loading dashboard news:', error);
       setNews([]);
       setLoading(false);
       return;
@@ -74,7 +67,7 @@ export default function AthleteNewsCarousel() {
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
     const el = scrollRef.current;
     if (!el) return;
 
@@ -84,8 +77,8 @@ export default function AthleteNewsCarousel() {
     draggedDistance.current = 0;
     suppressNextClick.current = false;
 
-    el.style.cursor = "grabbing";
-    el.style.userSelect = "none";
+    el.style.cursor = 'grabbing';
+    el.style.userSelect = 'none';
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -120,8 +113,8 @@ export default function AthleteNewsCarousel() {
     }
 
     if (el) {
-      el.style.cursor = "grab";
-      el.style.userSelect = "auto";
+      el.style.cursor = 'grab';
+      el.style.userSelect = 'auto';
     }
   }
 
@@ -181,8 +174,18 @@ export default function AthleteNewsCarousel() {
                   <NewsImage src={item.image_url} alt={normalizeLegacyTitle(item.title)} />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center">
-                    <svg className="w-10 h-10 text-secondary/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="w-10 h-10 text-secondary/20"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                 )}
@@ -206,7 +209,6 @@ export default function AthleteNewsCarousel() {
           );
         })}
       </div>
-
     </div>
   );
 }

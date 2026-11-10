@@ -7,13 +7,7 @@ import { Video, Loader2, Search, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import AuthGuard from '@/components/auth/AuthGuard';
-
-function getYouTubeVideoId(url: string) {
-  const match = url.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
-  );
-  return match ? match[1] : null;
-}
+import { getYouTubeVideoId } from '@/lib/utils/youtube';
 
 type VideoLesson = {
   id: string;

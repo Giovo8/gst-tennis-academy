@@ -116,7 +116,7 @@ La migrazione `087_rimozione_oggetti_non_usati.sql` elimina ciò che nessuna par
 
 ### Oggetti rimossi dalla migrazione 088
 
-`088_rimozione_chat_legacy_e_contenuti.sql` elimina la vecchia chat "a conversazioni", la cui pagina `/chat` non era più raggiungibile da aprile 2026 ed è stata rimossa con le sue API:
+`088_rimozione_chat_legacy_e_contenuti.sql` elimina la vecchia chat "a conversazioni", rimossa dal codice insieme alle sue API:
 
 - **Tabelle**: `conversations`, `conversation_participants`, `messages`, `message_reads`, `typing_indicators`, `user_presence`, più `announcements`, `events`, `services`, `enrollments`, che nessuna parte dell'app usa.
 - **Funzioni**: `get_or_create_conversation`, `update_conversation_last_message`, `update_unread_counts`, `reset_unread_count`, `update_user_presence_timestamp` e le funzioni degli annunci.

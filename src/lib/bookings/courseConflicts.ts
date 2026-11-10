@@ -13,7 +13,7 @@ import { parseItalyLocalToUTC } from './bookingTimeRestrictions';
  * dal fuso del server (Vercel gira in UTC).
  */
 
-export interface CourseSchedulePeriod {
+interface CourseSchedulePeriod {
   days: string[];
   time: string | null;
   court?: string | null;

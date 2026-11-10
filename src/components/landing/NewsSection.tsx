@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import NewsImage from '@/components/ui/NewsImage';
 import Reveal from '@/components/landing/Reveal';
+import { formatNewsDate, isPublishedNews, normalizeLegacyTitle } from '@/lib/news/display';
 
 export type NewsItem = {
   id: string;
@@ -19,29 +20,6 @@ export type NewsItem = {
   published_at?: string;
   created_at: string;
 };
-
-function isPublishedNews(item: Partial<NewsItem> | null | undefined): boolean {
-  if (!item) return false;
-  if (typeof item.is_published === 'boolean') return item.is_published;
-  return String(item.stato ?? '').toLowerCase() === 'pubblicata';
-}
-
-function formatNewsDate(dateString: string | undefined): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const formatted = new Intl.DateTimeFormat('it-IT', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-  // Capitalizza la prima lettera di ogni parola (giorno e mese)
-  return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
-}
-
-function normalizeLegacyTitle(title: string): string {
-  return title.replace(/\s*\.\.\.$/, '').trim();
-}
 
 // Segnaposto con l'ingombro delle card vere: la pagina non "salta" quando arrivano i dati
 function NewsCardsSkeleton() {

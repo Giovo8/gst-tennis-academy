@@ -1,6 +1,6 @@
 # API Reference
 
-Inventario completo delle **68 API route** (93 handler) in `src/app/api/`, raggruppate per dominio, con metodi HTTP, autenticazione richiesta e descrizione. La colonna "Auth" è verificata leggendo il codice di ogni route (ottobre 2026).
+Inventario delle API route in `src/app/api/`, raggruppate per dominio, con metodi HTTP, autenticazione richiesta e descrizione.
 
 Tutte le richieste verso `/api/*` passano prima dal **middleware** (`src/middleware.ts`): protezione CSRF sulle richieste mutanti (header `Origin` fuori whitelist → 403) e rate limiting per path (vedi [Note trasversali](#note-trasversali)).
 
@@ -203,4 +203,4 @@ Creazione, modifica ed eliminazione delle video-lezioni avvengono direttamente s
   ⚠️ Il contatore è in memoria (`src/lib/security/rate-limiter.ts`): su Vercel ogni istanza ha il proprio, quindi il limite effettivo è per-istanza e si azzera ai cold start. Regge un client insistente, non un attacco distribuito: per quello serve un contatore condiviso (Postgres/Redis) o un WAF.
 
 - **Eventi di sicurezza**: `verifyAuth`, `unauthorized()`, `forbidden()`, il blocco CSRF e il rate limiter scrivono le anomalie in `security_events`, consultabili in `/dashboard/admin/platform-logs`.
-- **Ogni route ha almeno un chiamante**: a ottobre 2026 sono state rimosse le route e i metodi che nessuna pagina richiamava (le pagine leggono e scrivono direttamente su Supabase). Prima di aggiungere una route o un metodo, verificare che il frontend li usi davvero; `/api/health` è l'unica eccezione voluta (monitoraggio).
+- **Ogni route ha almeno un chiamante**: le pagine leggono e scrivono spesso direttamente su Supabase, quindi prima di aggiungere una route o un metodo, verificare che il frontend li usi davvero; `/api/health` è l'unica eccezione voluta (monitoraggio).

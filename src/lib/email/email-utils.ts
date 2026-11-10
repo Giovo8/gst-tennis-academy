@@ -1,6 +1,6 @@
-import logger from "@/lib/logger/secure-logger";
+import logger from '@/lib/logger/secure-logger';
 
-export type EmailRecipientRole = "gestore" | "maestro" | "atleta";
+type EmailRecipientRole = 'gestore' | 'maestro' | 'atleta';
 
 export type EmailRecipient = {
   id?: string | null;
@@ -11,7 +11,7 @@ export type EmailRecipient = {
 
 export function normalizeEmail(value?: string | null): string | null {
   const normalized = value?.trim().toLowerCase();
-  if (!normalized || !normalized.includes("@")) {
+  if (!normalized || !normalized.includes('@')) {
     return null;
   }
 
@@ -20,23 +20,23 @@ export function normalizeEmail(value?: string | null): string | null {
 
 export function escapeHtml(value: string): string {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 export async function getGestoreRecipients(): Promise<EmailRecipient[]> {
-  const { supabaseServer } = await import("@/lib/supabase/serverClient");
+  const { supabaseServer } = await import('@/lib/supabase/serverClient');
   const { data, error } = await supabaseServer
-    .from("profiles")
-    .select("id, email, full_name, role")
-    .eq("role", "gestore")
-    .not("email", "is", null);
+    .from('profiles')
+    .select('id, email, full_name, role')
+    .eq('role', 'gestore')
+    .not('email', 'is', null);
 
   if (error) {
-    logger.error("Failed to fetch gestore recipients", error);
+    logger.error('Failed to fetch gestore recipients', error);
     return [];
   }
 
@@ -51,7 +51,7 @@ export async function getGestoreRecipients(): Promise<EmailRecipient[]> {
       id: item.id,
       email: normalizedEmail,
       full_name: item.full_name || null,
-      role: "gestore",
+      role: 'gestore',
     });
   }
 

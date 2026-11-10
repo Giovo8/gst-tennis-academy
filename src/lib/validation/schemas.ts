@@ -8,12 +8,14 @@ import { USER_ROLES, BOOKING_STATUS, VALIDATION_RULES } from '@/lib/constants/ap
 
 // ==================== COMMON SCHEMAS ====================
 
+// trim/toLowerCase prima del controllo: in Zod 4 i passaggi girano in ordine, e un'email
+// salvata con uno spazio finale (es. in profiles.email) altrimenti verrebbe scartata.
 const emailSchema = z
   .string()
-  .email('Email non valida')
-  .max(VALIDATION_RULES.EMAIL_MAX_LENGTH, 'Email troppo lunga')
+  .trim()
   .toLowerCase()
-  .trim();
+  .email('Email non valida')
+  .max(VALIDATION_RULES.EMAIL_MAX_LENGTH, 'Email troppo lunga');
 
 const passwordSchema = z
   .string()

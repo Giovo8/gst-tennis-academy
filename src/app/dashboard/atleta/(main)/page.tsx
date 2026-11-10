@@ -9,6 +9,7 @@ import WeatherCard from '@/components/dashboard/WeatherCard';
 import AthleteNewsCarousel from '@/components/dashboard/AthleteNewsCarousel';
 import AthleteBacheca from '@/components/dashboard/AthleteBacheca';
 import LiveScoresSection from '@/components/landing/LiveScoresSection';
+import { computeLessonDates } from '@/lib/courses/schedule';
 
 interface UpcomingBooking {
   id: string;
@@ -26,33 +27,6 @@ interface UpcomingCourseLesson {
   courseName: string;
   scheduleTime: string | null;
   lessonDate: Date;
-}
-
-const COURSE_DAY_INDEX: Record<string, number> = {
-  dom: 0,
-  lun: 1,
-  mar: 2,
-  mer: 3,
-  gio: 4,
-  ven: 5,
-  sab: 6,
-};
-
-function computeCourseLessonDates(course: {
-  schedule_days: string[] | null;
-  start_date: string | null;
-  end_date: string | null;
-}): Date[] {
-  if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
-  const allowed = new Set(course.schedule_days.map((d) => COURSE_DAY_INDEX[d] ?? -1));
-  const cur = new Date(course.start_date);
-  const end = new Date(course.end_date);
-  const result: Date[] = [];
-  while (cur <= end) {
-    if (allowed.has(cur.getDay())) result.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return result;
 }
 
 export default function AtletaDashboard() {
@@ -110,7 +84,9 @@ export default function AtletaDashboard() {
       enrollmentIds.length > 0
         ? supabase
             .from('courses')
-            .select('id, name, schedule_days, schedule_time, start_date, end_date')
+            .select(
+              'id, name, schedule_days, schedule_time, start_date, end_date, cancelled_dates, extra_dates',
+            )
             .in('id', enrollmentIds)
             .eq('is_active', true)
             .then((r) => r.data)
@@ -135,7 +111,9 @@ export default function AtletaDashboard() {
       nowDate.setHours(0, 0, 0, 0);
 
       for (const course of coursesData || []) {
-        const dates = computeCourseLessonDates(course).filter((d) => d >= nowDate);
+        const dates = computeLessonDates(course, { includeExtra: true }).filter(
+          (d) => d >= nowDate,
+        );
         if (dates.length > 0) {
           lessons.push({
             courseId: course.id,

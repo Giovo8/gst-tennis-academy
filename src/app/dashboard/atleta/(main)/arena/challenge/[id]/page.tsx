@@ -9,6 +9,19 @@ import { Check, X, Target, Handshake } from 'lucide-react';
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalBody } from '@/components/ui';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import {
+  SCORE_PATTERN,
+  buildScoreGrid,
+  formatBookingDate,
+  getMatchFormatLabel,
+  getMatchTypeLabel,
+  getPlayerInitial,
+  getPointsFromScore,
+  getWinnerIdFromScore,
+  getWinnerName,
+  hasChallengeDatePassed,
+  isDoublesMatch,
+} from '@/lib/arena/challengeDisplay';
 
 interface Challenge {
   id: string;
@@ -70,153 +83,6 @@ interface Challenge {
     end_time: string;
     status: string;
   };
-}
-
-const SCORE_PATTERN = /^\d+-\d+(?:,\s*\d+-\d+)*$/;
-
-function getPlayerInitial(name?: string) {
-  return name?.trim().charAt(0).toUpperCase() || 'U';
-}
-
-function getWinnerName(challenge: Challenge) {
-  if (!challenge.winner_id) return null;
-  if (challenge.winner_id === challenge.challenger_id)
-    return challenge.challenger?.full_name || 'Sfidante';
-  if (challenge.winner_id === challenge.opponent_id)
-    return challenge.opponent?.full_name || 'Sfidato';
-  return 'Vincitore non riconosciuto';
-}
-
-function hasChallengeDatePassed(challenge: Challenge) {
-  const challengeDateValue = challenge.booking?.start_time || challenge.scheduled_date;
-  if (!challengeDateValue) return true;
-  const today = new Date().toDateString();
-  const challengeDay = new Date(challengeDateValue).toDateString();
-  return challengeDay !== 'Invalid Date' && new Date(challengeDay) <= new Date(today);
-}
-
-function getMatchFormatLabel(matchFormat?: string) {
-  const formatMap: Record<string, string> = {
-    best_of_3: 'Meglio dei 5',
-    best_of_2: 'Meglio dei 3',
-    single_set: 'Set Singolo',
-  };
-  return formatMap[matchFormat || ''] || matchFormat || '-';
-}
-
-function capitalizeLabel(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatBookingDate(dateValue: string) {
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat('it-IT', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-    .formatToParts(date)
-    .map((part) => {
-      if (part.type === 'weekday' || part.type === 'month') return capitalizeLabel(part.value);
-      return part.value;
-    })
-    .join('');
-}
-
-function isDoublesMatch(matchType?: string) {
-  const normalized = (matchType || '').toLowerCase();
-  return normalized === 'doubles' || normalized === 'doppio';
-}
-
-function getMatchTypeLabel(matchType?: string) {
-  return isDoublesMatch(matchType) ? 'Doppio' : 'Singolo';
-}
-
-function getWinnerIdFromScore(scoreValue: string, challengerId: string, opponentId: string) {
-  const sets = scoreValue
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const match = s.match(/^(\d+)-(\d+)$/);
-      if (!match) return null;
-      return { challengerGames: Number(match[1]), opponentGames: Number(match[2]) };
-    })
-    .filter((s): s is { challengerGames: number; opponentGames: number } => s !== null);
-
-  if (sets.length === 0) return null;
-
-  const challengerSetsWon = sets.reduce(
-    (sum, s) => sum + (s.challengerGames > s.opponentGames ? 1 : 0),
-    0,
-  );
-  const opponentSetsWon = sets.reduce(
-    (sum, s) => sum + (s.opponentGames > s.challengerGames ? 1 : 0),
-    0,
-  );
-
-  if (challengerSetsWon === opponentSetsWon) return null;
-  return challengerSetsWon > opponentSetsWon ? challengerId : opponentId;
-}
-
-function buildScoreGrid(score?: string) {
-  if (!score) return null;
-  const sets = score
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const match = s.match(/^(\d+)-(\d+)$/);
-      if (!match) return null;
-      return { winner: Number(match[1]), loser: Number(match[2]) };
-    })
-    .filter((s): s is { winner: number; loser: number } => s !== null);
-
-  if (sets.length === 0) return null;
-
-  return {
-    sets,
-    totalWinner: sets.filter((s) => s.winner > s.loser).length,
-    totalLoser: sets.filter((s) => s.loser > s.winner).length,
-  };
-}
-
-function getPointsFromScore(
-  scoreValue: string,
-  winnerId: string,
-  challengerId: string,
-): { winnerPts: number; loserPts: number } | null {
-  const sets = scoreValue
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const match = s.match(/^(\d+)-(\d+)$/);
-      if (!match) return null;
-      return { left: Number(match[1]), right: Number(match[2]) };
-    })
-    .filter((s): s is { left: number; right: number } => s !== null);
-
-  if (sets.length === 0) return null;
-
-  const isWinnerChallenger = winnerId === challengerId;
-  let winnerSets = 0;
-  let loserSets = 0;
-  for (const s of sets) {
-    if (isWinnerChallenger) {
-      if (s.left > s.right) winnerSets++;
-      else loserSets++;
-    } else {
-      if (s.right > s.left) winnerSets++;
-      else loserSets++;
-    }
-  }
-
-  if (loserSets === 0) return { winnerPts: 30, loserPts: 0 };
-  if (winnerSets === 3 && loserSets === 1) return { winnerPts: 25, loserPts: 5 };
-  return { winnerPts: 20, loserPts: 10 };
 }
 
 export default function AtletaChallengePage() {

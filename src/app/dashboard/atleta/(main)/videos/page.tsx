@@ -9,13 +9,7 @@ import { getSessionUser } from '@/lib/auth/clientSession';
 import { Video, Loader2, Search, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-
-function getYouTubeVideoId(url: string) {
-  const match = url.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
-  );
-  return match ? match[1] : null;
-}
+import { getYouTubeVideoId } from '@/lib/utils/youtube';
 
 interface VideoLesson {
   id: string;

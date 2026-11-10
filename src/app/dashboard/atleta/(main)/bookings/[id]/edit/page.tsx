@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import { Loader2, AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { toastError } from '@/lib/toast';
+import { toastError, SESSION_EXPIRED } from '@/lib/toast';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
@@ -303,12 +303,14 @@ export default function EditBookingPage() {
           const res = await fetch(
             `/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(selectedCourt)}`,
           );
-          if (res.ok) {
-            const data = await res.json();
-            allOccupations = data.bookings ?? [];
+          if (!res.ok) {
+            throw new Error(res.status === 401 ? SESSION_EXPIRED : 'Disponibilità non caricata');
           }
+          const data = await res.json();
+          allOccupations = data.bookings ?? [];
         } catch (err) {
-          console.error('Error fetching availability:', err);
+          // Senza disponibilità la griglia sembrerebbe tutta libera: avvisa l'utente
+          toastError(err, 'Disponibilità non caricata');
         }
 
         const occupied = new Set<string>();

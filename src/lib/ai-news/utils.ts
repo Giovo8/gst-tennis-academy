@@ -1,16 +1,29 @@
-import env from "@/lib/config/env";
-import { supabaseServer } from "@/lib/supabase/serverClient";
+import env from '@/lib/config/env';
+import { supabaseServer } from '@/lib/supabase/serverClient';
 
 export function normalizeCategoria(value: unknown): string | null {
-  const raw = String(value ?? "").trim().toLowerCase();
-  if (!raw || raw === "tutte") return null;
+  const raw = String(value ?? '')
+    .trim()
+    .toLowerCase();
+  if (!raw || raw === 'tutte') return null;
   return raw;
 }
 
 export function toBoolean(value: unknown, fallback = false): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") return value === "true";
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value === 'true';
   return fallback;
+}
+
+/** Numero di cron attivi, escluso facoltativamente quello che si sta modificando. */
+export async function countCronAttivi(excludeId?: string): Promise<number> {
+  let query = supabaseServer
+    .from('ai_news_cron')
+    .select('id', { count: 'exact', head: true })
+    .eq('attivo', true);
+  if (excludeId) query = query.neq('id', excludeId);
+  const { count } = await query;
+  return count ?? 0;
 }
 
 export async function syncSingleCronJob(input: {
@@ -23,10 +36,10 @@ export async function syncSingleCronJob(input: {
   const serviceKey = env.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceKey) {
-    throw new Error("Variabili Supabase mancanti per la sincronizzazione cron");
+    throw new Error('Variabili Supabase mancanti per la sincronizzazione cron');
   }
 
-  const { error } = await supabaseServer.rpc("ai_news_sync_cron_job", {
+  const { error } = await supabaseServer.rpc('ai_news_sync_cron_job', {
     p_cron_id: input.id,
     p_attivo: input.attivo,
     p_ora: input.ora,
@@ -45,14 +58,14 @@ export async function callGeneraNewsEdge(payload: Record<string, unknown>) {
   const serviceKey = env.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceKey) {
-    throw new Error("Configurazione Supabase incompleta");
+    throw new Error('Configurazione Supabase incompleta');
   }
 
   const response = await fetch(`${supabaseUrl}/functions/v1/genera-news`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
   });
@@ -62,15 +75,16 @@ export async function callGeneraNewsEdge(payload: Record<string, unknown>) {
   if (!response.ok) {
     if (
       response.status === 404 ||
-      data?.code === "NOT_FOUND" ||
-      data?.message === "Requested function was not found"
+      data?.code === 'NOT_FOUND' ||
+      data?.message === 'Requested function was not found'
     ) {
       throw new Error(
-        "La funzione Supabase 'genera-news' non risulta deployata. Esegui il deploy della funzione e riprova."
+        "La funzione Supabase 'genera-news' non risulta deployata. Esegui il deploy della funzione e riprova.",
       );
     }
 
-    const message = typeof data?.error === "string" ? data.error : "Errore durante la generazione news";
+    const message =
+      typeof data?.error === 'string' ? data.error : 'Errore durante la generazione news';
     throw new Error(message);
   }
 
@@ -78,7 +92,7 @@ export async function callGeneraNewsEdge(payload: Record<string, unknown>) {
 }
 
 export function mapStatoToLegacy(stato: string) {
-  const isPublished = stato === "pubblicata";
+  const isPublished = stato === 'pubblicata';
   return {
     is_published: isPublished,
     published_at: isPublished ? new Date().toISOString() : null,

@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { toastError } from '@/lib/toast';
+import { toastError, SESSION_EXPIRED } from '@/lib/toast';
 import { getCourts } from '@/lib/courts/getCourts';
 import { DEFAULT_COURTS } from '@/lib/courts/constants';
 import AthletesSelector from '@/components/bookings/AthletesSelector';
@@ -324,17 +324,20 @@ function NewBookingPageInner() {
 
     // Usa l'API server-side (service role) per ottenere tutte le occupazioni del campo,
     // aggirando la RLS che limiterebbe l'atleta a vedere solo le proprie prenotazioni.
+    // Se la disponibilità non arriva la griglia sembrerebbe tutta libera: avvisa l'utente
+    // invece di fargli scegliere slot che il server poi rifiuta.
     let allOccupations: any[] = [];
     try {
       const res = await fetch(
         `/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(selectedCourt)}`,
       );
-      if (res.ok) {
-        const data = await res.json();
-        allOccupations = data.bookings ?? [];
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? SESSION_EXPIRED : 'Disponibilità non caricata');
       }
+      const data = await res.json();
+      allOccupations = data.bookings ?? [];
     } catch (err) {
-      console.error('Error fetching availability:', err);
+      toastError(err, 'Disponibilità non caricata');
     }
 
     // Build occupied half-hour slots set
@@ -543,6 +546,18 @@ function NewBookingPageInner() {
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorData.message || errorMessage;
+          // Validazione fallita: mostra il campo che non va (es. "Email non valida: Mario Rossi")
+          const detail = errorData.details?.[0] as { field?: string; message?: string } | undefined;
+          if (detail?.message) {
+            const participantIndex = detail.field?.match(/^participants\.(\d+)\./)?.[1];
+            const participantName =
+              participantIndex !== undefined
+                ? participants[Number(participantIndex)]?.full_name
+                : undefined;
+            errorMessage = participantName
+              ? `${detail.message}: ${participantName}`
+              : detail.message;
+          }
         } catch {
           // ignore
         }

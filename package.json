@@ -34,7 +34,6 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^15.0.7",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
@@ -50,9 +49,6 @@
     "typescript": "^5.9.3"
   },
   "lint-staged": {
-    "**/*.{ts,tsx,js,jsx,json,md}": [
-      "prettier --write",
-      "git add"
-    ]
+    "**/*.{ts,tsx,js,jsx,json,md}": "prettier --write"
   }
 }

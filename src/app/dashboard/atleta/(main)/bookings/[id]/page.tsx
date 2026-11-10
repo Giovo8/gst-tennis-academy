@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase/client';
 import { getSessionUser } from '@/lib/auth/clientSession';
 import Link from 'next/link';
 import { createNotification } from '@/lib/notifications/createNotification';
-import { resolveCourseCourtsForDate } from '@/lib/bookings/courseConflicts';
 import {
   TOURNAMENT_BOOKING_TYPE,
   TOURNAMENT_BOOKING_BACKGROUND,
@@ -34,6 +33,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import { getCourseCourtForDate, getCourseTimeForDate } from '@/lib/courses/schedule';
 
 type CourseData = {
   id: string;
@@ -56,32 +56,6 @@ type CourseEnrollment = {
   is_instructor: boolean;
   user_id: string | null;
 };
-
-const COURSE_DAY_CODE: Record<number, string> = {
-  0: 'dom',
-  1: 'lun',
-  2: 'mar',
-  3: 'mer',
-  4: 'gio',
-  5: 'ven',
-  6: 'sab',
-};
-
-function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
-  const dayCode = COURSE_DAY_CODE[new Date(dateStr + 'T12:00:00').getDay()];
-  const courts = resolveCourseCourtsForDate(course, dateStr, dayCode);
-  return courts.length > 0 ? courts.join(', ') : null;
-}
-
-function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {
-  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
-  if (course.schedule_periods?.length) {
-    const dayCode = COURSE_DAY_CODE[new Date(dateStr + 'T12:00:00').getDay()];
-    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
-    if (period?.time) return period.time;
-  }
-  return course.schedule_time;
-}
 
 type LinkedChallengeMeta = {
   id: string;

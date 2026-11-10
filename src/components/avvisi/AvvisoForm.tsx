@@ -12,7 +12,7 @@ export interface AvvisoFormValues {
   link: string;
 }
 
-export const EMPTY_AVVISO: AvvisoFormValues = {
+const EMPTY_AVVISO: AvvisoFormValues = {
   tipo: 'generale',
   testo: '',
   messaggio: '',

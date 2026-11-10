@@ -7,6 +7,7 @@ import { Loader2, User, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { errorText, toastError } from '@/lib/toast';
+import { computeLessonDates } from '@/lib/courses/schedule';
 
 type Course = {
   name: string;
@@ -27,32 +28,6 @@ type Payment = {
   created_at: string;
   metadata: { note?: string } | null;
 };
-
-const DAY_INDEX: Record<string, number> = {
-  dom: 0,
-  lun: 1,
-  mar: 2,
-  mer: 3,
-  gio: 4,
-  ven: 5,
-  sab: 6,
-};
-
-function computeLessonDates(course: Course): Date[] {
-  if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
-  const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
-  const cancelled = new Set(course.cancelled_dates ?? []);
-  const start = new Date(course.start_date);
-  const end = new Date(course.end_date);
-  const result: Date[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    const dateStr = cur.toISOString().split('T')[0];
-    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return result;
-}
 
 export default function OspitePresenzePage() {
   const params = useParams();

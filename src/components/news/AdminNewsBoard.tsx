@@ -7,20 +7,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from '@/lib/ai-news/contentSanitizer';
 import NewsImage from '@/components/ui/NewsImage';
+import { formatNewsDate, isPublishedNews } from '@/lib/news/display';
 
 const ITEMS_PER_PAGE = 21;
-
-function formatNewsDate(dateString: string | undefined): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const formatted = new Intl.DateTimeFormat('it-IT', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-  return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
-}
 
 type NewsPost = {
   id: string;
@@ -34,12 +23,6 @@ type NewsPost = {
   published_at?: string;
   created_at: string;
 };
-
-function isPublishedNews(post: Partial<NewsPost> | null | undefined): boolean {
-  if (!post) return false;
-  if (typeof post.is_published === 'boolean') return post.is_published;
-  return String(post.stato ?? '').toLowerCase() === 'pubblicata';
-}
 
 function sanitizePost(post: NewsPost): NewsPost {
   return {

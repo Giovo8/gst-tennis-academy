@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Loader2, User } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { Loader2, User } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { computeLessonDates } from '@/lib/courses/schedule';
 
 type Course = {
   name: string;
@@ -22,30 +23,15 @@ type Athlete = {
   phone?: string | null;
 };
 
-const DAY_INDEX: Record<string, number> = {
-  dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
-};
-
 const DAYS: Record<string, string> = {
-  lun: "Lunedì", mar: "Martedì", mer: "Mercoledì", gio: "Giovedì",
-  ven: "Venerdì", sab: "Sabato", dom: "Domenica",
+  lun: 'Lunedì',
+  mar: 'Martedì',
+  mer: 'Mercoledì',
+  gio: 'Giovedì',
+  ven: 'Venerdì',
+  sab: 'Sabato',
+  dom: 'Domenica',
 };
-
-function computeLessonDates(course: Course): Date[] {
-  if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
-  const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
-  const cancelled = new Set(course.cancelled_dates ?? []);
-  const start = new Date(course.start_date);
-  const end = new Date(course.end_date);
-  const result: Date[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    const dateStr = cur.toISOString().split("T")[0];
-    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return result;
-}
 
 export default function MaestroPartecipantePresenzePage() {
   const params = useParams();
@@ -65,23 +51,20 @@ export default function MaestroPartecipantePresenzePage() {
   async function load() {
     setLoading(true);
 
-    const [{ data: courseData }, { data: profileData }, { data: attendanceData }] = await Promise.all([
-      supabase
-        .from("courses")
-        .select("name, schedule_time, schedule_days, start_date, end_date, cancelled_dates")
-        .eq("id", courseId)
-        .single(),
-      supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .eq("id", userId)
-        .single(),
-      supabase
-        .from("lesson_attendance")
-        .select("lesson_date, present")
-        .eq("course_id", courseId)
-        .eq("user_id", userId),
-    ]);
+    const [{ data: courseData }, { data: profileData }, { data: attendanceData }] =
+      await Promise.all([
+        supabase
+          .from('courses')
+          .select('name, schedule_time, schedule_days, start_date, end_date, cancelled_dates')
+          .eq('id', courseId)
+          .single(),
+        supabase.from('profiles').select('id, full_name, email, phone').eq('id', userId).single(),
+        supabase
+          .from('lesson_attendance')
+          .select('lesson_date, present')
+          .eq('course_id', courseId)
+          .eq('user_id', userId),
+      ]);
 
     if (courseData) setCourse(courseData);
     if (profileData) setAthlete(profileData);
@@ -108,18 +91,30 @@ export default function MaestroPartecipantePresenzePage() {
   if (!course || !athlete) return null;
 
   const lessonDates = computeLessonDates(course);
-  const presentCount = lessonDates.filter((d) => attendance[d.toISOString().split("T")[0]] === true).length;
-  const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
+  const presentCount = lessonDates.filter(
+    (d) => attendance[d.toISOString().split('T')[0]] === true,
+  ).length;
+  const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(', ');
 
   return (
     <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/maestro/corsi" className="hover:text-secondary/80 transition-colors">Corsi</Link>
-          {" › "}
-          <Link href={`/dashboard/maestro/corsi/${courseId}`} className="hover:text-secondary/80 transition-colors">Dettagli Corso</Link>
-          {" › "}
+          <Link
+            href="/dashboard/maestro/corsi"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Corsi
+          </Link>
+          {' › '}
+          <Link
+            href={`/dashboard/maestro/corsi/${courseId}`}
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Dettagli Corso
+          </Link>
+          {' › '}
           <span>Dettagli Partecipante</span>
         </p>
         <h1 className="text-4xl font-bold text-secondary">Dettagli Partecipante</h1>
@@ -128,7 +123,11 @@ export default function MaestroPartecipantePresenzePage() {
       {/* Header */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}
+        style={{
+          backgroundColor: 'var(--color-frozen-lake-900)',
+          borderColor: 'var(--color-frozen-lake-900)',
+          borderLeftColor: 'var(--color-frozen-lake-900)',
+        }}
       >
         <div className="flex items-start gap-6">
           <User className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -145,37 +144,51 @@ export default function MaestroPartecipantePresenzePage() {
         </div>
         <div className="px-6 py-6 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Corso</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Corso
+            </label>
             <p className="text-secondary font-semibold">{course.name}</p>
           </div>
           {athlete.email && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Email
+              </label>
               <p className="text-secondary font-semibold">{athlete.email}</p>
             </div>
           )}
           {athlete.phone && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Telefono
+              </label>
               <p className="text-secondary font-semibold">{athlete.phone}</p>
             </div>
           )}
           {days && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni corso</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Giorni corso
+              </label>
               <p className="text-secondary font-semibold">{days}</p>
             </div>
           )}
           {course.schedule_time && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Orario
+              </label>
               <p className="text-secondary font-semibold">{course.schedule_time}</p>
             </div>
           )}
           {lessonDates.length > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Presenze</label>
-              <p className="text-secondary font-semibold">{presentCount} / {lessonDates.length}</p>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Presenze
+              </label>
+              <p className="text-secondary font-semibold">
+                {presentCount} / {lessonDates.length}
+              </p>
             </div>
           )}
         </div>
@@ -194,15 +207,22 @@ export default function MaestroPartecipantePresenzePage() {
           <div className="px-6 py-4">
             <ul className="flex flex-col gap-2">
               {lessonDates.map((d, i) => {
-                const dateStr = d.toISOString().split("T")[0];
-                const label = d.toLocaleDateString("it-IT", {
-                  weekday: "long", day: "numeric", month: "long", year: "numeric",
-                }).replace(/^./, (c) => c.toUpperCase());
+                const dateStr = d.toISOString().split('T')[0];
+                const label = d
+                  .toLocaleDateString('it-IT', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                  .replace(/^./, (c) => c.toUpperCase());
                 const hasRecord = attendance[dateStr] !== undefined;
                 const isPresent = attendance[dateStr] === true;
                 const bg = hasRecord
-                  ? isPresent ? "#023047" : "var(--color-frozen-lake-900)"
-                  : "var(--secondary)";
+                  ? isPresent
+                    ? '#023047'
+                    : 'var(--color-frozen-lake-900)'
+                  : 'var(--secondary)';
                 return (
                   <li key={i}>
                     <Link href={`/dashboard/maestro/corsi/${courseId}/lezioni/${dateStr}`}>
@@ -218,7 +238,7 @@ export default function MaestroPartecipantePresenzePage() {
                         </div>
                         {hasRecord && (
                           <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
-                            {isPresent ? "PRESENTE" : "ASSENTE"}
+                            {isPresent ? 'PRESENTE' : 'ASSENTE'}
                           </span>
                         )}
                       </div>

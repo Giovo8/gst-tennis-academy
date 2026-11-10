@@ -1,6 +1,6 @@
 # Funzionalità per modulo
 
-Panoramica delle funzionalità della piattaforma, verificate sul codice (ottobre 2026). Per ruoli e permessi vedi [ROLES.md](ROLES.md); per le API [API.md](API.md); per lo schema dati [DATABASE.md](DATABASE.md).
+Panoramica delle funzionalità della piattaforma. Per ruoli e permessi vedi [ROLES.md](ROLES.md); per le API [API.md](API.md); per lo schema dati [DATABASE.md](DATABASE.md).
 
 ---
 

@@ -6,14 +6,7 @@ type RoleAwareProfile = {
   is_bookable_coach?: boolean | null;
 };
 
-export const roleLabels: Record<UserRole, string> = {
-  atleta: 'Atleta',
-  maestro: 'Coach',
-  gestore: 'Gestore',
-  admin: 'Admin',
-};
-
-export const roleDestinations: Record<UserRole, string> = {
+const roleDestinations: Record<UserRole, string> = {
   atleta: '/dashboard/atleta',
   maestro: '/dashboard/maestro',
   gestore: '/dashboard/admin',
@@ -24,24 +17,13 @@ export function getDestinationForRole(role: UserRole) {
   return roleDestinations[role] ?? '/login';
 }
 
-export function isAdmin(role: UserRole | null | undefined): boolean {
+export function isAdminOrGestore(role: UserRole | null | undefined): boolean {
   return role === 'admin' || role === 'gestore';
-}
-
-/** Alias for isAdmin — checks admin or gestore */
-export const isAdminOrGestore = isAdmin;
-
-export function isCoach(role: UserRole | null | undefined): boolean {
-  return role === 'maestro' || isAdmin(role);
 }
 
 export function isStaffRole(role: string | null | undefined): boolean {
   const normalized = String(role || '').toLowerCase();
   return normalized === 'admin' || normalized === 'gestore' || normalized === 'maestro';
-}
-
-export function canManageUsers(role: UserRole | null | undefined): boolean {
-  return role === 'admin' || role === 'gestore' || role === 'maestro';
 }
 
 export function getSecondaryRoles(metadata: unknown): string[] {
