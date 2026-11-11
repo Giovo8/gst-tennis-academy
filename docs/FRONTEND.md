@@ -18,6 +18,11 @@ Convenzioni dell'interfaccia: organizzazione dei componenti, palette e stile, mo
   | `src/lib/utils/youtube.ts`           | ID di un video YouTube dall'URL                                         |
   | `src/lib/utils/formatItalianDate.ts` | Date in italiano (breve ed estesa)                                      |
   | `src/lib/courts/getCourts.ts`        | Lista dei campi da `courts_settings` (mai una costante con i nomi)      |
+  | `src/lib/courts/blocks.ts`           | Blocchi campo: tipi, testo del motivo, generazione dei blocchi          |
+  | `src/lib/courts/blockDisplay.ts`     | Tipo, icona e colore di un blocco campo                                 |
+  | `src/lib/utils/dateInput.ts`         | Date degli input (`aaaa-mm-gg`) nel fuso locale                         |
+
+- **Niente pagine copiate tra aree o tra "nuovo" e "modifica"**: la parte comune sta in un componente, la pagina tiene solo ciò che è suo (azioni, permessi). Esistono già `components/arena/ChallengeDetailView` (dettaglio sfida: le pagine admin e atleta passano solo i pulsanti), `components/courses/CourseParticipantView` (partecipante di un corso, iscritto o ospite, per admin e maestro), `components/courts/BlockFormFields` (campi dei form "crea" e "modifica" blocco) e i selettori di data in `components/ui/`: `DateCalendarPanel` (calendario a scomparsa sotto un campo), `DatePickerModal` (finestra con Oggi/Applica, limiti `disablePast` e `maxDate`) e `CalendarMonth`, la griglia del mese su cui si basano entrambi e il `DateNavigator` delle prenotazioni. Nessuna pagina disegna più il proprio calendario.
 
 - **Hook condivisi** in `src/lib/hooks/`:
 

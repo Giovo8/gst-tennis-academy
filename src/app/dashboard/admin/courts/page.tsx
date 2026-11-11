@@ -4,20 +4,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Plus,
-  Loader2,
-  Shield,
-  Search,
-  SlidersHorizontal,
-  GraduationCap,
-  Wrench,
-  Flag,
-  ArrowUpDown,
-  X,
-} from 'lucide-react';
+import { Plus, Loader2, Shield, Search, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { getBlockStyle, getBlockTitle } from '@/lib/courts/blockDisplay';
 
 type Block = {
   id: string;
@@ -124,49 +114,6 @@ export default function CourtsBlockPage() {
 
   const groupedBlocks = groupConsecutiveBlocks(blocks);
 
-  // Determina tipo e icona in base al motivo
-  function getBlockStyle(reason?: string) {
-    const reasonText = (reason || '').trim();
-    const reasonLower = reasonText.toLowerCase();
-
-    if (reasonLower.includes('corso adulti')) {
-      return {
-        type: 'Corso Adulti',
-        icon: GraduationCap,
-      };
-    }
-
-    if (reasonLower.includes('corsi') || reasonLower.includes('tennis')) {
-      return {
-        type: 'Corsi Tennis',
-        icon: GraduationCap,
-      };
-    } else if (reasonLower.includes('manutenzione')) {
-      return {
-        type: 'Manutenzione',
-        icon: Wrench,
-      };
-    } else if (reasonLower.includes('evento')) {
-      return {
-        type: 'Evento',
-        icon: Flag,
-      };
-    }
-
-    if (reasonLower.startsWith('altro')) {
-      return {
-        type: 'Altro',
-        icon: Shield,
-      };
-    }
-
-    // Default
-    return {
-      type: reasonText ? 'Altro' : 'Blocco',
-      icon: Shield,
-    };
-  }
-
   const hasActiveFilters = filterStatus !== 'active' || sortOrder !== 'desc';
 
   const nowMs = Date.now();
@@ -201,26 +148,6 @@ export default function CourtsBlockPage() {
     }
 
     return `${startDate} - ${endDate} · ${startTime} - ${endTime}`;
-  };
-
-  const getBlockTitle = (reason?: string) => {
-    const text = (reason || '').trim();
-    if (!text) return 'Blocco campo';
-
-    const altroWithParens = text.match(/^Altro\s*\(([^)]+)\)(?:\s*-\s*(.+))?$/i);
-    if (altroWithParens) {
-      const custom = (altroWithParens[1] || '').trim();
-      const notes = (altroWithParens[2] || '').trim();
-      if (custom && notes) return `${custom} - ${notes}`;
-      return custom || notes || 'Altro';
-    }
-
-    const altroSimple = text.match(/^Altro\s*-\s*(.+)$/i);
-    if (altroSimple) {
-      return (altroSimple[1] || '').trim() || 'Altro';
-    }
-
-    return text;
   };
 
   const renderSearchWithFilter = () => (
@@ -372,24 +299,11 @@ export default function CourtsBlockPage() {
             const lastDate = new Date(block.allDates[block.allDates.length - 1].end);
             const dateTimeLabel = formatBlockDateTime(firstDate, lastDate);
 
-            const cardBg =
-              blockStyle.type === 'Corso Adulti'
-                ? '#023047'
-                : blockStyle.type === 'Corsi Tennis'
-                ? '#05384c'
-                : blockStyle.type === 'Manutenzione'
-                ? 'var(--color-frozen-lake-900)'
-                : blockStyle.type === 'Evento'
-                ? 'var(--color-frozen-lake-900)'
-                : blockStyle.type === 'Altro'
-                ? 'var(--secondary)'
-                : 'var(--color-frozen-lake-800)';
-
             return (
               <div
                 key={block.id}
                 className="rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity"
-                style={{ background: cardBg }}
+                style={{ background: blockStyle.background }}
                 onClick={() => router.push(`/dashboard/admin/courts/${block.id}`)}
               >
                 <div className="flex items-center gap-4 py-3 px-3">

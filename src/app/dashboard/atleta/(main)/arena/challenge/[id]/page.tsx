@@ -1,217 +1,53 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-
+import { useRouter, usePathname } from 'next/navigation';
+import { Check, X } from 'lucide-react';
 import { getSessionUser } from '@/lib/auth/clientSession';
-import { Check, X, Target, Handshake } from 'lucide-react';
-import { Modal, ModalContent, ModalHeader, ModalTitle, ModalBody } from '@/components/ui';
-import { toast } from 'sonner';
-import { toastError } from '@/lib/toast';
-import {
-  SCORE_PATTERN,
-  buildScoreGrid,
-  formatBookingDate,
-  getMatchFormatLabel,
-  getMatchTypeLabel,
-  getPlayerInitial,
-  getPointsFromScore,
-  getWinnerIdFromScore,
-  getWinnerName,
-  hasChallengeDatePassed,
-  isDoublesMatch,
-} from '@/lib/arena/challengeDisplay';
-
-interface Challenge {
-  id: string;
-  challenger_id: string;
-  opponent_id: string;
-  status:
-    | 'pending'
-    | 'accepted'
-    | 'declined'
-    | 'completed'
-    | 'cancelled'
-    | 'counter_proposal'
-    | 'awaiting_score';
-  scheduled_date?: string;
-  court?: string;
-  message?: string;
-  booking_id?: string;
-  match_format?: string;
-  duration_minutes?: number;
-  match_type?: string;
-  challenge_type?: string;
-  my_partner_id?: string;
-  opponent_partner_id?: string;
-  winner_id?: string;
-  score?: string;
-  created_at: string;
-  challenger?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-    email?: string;
-    phone?: string;
-  };
-  opponent?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-    email?: string;
-    phone?: string;
-  };
-  my_partner?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-    email?: string;
-    phone?: string;
-  };
-  opponent_partner?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-    email?: string;
-    phone?: string;
-  };
-  booking?: {
-    id: string;
-    court: string;
-    start_time: string;
-    end_time: string;
-    status: string;
-  };
-}
+import ChallengeDetailView, {
+  ChallengeActionButton,
+  type ArenaChallenge,
+} from '@/components/arena/ChallengeDetailView';
 
 export default function AtletaChallengePage() {
-  const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
+  // La pagina è riesportata anche nell'area maestro: i link seguono l'area corrente.
   const dashboardBase = pathname.split('/arena')[0];
-  const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
 
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [userId, setUserId] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [showScoreForm, setShowScoreForm] = useState(false);
-  const [score, setScore] = useState('');
-  const [savingScore, setSavingScore] = useState(false);
+  const [userId, setUserId] = useState('');
 
-  type ParticipantStats = {
-    name: string;
-    points: number;
-    wins: number;
-    losses: number;
-    setsWon: number;
-    totalMatches: number;
-    winRate: number;
-    ranking: number;
-  };
-  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantStats | null>(null);
-  const [loadingParticipantStats, setLoadingParticipantStats] = useState(false);
-
-  async function openParticipantModal(participantId: string, name: string) {
-    setLoadingParticipantStats(true);
-    setSelectedParticipant({
-      name,
-      points: 0,
-      wins: 0,
-      losses: 0,
-      setsWon: 0,
-      totalMatches: 0,
-      winRate: 0,
-      ranking: 0,
+  useEffect(() => {
+    void getSessionUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      setUserId(user.id);
     });
+  }, []);
+
+  async function respond(
+    challenge: ArenaChallenge,
+    status: 'accepted' | 'declined',
+    reload: () => Promise<void>,
+  ) {
     try {
-      const res = await fetch(`/api/arena/stats?user_id=${participantId}`);
-      if (res.ok) {
-        const data = await res.json();
-        const s = data.stats;
-        if (s) {
-          setSelectedParticipant({
-            name,
-            points: s.points || 0,
-            wins: s.wins || 0,
-            losses: s.losses || 0,
-            setsWon: s.sets_won || 0,
-            totalMatches: (s.wins || 0) + (s.losses || 0),
-            winRate: s.win_rate || 0,
-            ranking: s.ranking || 0,
-          });
-        }
-      }
-    } catch {
-      // keep placeholder
-    } finally {
-      setLoadingParticipantStats(false);
-    }
-  }
-
-  useEffect(() => {
-    if (id) void loadChallengeDetails();
-  }, [id]);
-
-  useEffect(() => {
-    if (challenge) setScore(challenge.score || '');
-  }, [challenge]);
-
-  async function loadChallengeDetails() {
-    const {
-      data: { user },
-    } = await getSessionUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    setUserId(user.id);
-
-    try {
-      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.challenge) setChallenge(data.challenge);
-      }
-    } catch (error) {
-      console.error('Error loading challenge:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function getStatusLabel(status: string): string {
-    const statusMap: Record<string, string> = {
-      pending: 'Da Confermare',
-      accepted: 'Confermata',
-      declined: 'Rifiutata',
-      completed: 'Completata',
-      cancelled: 'Annullata',
-      counter_proposal: 'Controproposta',
-      awaiting_score: 'Attesa Punteggio',
-    };
-    return statusMap[status] || status;
-  }
-
-  async function handleChallengeAction(action: 'accept' | 'decline') {
-    if (!challenge) return;
-    try {
-      const status = action === 'accept' ? 'accepted' : 'declined';
       const response = await fetch('/api/arena/challenges', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ challenge_id: challenge.id, status }),
       });
-      if (response.ok) loadChallengeDetails();
+      if (response.ok) await reload();
     } catch (error) {
       console.error('Error updating challenge:', error);
     }
   }
 
-  async function handleCancelChallenge() {
+  async function cancelChallenge(challenge: ArenaChallenge) {
     if (!confirm('Sei sicuro di voler cancellare questa sfida?')) return;
     try {
-      const response = await fetch(`/api/arena/challenges?challenge_id=${challenge?.id}`, {
+      const response = await fetch(`/api/arena/challenges?challenge_id=${challenge.id}`, {
         method: 'DELETE',
       });
       if (response.ok) router.push(`${dashboardBase}/arena`);
@@ -220,745 +56,99 @@ export default function AtletaChallengePage() {
     }
   }
 
-  async function handleSaveScore() {
-    if (!score.trim()) {
-      toast.warning('Inserisci il punteggio');
-      return;
-    }
-    if (!SCORE_PATTERN.test(score.trim())) {
-      toast.warning('Formato punteggio non valido');
-      return;
-    }
-
-    const normalizedScore = score.trim();
-    const computedWinnerId = getWinnerIdFromScore(
-      normalizedScore,
-      challenge!.challenger_id,
-      challenge!.opponent_id,
-    );
-
-    if (!computedWinnerId) {
-      toast.error('Vincitore non determinabile');
-      return;
-    }
-
-    try {
-      setSavingScore(true);
-      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          winner_id: computedWinnerId,
-          score: normalizedScore,
-          status: 'completed',
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Punteggio salvato');
-        setShowScoreForm(false);
-        loadChallengeDetails();
-      } else {
-        const errorData = await response.json();
-        toastError(errorData.error, 'Salvataggio non riuscito');
-      }
-    } catch (error) {
-      console.error('Error saving score:', error);
-      toast.error('Salvataggio non riuscito');
-    } finally {
-      setSavingScore(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-12 h-12 border-4 border-secondary border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-secondary/60">Caricamento...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!challenge) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-secondary/60">Sfida non trovata</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all"
-          >
-            Torna indietro
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const isChallenger = challenge.challenger_id === userId;
-  const opponent = isChallenger ? challenge.opponent : challenge.challenger;
-  const isPending = challenge.status === 'pending';
-  const isCounterProposal = challenge.status === 'counter_proposal';
-  const canRespond = !isChallenger && isPending;
-  const canConfirmCounterProposal = isChallenger && isCounterProposal;
-  const isDoubles = isDoublesMatch(challenge.match_type);
-  const scoreGrid = buildScoreGrid(challenge.score);
-  const winnerIsChallenger = challenge.winner_id === challenge.challenger_id;
-  const winnerDisplayName = winnerIsChallenger
-    ? `${challenge.challenger?.full_name || 'Sfidante'}${
-        isDoubles && challenge.my_partner ? ` / ${challenge.my_partner.full_name}` : ''
-      }`
-    : `${challenge.opponent?.full_name || 'Sfidato'}${
-        isDoubles && challenge.opponent_partner ? ` / ${challenge.opponent_partner.full_name}` : ''
-      }`;
-  const loserDisplayName = winnerIsChallenger
-    ? `${challenge.opponent?.full_name || 'Sfidato'}${
-        isDoubles && challenge.opponent_partner ? ` / ${challenge.opponent_partner.full_name}` : ''
-      }`
-    : `${challenge.challenger?.full_name || 'Sfidante'}${
-        isDoubles && challenge.my_partner ? ` / ${challenge.my_partner.full_name}` : ''
-      }`;
-
-  const canEnterScore =
-    !challenge.winner_id &&
-    !showScoreForm &&
-    (challenge.status === 'awaiting_score' ||
-      ((challenge.status === 'accepted' || challenge.status === 'completed') &&
-        hasChallengeDatePassed(challenge)));
-
-  const challengeTypeColor = challenge.challenge_type === 'ranked' ? 'var(--secondary)' : '#023047';
-
-  const participantCards = [
-    {
-      key: challenge.challenger?.id || 'challenger',
-      participant: challenge.challenger,
-      background: 'var(--secondary)',
-      isChallenger: true,
-    },
-    ...(isDoubles && challenge.my_partner
-      ? [
-          {
-            key: challenge.my_partner.id,
-            participant: challenge.my_partner,
-            background: 'var(--secondary)',
-            isChallenger: true,
-          },
-        ]
-      : []),
-    {
-      key: challenge.opponent?.id || 'opponent',
-      participant: challenge.opponent,
-      background: '#023047',
-      isChallenger: false,
-    },
-    ...(isDoubles && challenge.opponent_partner
-      ? [
-          {
-            key: challenge.opponent_partner.id,
-            participant: challenge.opponent_partner,
-            background: '#023047',
-            isChallenger: false,
-          },
-        ]
-      : []),
-  ];
+  const configureUrl = (challenge: ArenaChallenge, otherPlayerId: string, counter = false) =>
+    `${dashboardBase}/arena/configure-challenge/${otherPlayerId}?edit=${challenge.id}${
+      counter ? '&counter=true' : ''
+    }`;
 
   return (
-    <div className="space-y-6 pt-3">
-      {/* Breadcrumb */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link
-            href={`${dashboardBase}/arena`}
-            className="hover:text-secondary/80 transition-colors"
-          >
-            Arena
-          </Link>
-          {' › '}
-          <span>Dettagli Sfida</span>
-        </p>
-        <h1 className="text-4xl font-bold text-secondary">Dettagli Sfida</h1>
-      </div>
-
-      {/* Challenge Type Header */}
-      <div
-        className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{
-          borderLeftColor: challengeTypeColor,
-          backgroundColor: challengeTypeColor,
-        }}
-      >
-        <div className="flex items-start gap-6">
-          {challenge.challenge_type === 'ranked' ? (
-            <Target className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
-          ) : (
-            <Handshake className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
-          )}
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white">
-              {challenge.challenge_type === 'ranked' ? 'Sfida Classificata' : 'Sfida Amichevole'}
-            </h2>
-          </div>
-        </div>
-      </div>
-
-      {/* Partecipanti */}
-      <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
-        </div>
-        <div className="px-6 py-4">
-          <ul className="flex flex-col gap-3">
-            {participantCards.map(
-              ({ key, participant, background, isChallenger: isParticipantChallenger }) => {
-                if (!participant) return null;
-
-                const isAwaitingAcceptance =
-                  challenge.status === 'pending' && !isParticipantChallenger;
-                const bg = isAwaitingAcceptance ? '#9ca3af' : background;
-                const setsWon = scoreGrid
-                  ? isParticipantChallenger === winnerIsChallenger
-                    ? scoreGrid.totalWinner
-                    : scoreGrid.totalLoser
-                  : null;
-
-                return (
-                  <li key={key}>
-                    <button
-                      type="button"
-                      className="w-full text-left"
-                      onClick={() => openParticipantModal(participant.id, participant.full_name)}
-                    >
-                      <div
-                        className="flex items-center gap-4 py-3 px-3 rounded-lg"
-                        style={{ background: bg }}
-                      >
-                        <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
-                          {participant.avatar_url ? (
-                            <img
-                              src={participant.avatar_url}
-                              alt={participant.full_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-sm font-bold text-white leading-none">
-                              {getPlayerInitial(participant.full_name)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white text-sm">
-                            {participant.full_name}
-                          </p>
-                          {isAwaitingAcceptance ? (
-                            <p className="text-xs text-white/70 mt-0.5">
-                              In attesa di accettazione
-                            </p>
-                          ) : participant.email ? (
-                            <p className="text-xs text-white/60 truncate mt-0.5">
-                              {participant.email}
-                            </p>
-                          ) : null}
-                        </div>
-                        {setsWon !== null && (
-                          <span className="text-white font-bold text-lg flex-shrink-0">
-                            {setsWon}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                );
-              },
-            )}
-          </ul>
-        </div>
-      </div>
-
-      {/* Match Details */}
-      <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Match</h2>
-        </div>
-        <div className="px-6 py-6">
-          <div className="space-y-6">
-            {challenge.match_type && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Tipo Match
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">
-                    {getMatchTypeLabel(challenge.match_type)}
-                  </p>
-                </div>
-              </div>
-            )}
-            {challenge.match_format && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Formato
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary/70">{getMatchFormatLabel(challenge.match_format)}</p>
-                </div>
-              </div>
-            )}
-            {challenge.challenge_type && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Tipo Sfida
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">
-                    {challenge.challenge_type === 'ranked' ? 'Classificata' : 'Amichevole'}
-                  </p>
-                </div>
-              </div>
-            )}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Data creazione
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary/70">
-                  {new Date(challenge.created_at).toLocaleDateString('it-IT', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}{' '}
-                  {new Date(challenge.created_at).toLocaleTimeString('it-IT', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+    <ChallengeDetailView
+      basePath={dashboardBase}
+      arenaLabel="Arena"
+      markPendingOpponent
+      renderExtra={(challenge, reload) => {
+        // Lo sfidante riceve la controproposta dello sfidato e la conferma o rifiuta.
+        if (challenge.challenger_id !== userId || challenge.status !== 'counter_proposal') {
+          return null;
+        }
+        return (
+          <div className="page-card">
+            <div className="page-card-header">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                Controproposta Ricevuta
+              </h2>
+            </div>
+            <div className="px-6 py-6">
+              <div className="mb-6 p-4 bg-secondary/5 border border-secondary/20 rounded-lg">
+                <p className="text-sm text-secondary">
+                  <strong>{challenge.opponent?.full_name}</strong> ha proposto delle modifiche alla
+                  tua sfida. Rivedi i dettagli e conferma o rifiuta le modifiche.
                 </p>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Stato
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{getStatusLabel(challenge.status)}</p>
-              </div>
-            </div>
-            {challenge.winner_id && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pt-6 border-t border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Vincitore
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">{getWinnerName(challenge)}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Risultato */}
-      {(challenge.status === 'completed' ||
-        !!challenge.winner_id ||
-        showScoreForm ||
-        canEnterScore ||
-        challenge.status === 'awaiting_score') && (
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Risultato</h2>
-          </div>
-          <div className="px-6 py-6">
-            {!showScoreForm && challenge.winner_id && (
-              <div className="space-y-3">
-                {scoreGrid && (
-                  <div className="overflow-x-auto rounded-lg border border-black/10">
-                    <table className="min-w-full text-xs sm:text-sm">
-                      <thead className="bg-gray-100 text-secondary">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-semibold"></th>
-                          <th className="px-3 py-2 text-center font-semibold">
-                            {winnerDisplayName}
-                          </th>
-                          <th className="px-3 py-2 text-center font-semibold">
-                            {loserDisplayName}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white">
-                        {scoreGrid.sets.map((setScore, index) => (
-                          <tr key={`set-row-${index + 1}`} className="border-t border-gray-200">
-                            <td className="px-3 py-2 font-semibold text-secondary">
-                              Set {index + 1}
-                            </td>
-                            <td className="px-3 py-2 text-center font-semibold text-secondary">
-                              {setScore.winner}
-                            </td>
-                            <td className="px-3 py-2 text-center font-semibold text-secondary/70">
-                              {setScore.loser}
-                            </td>
-                          </tr>
-                        ))}
-                        <tr className="border-t border-gray-200 bg-gray-50">
-                          <td className="px-3 py-2 font-semibold text-secondary">Totale</td>
-                          <td className="px-3 py-2 text-center font-bold text-secondary">
-                            {scoreGrid.totalWinner}
-                          </td>
-                          <td className="px-3 py-2 text-center font-bold text-secondary/70">
-                            {scoreGrid.totalLoser}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                <button
-                  onClick={() => setShowScoreForm(true)}
-                  className="w-full mt-2 px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all flex items-center justify-center gap-2"
+              <div className="flex flex-col sm:flex-row gap-3">
+                <ChallengeActionButton
+                  tone="primary"
+                  onClick={() => respond(challenge, 'accepted', reload)}
                 >
-                  Modifica Risultato
-                </button>
+                  <Check className="h-5 w-5" />
+                  Conferma Modifiche
+                </ChallengeActionButton>
+                <ChallengeActionButton
+                  tone="dark"
+                  onClick={() => respond(challenge, 'declined', reload)}
+                >
+                  <X className="h-5 w-5" />
+                  Rifiuta Modifiche
+                </ChallengeActionButton>
               </div>
-            )}
+            </div>
+          </div>
+        );
+      }}
+      renderActions={(challenge, reload) => {
+        if (!userId || challenge.status !== 'pending') return null;
 
-            {!showScoreForm && !challenge.winner_id && canEnterScore && (
-              <button
-                onClick={() => setShowScoreForm(true)}
-                className="w-full px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all flex items-center justify-center gap-2"
+        // Lo sfidato risponde alla sfida in attesa.
+        if (challenge.challenger_id !== userId) {
+          return (
+            <>
+              <ChallengeActionButton
+                tone="primary"
+                onClick={() => respond(challenge, 'accepted', reload)}
               >
-                {challenge.status === 'awaiting_score'
-                  ? 'Inserisci Punteggio'
-                  : 'Inserisci Risultato'}
-              </button>
-            )}
-
-            {showScoreForm && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                    Punteggio *
-                  </label>
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={score}
-                      onChange={(e) => setScore(e.target.value)}
-                      placeholder="es: 6-4, 6-3"
-                      inputMode="text"
-                      pattern="\d+-\d+(,\s*\d+-\d+)*"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-                    />
-                    <p className="text-xs text-secondary/60 mt-2">
-                      Formato: 6-4, 6-3 · Il vincitore e i punti vengono calcolati automaticamente
-                      dai set.
-                    </p>
-                    {(() => {
-                      if (!score.trim() || !SCORE_PATTERN.test(score.trim())) return null;
-                      const computedWinner = getWinnerIdFromScore(
-                        score.trim(),
-                        challenge.challenger_id,
-                        challenge.opponent_id,
-                      );
-                      if (!computedWinner) return null;
-                      const pts = getPointsFromScore(
-                        score.trim(),
-                        computedWinner,
-                        challenge.challenger_id,
-                      );
-                      if (!pts) return null;
-                      const winnerName =
-                        computedWinner === challenge.challenger_id
-                          ? challenge.challenger?.full_name
-                          : challenge.opponent?.full_name;
-                      const loserName =
-                        computedWinner === challenge.challenger_id
-                          ? challenge.opponent?.full_name
-                          : challenge.challenger?.full_name;
-                      return (
-                        <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <p className="text-xs font-semibold text-green-700 mb-1">
-                            Anteprima risultato
-                          </p>
-                          <p className="text-xs text-green-700">
-                            Vincitore: <strong>{winnerName}</strong> →{' '}
-                            <strong>+{pts.winnerPts} pt</strong>
-                          </p>
-                          <p className="text-xs text-green-600">
-                            {loserName} → +{pts.loserPts} pt
-                          </p>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleSaveScore}
-                    disabled={savingScore || !score.trim()}
-                    className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                  >
-                    {savingScore ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Salvataggio...
-                      </>
-                    ) : (
-                      'Salva Risultato'
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowScoreForm(false);
-                      setScore(challenge.score || '');
-                    }}
-                    disabled={savingScore}
-                    className="px-4 py-2.5 text-sm font-medium text-secondary bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    Annulla
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Prenotazione Campo */}
-      {challenge.booking && (
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Prenotazione Campo
-            </h2>
-          </div>
-          <div className="px-6 py-6">
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Data
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">
-                    {formatBookingDate(challenge.booking.start_time)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Orario
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary/70">
-                    {new Date(challenge.booking.start_time).toLocaleTimeString('it-IT', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                    {' – '}
-                    {new Date(challenge.booking.end_time).toLocaleTimeString('it-IT', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Campo
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">{challenge.booking.court}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Messaggio */}
-      {challenge.message && (
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio</h2>
-          </div>
-          <div className="px-6 py-6">
-            <div className="p-4 bg-secondary/5 rounded-lg">
-              <p className="text-secondary italic">&quot;{challenge.message}&quot;</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Controproposta ricevuta */}
-      {canConfirmCounterProposal && (
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Controproposta Ricevuta
-            </h2>
-          </div>
-          <div className="px-6 py-6">
-            <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <p className="text-sm text-purple-800">
-                <strong>{opponent?.full_name}</strong> ha proposto delle modifiche alla tua sfida.
-                Rivedi i dettagli e conferma o rifiuta le modifiche.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => handleChallengeAction('accept')}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+                Accetta Sfida
+              </ChallengeActionButton>
+              <ChallengeActionButton
+                tone="outline"
+                onClick={() => router.push(configureUrl(challenge, challenge.challenger_id, true))}
               >
-                <Check className="h-5 w-5" />
-                Conferma Modifiche
-              </button>
-              <button
-                onClick={() => handleChallengeAction('decline')}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
+                Proponi Modifiche
+              </ChallengeActionButton>
+              <ChallengeActionButton
+                tone="dark"
+                onClick={() => respond(challenge, 'declined', reload)}
               >
-                <X className="h-5 w-5" />
-                Rifiuta Modifiche
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                Rifiuta Sfida
+              </ChallengeActionButton>
+            </>
+          );
+        }
 
-      {/* Bottoni Azione */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {challenge.booking?.id && (
-          <Link
-            href={`${dashboardBase}/bookings/${challenge.booking.id}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
-          >
-            Prenotazione Campo
-          </Link>
-        )}
-        {canRespond && (
+        // Lo sfidante può ancora modificarla o annullarla.
+        return (
           <>
-            <button
-              onClick={() => handleChallengeAction('accept')}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
-            >
-              Accetta Sfida
-            </button>
-            <button
-              onClick={() =>
-                router.push(
-                  `${dashboardBase}/arena/configure-challenge/${challenge.challenger_id}?edit=${challenge.id}&counter=true`,
-                )
-              }
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-secondary bg-white border border-gray-300 rounded-lg hover:bg-secondary hover:text-white hover:border-secondary transition-all font-medium"
-            >
-              Proponi Modifiche
-            </button>
-            <button
-              onClick={() => handleChallengeAction('decline')}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
-            >
-              Rifiuta Sfida
-            </button>
-          </>
-        )}
-        {isChallenger && isPending && (
-          <>
-            <button
-              onClick={() =>
-                router.push(
-                  `${dashboardBase}/arena/configure-challenge/${challenge.opponent_id}?edit=${challenge.id}`,
-                )
-              }
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+            <ChallengeActionButton
+              tone="primary"
+              onClick={() => router.push(configureUrl(challenge, challenge.opponent_id))}
             >
               Modifica Sfida
-            </button>
-            <button
-              onClick={handleCancelChallenge}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium"
-            >
+            </ChallengeActionButton>
+            <ChallengeActionButton tone="muted" onClick={() => cancelChallenge(challenge)}>
               Annulla Sfida
-            </button>
+            </ChallengeActionButton>
           </>
-        )}
-      </div>
-      {/* Participant Stats Modal */}
-      {selectedParticipant && (
-        <Modal
-          open={!!selectedParticipant}
-          onOpenChange={(open) => {
-            if (!open) setSelectedParticipant(null);
-          }}
-        >
-          <ModalContent
-            size="sm"
-            showBuiltinClose={false}
-            className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
-          >
-            <ModalHeader
-              withCloseButton
-              closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
-              className="px-4 py-3 bg-secondary border-b border-secondary"
-            >
-              <ModalTitle className="text-white text-base sm:text-lg">
-                {selectedParticipant.name}
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody className="px-0 py-0 bg-white">
-              {loadingParticipantStats ? (
-                <div className="flex items-center justify-center py-10">
-                  <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                <div className="text-sm bg-white divide-y divide-gray-200">
-                  {selectedParticipant.ranking > 0 && (
-                    <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
-                      <span className="text-xs font-semibold text-gray-900">Posizione</span>
-                      <span className="text-xs text-gray-600">{selectedParticipant.ranking}</span>
-                    </div>
-                  )}
-                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
-                    <span className="text-xs font-semibold text-gray-900">Punti</span>
-                    <span className="text-xs text-gray-600">{selectedParticipant.points}</span>
-                  </div>
-                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
-                    <span className="text-xs font-semibold text-gray-900">Partite</span>
-                    <span className="text-xs text-gray-600">
-                      {selectedParticipant.totalMatches}
-                    </span>
-                  </div>
-                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
-                    <span className="text-xs font-semibold text-gray-900">Vittorie</span>
-                    <span className="text-xs text-gray-600">{selectedParticipant.wins}</span>
-                  </div>
-                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
-                    <span className="text-xs font-semibold text-gray-900">Sconfitte</span>
-                    <span className="text-xs text-gray-600">{selectedParticipant.losses}</span>
-                  </div>
-                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
-                    <span className="text-xs font-semibold text-gray-900">Set vinti</span>
-                    <span className="text-xs text-gray-600">{selectedParticipant.setsWon}</span>
-                  </div>
-                  {selectedParticipant.totalMatches > 0 && (
-                    <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 items-center bg-white">
-                      <span className="text-xs font-semibold text-gray-900">Win rate</span>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-secondary rounded-full transition-all"
-                            style={{ width: `${Math.round(selectedParticipant.winRate)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-600 tabular-nums w-8 text-right">
-                          {Math.round(selectedParticipant.winRate)}%
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ModalBody>
-          </ModalContent>
-        </Modal>
-      )}
-    </div>
+        );
+      }}
+    />
   );
 }

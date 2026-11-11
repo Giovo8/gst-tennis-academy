@@ -11,21 +11,14 @@ import { getSessionUser } from '@/lib/auth/clientSession';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { getClosingMinutes, getCourtHoursLabel } from '@/lib/bookings/bookingTimeRestrictions';
-import { Calendar, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalBody,
-  ModalFooter,
-} from '@/components/ui';
+import { Calendar, Loader2 } from 'lucide-react';
 import AthletesSelector from '@/components/bookings/AthletesSelector';
 import { type UserRole } from '@/lib/roles';
 import { useDragScroll } from '@/components/admin/hooks/useDragScroll';
 import { ARENA_MATCH_FORMATS, CHALLENGE_TYPES } from '@/lib/arena/arenaConstants';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import DatePickerModal from '@/components/ui/DatePickerModal';
 
 interface OpponentProfile {
   id: string;
@@ -57,8 +50,6 @@ const MATCH_TYPES = [
   { value: 'singolo', label: 'Singolo' },
   { value: 'doppio', label: 'Doppio' },
 ];
-
-const WEEK_DAYS = ['lu', 'ma', 'me', 'gi', 've', 'sa', 'do'];
 
 export default function ConfigureChallengePage() {
   const courts = useCourts();
@@ -94,12 +85,6 @@ export default function ConfigureChallengePage() {
 
   // Calendar modal
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
-  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
-
   // Booking ID to exclude from occupied slots when editing
   const editingBookingIdRef = useRef<string | null>(null);
 
@@ -311,70 +296,11 @@ export default function ConfigureChallengePage() {
   };
 
   // Calendar helpers
-  function normalizeDate(date: Date): Date {
-    const d = new Date(date);
-    d.setHours(12, 0, 0, 0);
-    return d;
-  }
-
-  function isSameCalendarDay(a: Date, b: Date): boolean {
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
-  }
-
-  function openDatePickerModal() {
-    const normalized = normalizeDate(selectedDate);
-    setPendingDate(normalized);
-    setCalendarViewDate(new Date(normalized.getFullYear(), normalized.getMonth(), 1));
-    setDatePickerModalOpen(true);
-  }
-
-  function changeCalendarMonth(delta: number) {
-    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
-  }
-
-  function selectCalendarDay(day: Date) {
-    const normalized = normalizeDate(day);
-    setPendingDate(normalized);
-    setCalendarViewDate(new Date(normalized.getFullYear(), normalized.getMonth(), 1));
-  }
-
-  function applyDateSelection() {
-    handleDateChange(normalizeDate(pendingDate));
-    setDatePickerModalOpen(false);
-  }
-
-  function handleDatePickerToday() {
-    const today = normalizeDate(new Date());
-    setPendingDate(today);
-    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
-  }
-
-  function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }
-
   const getMaxDate = (): Date => {
     const d = new Date();
     d.setDate(d.getDate() + 90);
     return d;
   };
-
-  const calendarDays = useMemo(() => {
-    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
-    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
-    const gridStartDate = new Date(firstOfMonth);
-    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(gridStartDate);
-      date.setDate(gridStartDate.getDate() + index);
-      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
-    });
-  }, [calendarViewDate]);
 
   async function handleSubmit() {
     if (selectedSlots.length === 0 || !selectedCourt) {
@@ -646,7 +572,7 @@ export default function ConfigureChallengePage() {
         <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center sm:static sm:inset-auto sm:translate-x-0 sm:min-w-0 sm:justify-center">
           <button
             type="button"
-            onClick={openDatePickerModal}
+            onClick={() => setDatePickerModalOpen(true)}
             className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
             title="Scegli data"
           >
@@ -969,102 +895,16 @@ export default function ConfigureChallengePage() {
       <div className="h-8" />
 
       {/* Calendar Modal */}
-      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent
-          size="sm"
-          showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
-        >
-          <ModalHeader
-            withCloseButton
-            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
-            className="px-4 py-3 bg-secondary border-b border-secondary"
-          >
-            <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">
-                    {day}
-                  </span>
-                ))}
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  const maxDate = getMaxDate();
-                  maxDate.setHours(23, 59, 59, 999);
-                  const normalizedDay = new Date(date);
-                  normalizedDay.setHours(12, 0, 0, 0);
-                  const isDisabled = normalizedDay < today || normalizedDay > maxDate;
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => !isDisabled && selectCalendarDay(date)}
-                      disabled={isDisabled}
-                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-lg text-sm leading-none transition-colors ${
-                        isDisabled
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : isSelected
-                          ? 'bg-secondary text-white font-semibold'
-                          : isCurrentMonth
-                          ? 'text-gray-800 hover:bg-gray-100'
-                          : 'text-gray-400 hover:bg-gray-50'
-                      } ${
-                        !isSelected && !isDisabled && isTodayDate ? 'ring-1 ring-secondary/40' : ''
-                      }`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
-            <button
-              type="button"
-              onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <DatePickerModal
+        open={datePickerModalOpen}
+        onOpenChange={setDatePickerModalOpen}
+        value={selectedDate}
+        onApply={(date) => {
+          handleDateChange(date);
+        }}
+        disablePast
+        maxDate={getMaxDate()}
+      />
     </div>
   );
 }

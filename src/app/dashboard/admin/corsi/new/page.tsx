@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
 import { getSessionUser } from '@/lib/auth/clientSession';
@@ -15,6 +15,7 @@ import AthletesSelector from '@/components/bookings/AthletesSelector';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import DateCalendarPanel from '@/components/ui/DateCalendarPanel';
 
 interface Athlete {
   id: string;
@@ -112,11 +113,6 @@ export default function NuovoCorsoPage() {
     pidx: number;
     field: 'start' | 'end';
   } | null>(null);
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
-
   useEffect(() => {
     async function loadMaestros() {
       const { data } = await supabase
@@ -250,32 +246,10 @@ export default function NuovoCorsoPage() {
     loadCourse();
   }, [courseId, isEditMode]);
 
-  const WEEK_DAYS_CAL = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
-
-  const calendarDays = useMemo(() => {
-    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
-    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
-    const gridStartDate = new Date(firstOfMonth);
-    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(gridStartDate);
-      date.setDate(gridStartDate.getDate() + index);
-      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
-    });
-  }, [calendarViewDate]);
-
   function normalizeDate(date: Date): Date {
     const d = new Date(date);
     d.setHours(12, 0, 0, 0);
     return d;
-  }
-
-  function isSameCalendarDay(a: Date, b: Date): boolean {
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
   }
 
   function isoToDisplay(iso: string): string {
@@ -307,18 +281,8 @@ export default function NuovoCorsoPage() {
   }
 
   function toggleDatePicker(pidx: number, field: 'start' | 'end') {
-    if (activeDateContext?.pidx === pidx && activeDateContext?.field === field) {
-      setActiveDateContext(null);
-      return;
-    }
-    const existing = field === 'start' ? periods[pidx]?.start_date : periods[pidx]?.end_date;
-    const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
-    setActiveDateContext({ pidx, field });
-    setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
-  }
-
-  function changeCalendarMonth(delta: number) {
-    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    const isOpen = activeDateContext?.pidx === pidx && activeDateContext?.field === field;
+    setActiveDateContext(isOpen ? null : { pidx, field });
   }
 
   function dayValueFromDate(date: Date): string {
@@ -347,78 +311,11 @@ export default function NuovoCorsoPage() {
     setActiveDateContext(null);
   }
 
-  function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }
-
   function renderDateCalendarPanel(pidx: number, field: 'start' | 'end') {
     const isOpen = activeDateContext?.pidx === pidx && activeDateContext?.field === field;
     const selectedIso = field === 'start' ? periods[pidx]?.start_date : periods[pidx]?.end_date;
-    const selectedDate = selectedIso ? normalizeDate(new Date(selectedIso)) : null;
     return (
-      <div
-        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${
-          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
-        aria-hidden={!isOpen}
-        inert={!isOpen}
-      >
-        <div className="overflow-hidden min-h-0">
-          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => changeCalendarMonth(-1)}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                aria-label="Mese precedente"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <p className="text-sm font-semibold text-gray-900 capitalize">
-                {getCalendarMonthLabel(calendarViewDate)}
-              </p>
-              <button
-                type="button"
-                onClick={() => changeCalendarMonth(1)}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                aria-label="Mese successivo"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-              {WEEK_DAYS_CAL.map((day) => (
-                <span key={day} className="py-1">
-                  {day}
-                </span>
-              ))}
-            </div>
-            <div className="calendar-grid grid grid-cols-7 gap-1">
-              {calendarDays.map(({ date, isCurrentMonth }) => {
-                const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
-                const isTodayDate = isSameCalendarDay(date, new Date());
-                return (
-                  <button
-                    key={date.toISOString()}
-                    type="button"
-                    onClick={() => selectCalendarDay(date)}
-                    className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
-                      isSelected
-                        ? 'bg-secondary text-white'
-                        : isCurrentMonth
-                        ? 'text-gray-800 border border-gray-200 hover:bg-gray-100'
-                        : 'text-gray-400 border border-gray-100 hover:bg-gray-50'
-                    } ${!isSelected && isTodayDate ? 'ring-1 ring-secondary/40' : ''}`}
-                  >
-                    {date.getDate()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
+      <DateCalendarPanel open={isOpen} value={selectedIso || ''} onSelect={selectCalendarDay} />
     );
   }
 

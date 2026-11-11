@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test per gli helper condivisi di corsi, sfide Arena, news e video.
+ * Test per gli helper condivisi di corsi, sfide Arena, news, video e blocchi campo.
  */
 
 import {
@@ -19,6 +19,14 @@ import {
 } from '@/lib/arena/challengeDisplay';
 import { formatNewsDate, isPublishedNews, normalizeLegacyTitle } from '@/lib/news/display';
 import { getYouTubeVideoId } from '@/lib/utils/youtube';
+import {
+  applyPickedDate,
+  buildBlockReason,
+  buildCourtBlocks,
+  parseBlockReason,
+} from '@/lib/courts/blocks';
+import { getBlockStyle, getBlockTitle } from '@/lib/courts/blockDisplay';
+import { formatDateInputLabel, parseDateInput, toInputDateValue } from '@/lib/utils/dateInput';
 
 const iso = (dates: Date[]) => dates.map((d) => d.toISOString().split('T')[0]);
 
@@ -137,5 +145,116 @@ describe('news e video', () => {
     expect(getYouTubeVideoId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     expect(getYouTubeVideoId('https://youtu.be/dQw4w9WgXcQ?t=10')).toBe('dQw4w9WgXcQ');
     expect(getYouTubeVideoId('https://example.com/video')).toBeNull();
+  });
+});
+
+describe('blocchi campo', () => {
+  it('compone il testo del motivo', () => {
+    expect(buildBlockReason({ blockType: 'manutenzione', customBlockType: '', notes: '' })).toBe(
+      'Manutenzione',
+    );
+    expect(
+      buildBlockReason({
+        blockType: 'altro',
+        customBlockType: ' Gara ',
+        notes: 'campo chiuso',
+        blockName: 'Sociale',
+      }),
+    ).toBe('Sociale - Altro (Gara) - campo chiuso');
+  });
+
+  it('rilegge nome, tipo e note dal motivo', () => {
+    const fields = {
+      blockName: 'Sociale',
+      blockType: 'altro',
+      customBlockType: 'Gara',
+      notes: 'campo chiuso - tutto il giorno',
+    };
+    expect(parseBlockReason(buildBlockReason(fields))).toEqual(fields);
+    expect(parseBlockReason('Manutenzione - rete')).toEqual({
+      blockName: '',
+      blockType: 'manutenzione',
+      customBlockType: '',
+      notes: 'rete',
+    });
+    // Testo libero dei blocchi vecchi: tipo dedotto, oppure tutto nelle note
+    expect(parseBlockReason('corsi tennis ragazzi').blockType).toBe('corsi_tennis');
+    expect(parseBlockReason('Festa del circolo')).toMatchObject({
+      blockType: '',
+      notes: 'Festa del circolo',
+    });
+  });
+
+  it('ricava il titolo del blocco', () => {
+    expect(getBlockTitle('')).toBe('Blocco campo');
+    expect(getBlockTitle('Altro (Gara) - sabato')).toBe('Gara - sabato');
+    expect(getBlockTitle('Manutenzione - rete')).toBe('Manutenzione - rete');
+  });
+
+  it('crea un blocco per ogni giorno scelto, saltando le date escluse', () => {
+    // Lunedì e mercoledì dal 2 all'11 marzo 2026 (il 2 è un lunedì)
+    const blocks = buildCourtBlocks({
+      court: 'Campo 1',
+      startDate: '2026-03-02',
+      endDate: '2026-03-11',
+      weekDays: [1, 3],
+      startTime: '09:00',
+      endTime: '10:30',
+      reason: 'Evento',
+      excludedDates: ['2026-03-04'],
+    });
+    expect(blocks.map((b) => toInputDateValue(new Date(b.start_time)))).toEqual([
+      '2026-03-02',
+      '2026-03-09',
+      '2026-03-11',
+    ]);
+    const first = blocks[0];
+    expect(new Date(first.end_time).getTime() - new Date(first.start_time).getTime()).toBe(
+      90 * 60 * 1000,
+    );
+    expect(first).toMatchObject({ court_id: 'Campo 1', reason: 'Evento' });
+  });
+
+  it('rifiuta un periodo con la fine prima dell’inizio', () => {
+    expect(() =>
+      buildCourtBlocks({
+        court: 'Campo 1',
+        startDate: '2026-03-10',
+        endDate: '2026-03-02',
+        weekDays: [1],
+        startTime: '09:00',
+        endTime: '10:00',
+        reason: 'Evento',
+      }),
+    ).toThrow();
+  });
+
+  it('applica la data scelta dal calendario al periodo', () => {
+    const period = { startDate: '2026-03-02', endDate: '2026-03-05', weekDays: [1] };
+    // Inizio spostato dopo la fine: la fine lo segue; sabato viene aggiunto ai giorni
+    expect(applyPickedDate(period, 'start', parseDateInput('2026-03-07')!)).toEqual({
+      startDate: '2026-03-07',
+      endDate: '2026-03-07',
+      weekDays: [1, 6],
+    });
+    // Fine prima dell'inizio: resta sull'inizio
+    expect(applyPickedDate(period, 'end', parseDateInput('2026-03-01')!).endDate).toBe(
+      '2026-03-02',
+    );
+  });
+
+  it('riconosce il tipo di blocco dal motivo', () => {
+    expect(getBlockStyle('Corso Adulti - serale').type).toBe('Corso Adulti');
+    expect(getBlockStyle('Manutenzione').type).toBe('Manutenzione');
+    expect(getBlockStyle('Altro (Gara)').type).toBe('Altro');
+    expect(getBlockStyle('').type).toBe('Blocco');
+  });
+
+  it('legge e scrive le date degli input', () => {
+    expect(parseDateInput('')).toBeNull();
+    expect(toInputDateValue(parseDateInput('2026-03-02')!)).toBe('2026-03-02');
+    expect(formatDateInputLabel('2026-03-02')).toBe('02/03/2026');
+    expect(formatDateInputLabel('')).toBe('gg/mm/aaaa');
+    expect(toInputDateValue(parseDateInput('2026-03-02T00:00:00')!)).toBe('2026-03-02');
   });
 });

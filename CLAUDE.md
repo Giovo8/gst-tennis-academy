@@ -41,19 +41,24 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 
 Le pagine sono grandi e simili tra aree (admin, atleta, maestro): prima di scrivere una funzione di utilità in una pagina, controllare se esiste già in `src/lib/`. Se serve a più di una pagina va in `src/lib/`, non copiata.
 
-| Serve                                                    | Usare                                                                            |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Date delle lezioni di un corso, campo/orario in una data | `src/lib/courses/schedule.ts`                                                    |
-| Conflitti corso ↔ prenotazione, campi di un corso        | `src/lib/bookings/courseConflicts.ts`                                            |
-| Orari prenotabili, conversione ora italiana ↔ UTC        | `src/lib/bookings/bookingTimeRestrictions.ts`                                    |
-| Etichette e punteggio delle sfide Arena                  | `src/lib/arena/challengeDisplay.ts`                                              |
-| Punteggio tennis dei tornei, "best of", struttura torneo | `src/lib/tournaments/`                                                           |
-| News pubblicata, titolo, data della news                 | `src/lib/news/display.ts`                                                        |
-| ID di un video YouTube                                   | `src/lib/utils/youtube.ts`                                                       |
-| Date in italiano                                         | `src/lib/utils/formatItalianDate.ts`                                             |
-| Controlli sul ruolo                                      | `src/lib/roles.ts` (`isAdminOrGestore`, `isStaffRole`, `isBookableCoachProfile`) |
-| Lista dei campi                                          | `getCourts()` (`src/lib/courts/getCourts.ts`) o l'hook `useCourts()`             |
-| Classi CSS composte, URL avatar                          | `cn()`, `getAvatarUrl()` in `src/lib/utils.ts`                                   |
+| Serve                                                                                  | Usare                                                                                                                                |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Date delle lezioni di un corso, campo/orario in una data                               | `src/lib/courses/schedule.ts`                                                                                                        |
+| Conflitti corso ↔ prenotazione, campi di un corso                                      | `src/lib/bookings/courseConflicts.ts`                                                                                                |
+| Orari prenotabili, conversione ora italiana ↔ UTC                                      | `src/lib/bookings/bookingTimeRestrictions.ts`                                                                                        |
+| Etichette e punteggio delle sfide Arena                                                | `src/lib/arena/challengeDisplay.ts`                                                                                                  |
+| Punteggio tennis dei tornei, "best of", struttura torneo                               | `src/lib/tournaments/`                                                                                                               |
+| News pubblicata, titolo, data della news                                               | `src/lib/news/display.ts`                                                                                                            |
+| ID di un video YouTube                                                                 | `src/lib/utils/youtube.ts`                                                                                                           |
+| Date in italiano                                                                       | `src/lib/utils/formatItalianDate.ts`                                                                                                 |
+| Controlli sul ruolo                                                                    | `src/lib/roles.ts` (`isAdminOrGestore`, `isStaffRole`, `isBookableCoachProfile`)                                                     |
+| Lista dei campi                                                                        | `getCourts()` (`src/lib/courts/getCourts.ts`) o l'hook `useCourts()`                                                                 |
+| Blocchi campo: tipi, motivo (scrittura e lettura), generazione, titolo, icona e colore | `src/lib/courts/blocks.ts`, `src/lib/courts/blockDisplay.ts`                                                                         |
+| Date degli input (`aaaa-mm-gg`)                                                        | `src/lib/utils/dateInput.ts`                                                                                                         |
+| Scelta di una data (mai un calendario scritto a mano)                                  | `src/components/ui/`: `DateCalendarPanel` (a scomparsa sotto un campo), `DatePickerModal` (finestra), `CalendarMonth` (griglia base) |
+| Dettaglio sfida Arena (admin e atleta)                                                 | `src/components/arena/ChallengeDetailView.tsx`                                                                                       |
+| Dettaglio partecipante di un corso (iscritto o ospite)                                 | `src/components/courses/CourseParticipantView.tsx`                                                                                   |
+| Classi CSS composte, URL avatar                                                        | `cn()`, `getAvatarUrl()` in `src/lib/utils.ts`                                                                                       |
 
 ## Convenzioni
 

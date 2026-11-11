@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,19 +11,9 @@ import {
   Trash2,
   Calendar,
   Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle2,
   X,
 } from 'lucide-react';
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalBody,
-  ModalFooter,
-} from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { getCourts } from '@/lib/courts/getCourts';
 import { DEFAULT_COURTS } from '@/lib/courts/constants';
@@ -34,6 +24,8 @@ import {
   getCourseCourtsForDate,
   getCourseTimeForDate,
 } from '@/lib/courses/schedule';
+import DatePickerModal from '@/components/ui/DatePickerModal';
+import { parseDateInput, toInputDateValue } from '@/lib/utils/dateInput';
 
 type Athlete = {
   id: string;
@@ -146,61 +138,6 @@ export default function CorsoDetailPage() {
   const [editingEndTime, setEditingEndTime] = useState('');
   const [slotError, setSlotError] = useState<string | null>(null);
   const [calPickerOpen, setCalPickerOpen] = useState(false);
-  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
-
-  const WEEK_DAYS_CAL = ['lu', 'ma', 'me', 'gi', 've', 'sa', 'do'];
-
-  const calendarDays = useMemo(() => {
-    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
-    const mondayOffset = (firstOfMonth.getDay() + 6) % 7;
-    const gridStart = new Date(firstOfMonth);
-    gridStart.setDate(firstOfMonth.getDate() - mondayOffset);
-    return Array.from({ length: 42 }, (_, i) => {
-      const date = new Date(gridStart);
-      date.setDate(gridStart.getDate() + i);
-      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
-    });
-  }, [calendarViewDate]);
-
-  function normalizeDate(date: Date): Date {
-    const d = new Date(date);
-    d.setHours(12, 0, 0, 0);
-    return d;
-  }
-
-  function isSameCalendarDay(a: Date, b: Date): boolean {
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
-  }
-
-  function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }
-
-  function openCalendar() {
-    const base = editingNewDate
-      ? normalizeDate(new Date(editingNewDate + 'T12:00:00'))
-      : normalizeDate(new Date());
-    setPendingDate(base);
-    setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
-    setCalPickerOpen(true);
-  }
-
-  function applyCalendarDate() {
-    const iso = pendingDate.toISOString().split('T')[0];
-    setEditingNewDate(iso);
-    setEditingNewDateText(isoToDisplay(iso));
-    setCalPickerOpen(false);
-  }
-
   function parseTimeRange(timeStr: string | null): { start: string; end: string } {
     if (!timeStr) return { start: '', end: '' };
     const match = timeStr.match(/(\d{1,2}:\d{2})\s*[\u2013\-]\s*(\d{1,2}:\d{2})/);
@@ -873,7 +810,7 @@ export default function CorsoDetailPage() {
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={openCalendar}
+                    onClick={() => setCalPickerOpen(true)}
                     className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
                     tabIndex={-1}
                   >
@@ -976,97 +913,16 @@ export default function CorsoDetailPage() {
       )}
 
       {/* Calendar picker */}
-      <Modal open={calPickerOpen} onOpenChange={setCalPickerOpen}>
-        <ModalContent
-          size="sm"
-          showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white"
-        >
-          <ModalHeader
-            withCloseButton
-            closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10"
-            className="px-4 py-3 bg-secondary border-b border-secondary"
-          >
-            <ModalTitle className="font-semibold text-white">Seleziona data</ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))
-                  }
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))
-                  }
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS_CAL.map((d) => (
-                  <span key={d} className="py-1">
-                    {d}
-                  </span>
-                ))}
-              </div>
-              <div className="calendar-grid grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isToday = isSameCalendarDay(date, new Date());
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => setPendingDate(normalizeDate(date))}
-                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-lg text-sm leading-none transition-colors ${
-                        isSelected
-                          ? 'bg-secondary text-white font-semibold'
-                          : isCurrentMonth
-                          ? 'text-gray-800 hover:bg-gray-100'
-                          : 'text-gray-400 hover:bg-gray-50'
-                      } ${!isSelected && isToday ? 'ring-1 ring-secondary/40' : ''}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white">
-            <button
-              type="button"
-              onClick={() => {
-                const t = normalizeDate(new Date());
-                setPendingDate(t);
-                setCalendarViewDate(new Date(t.getFullYear(), t.getMonth(), 1));
-              }}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyCalendarDate}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <DatePickerModal
+        open={calPickerOpen}
+        onOpenChange={setCalPickerOpen}
+        value={parseDateInput(editingNewDate) ?? new Date()}
+        onApply={(date) => {
+          const iso = toInputDateValue(date);
+          setEditingNewDate(iso);
+          setEditingNewDateText(isoToDisplay(iso));
+        }}
+      />
     </div>
   );
 }
