@@ -23,14 +23,14 @@ describe('getCourtHoursForDay', () => {
     for (const day of [1, 2, 3, 4, 5]) {
       const h = getCourtHoursForDay(day);
       expect(h.open).toEqual({ h: 7, m: 0 });
-      expect(h.close).toEqual({ h: 20, m: 30 });
+      expect(h.close).toEqual({ h: 22, m: 30 });
     }
   });
 
-  it('restituisce orari sabato (chiude 18:00)', () => {
+  it('restituisce orari sabato (chiude 19:00)', () => {
     const h = getCourtHoursForDay(6);
     expect(h.open).toEqual({ h: 7, m: 0 });
-    expect(h.close).toEqual({ h: 18, m: 0 });
+    expect(h.close).toEqual({ h: 19, m: 0 });
   });
 
   it('restituisce orari domenica (chiude 13:00)', () => {
@@ -44,14 +44,14 @@ describe('getCourtHoursForDay', () => {
 // getClosingMinutes
 // ─────────────────────────────────────────────
 describe('getClosingMinutes', () => {
-  it('chiusura feriale 20:30 → 1230 minuti', () => {
+  it('chiusura feriale 22:30 → 1350 minuti', () => {
     for (const day of [1, 2, 3, 4, 5]) {
-      expect(getClosingMinutes(day)).toBe(20 * 60 + 30); // 1230
+      expect(getClosingMinutes(day)).toBe(22 * 60 + 30); // 1350
     }
   });
 
-  it('chiusura sabato 18:00 → 1080 minuti', () => {
-    expect(getClosingMinutes(6)).toBe(18 * 60); // 1080
+  it('chiusura sabato 19:00 → 1140 minuti', () => {
+    expect(getClosingMinutes(6)).toBe(19 * 60); // 1140
   });
 
   it('chiusura domenica 13:00 → 780 minuti', () => {
@@ -63,13 +63,13 @@ describe('getClosingMinutes', () => {
 // getCourtHoursLabel
 // ─────────────────────────────────────────────
 describe('getCourtHoursLabel', () => {
-  it("ritorna '07:00 - 20:30' per i feriali", () => {
-    expect(getCourtHoursLabel(1)).toBe('07:00 - 20:30');
-    expect(getCourtHoursLabel(5)).toBe('07:00 - 20:30');
+  it("ritorna '07:00 - 22:30' per i feriali", () => {
+    expect(getCourtHoursLabel(1)).toBe('07:00 - 22:30');
+    expect(getCourtHoursLabel(5)).toBe('07:00 - 22:30');
   });
 
-  it("ritorna '07:00 - 18:00' per sabato", () => {
-    expect(getCourtHoursLabel(6)).toBe('07:00 - 18:00');
+  it("ritorna '07:00 - 19:00' per sabato", () => {
+    expect(getCourtHoursLabel(6)).toBe('07:00 - 19:00');
   });
 
   it("ritorna '07:00 - 13:00' per domenica", () => {
@@ -91,10 +91,10 @@ describe('validateRestrictedBookingHours', () => {
     expect(result).toBeNull();
   });
 
-  it('ritorna null per una prenotazione al limite orario feriale (07:00–20:30)', () => {
+  it('ritorna null per una prenotazione al limite orario feriale (07:00–22:30)', () => {
     const result = validateRestrictedBookingHours(
       '2026-05-04T05:00:00.000Z', // 07:00 CEST
-      '2026-05-04T18:30:00.000Z', // 20:30 CEST
+      '2026-05-04T20:30:00.000Z', // 22:30 CEST
     );
     expect(result).toBeNull();
   });
@@ -102,10 +102,10 @@ describe('validateRestrictedBookingHours', () => {
   it('ritorna errore per una prenotazione feriale fuori orario (troppo tardi)', () => {
     const result = validateRestrictedBookingHours(
       '2026-05-04T05:00:00.000Z', // 07:00 CEST
-      '2026-05-04T19:00:00.000Z', // 21:00 CEST — oltre 20:30
+      '2026-05-04T21:00:00.000Z', // 23:00 CEST — oltre 22:30
     );
     expect(result).not.toBeNull();
-    expect(result).toContain('07:00 - 20:30');
+    expect(result).toContain('07:00 - 22:30');
   });
 
   it('ritorna errore per una prenotazione troppo mattiniera (prima apertura)', () => {
@@ -124,13 +124,13 @@ describe('validateRestrictedBookingHours', () => {
     expect(result).toBeNull();
   });
 
-  it('ritorna errore per una prenotazione sabato oltre le 18:00', () => {
+  it('ritorna errore per una prenotazione sabato oltre le 19:00', () => {
     const result = validateRestrictedBookingHours(
       '2026-05-09T07:00:00.000Z', // 09:00 CEST
-      '2026-05-09T17:30:00.000Z', // 19:30 CEST — oltre 18:00
+      '2026-05-09T17:30:00.000Z', // 19:30 CEST — oltre 19:00
     );
     expect(result).not.toBeNull();
-    expect(result).toContain('07:00 - 18:00');
+    expect(result).toContain('07:00 - 19:00');
   });
 
   it('ritorna null per una prenotazione domenica valida (09:00–10:00)', () => {

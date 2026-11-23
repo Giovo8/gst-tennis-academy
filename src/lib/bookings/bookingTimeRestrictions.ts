@@ -9,10 +9,10 @@ interface DayHours {
 }
 
 const COURT_HOURS: Record<string, DayHours> = {
-  // Lunedì - Venerdì: 07:00 - 20:30
-  weekday: { open: { h: 7, m: 0 }, close: { h: 20, m: 30 } },
-  // Sabato: 07:00 - 18:00
-  saturday: { open: { h: 7, m: 0 }, close: { h: 18, m: 0 } },
+  // Lunedì - Venerdì: 07:00 - 22:30
+  weekday: { open: { h: 7, m: 0 }, close: { h: 22, m: 30 } },
+  // Sabato: 07:00 - 19:00
+  saturday: { open: { h: 7, m: 0 }, close: { h: 19, m: 0 } },
   // Domenica: 07:00 - 13:00
   sunday: { open: { h: 7, m: 0 }, close: { h: 13, m: 0 } },
 };
@@ -30,7 +30,7 @@ export function getClosingMinutes(dayOfWeek: number): number {
   return h.close.h * 60 + h.close.m;
 }
 
-/** Label leggibile degli orari per il giorno dato, es. "07:00 - 20:30" */
+/** Label leggibile degli orari per il giorno dato, es. "07:00 - 22:30" */
 export function getCourtHoursLabel(dayOfWeek: number): string {
   const h = getCourtHoursForDay(dayOfWeek);
   const fmt = (v: number) => v.toString().padStart(2, '0');

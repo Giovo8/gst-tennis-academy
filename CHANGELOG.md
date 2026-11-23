@@ -4,6 +4,10 @@ Modifiche rilevanti a GST Tennis Academy, dalla più recente.
 
 ## [Unreleased]
 
+### Nuovi orari di prenotazione
+
+- Atleti e maestri possono prenotare lun–ven 07:00–22:30 (prima 20:30) e sabato 07:00–19:00 (prima 18:00); domenica invariata 07:00–13:00. Configurazione in `src/lib/bookings/bookingTimeRestrictions.ts`.
+
 ### Pulizia del codice e della documentazione (novembre 2026)
 
 - **Helper condivisi al posto delle copie**: le funzioni ripetute identiche in più pagine ora vivono in un solo modulo. `src/lib/courses/schedule.ts` (date delle lezioni, campo e orario di un corso in una data: prima in 13 pagine), `src/lib/arena/challengeDisplay.ts` (etichette e lettura del punteggio delle sfide: prima duplicati nelle pagine dettaglio admin e atleta), `src/lib/news/display.ts` (news pubblicata, titolo, data), `src/lib/utils/youtube.ts` (ID video, prima in 4 pagine), `countCronAttivi` in `src/lib/ai-news/utils.ts`. Nessun cambio di comportamento; circa 600 righe in meno.
