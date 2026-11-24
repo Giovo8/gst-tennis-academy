@@ -1,6 +1,6 @@
 # Database
 
-Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy. Lo schema nasce da `supabase/schema.sql` (base iniziale), dalle migrazioni `supabase/migrations/001–097` e da alcuni script una tantum in `supabase/scripts/` che creano oggetti assenti dalle migrazioni (vedi [Setup da zero](#setup-da-zero)).
+Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy. Lo schema nasce da `supabase/schema.sql` (base iniziale), dalle migrazioni `supabase/migrations/001–098` e da alcuni script una tantum in `supabase/scripts/` che creano oggetti assenti dalle migrazioni (vedi [Setup da zero](#setup-da-zero)).
 
 > Le migrazioni sono sempre state applicate **a mano dallo SQL Editor** (il progetto non ha `supabase/config.toml` né storico `supabase db push`). L'ordine numerico non coincide sempre con quello reale di applicazione.
 
@@ -128,7 +128,7 @@ Elimina i messaggi storici della vecchia chat: esportarli prima se servono.
 
 `089_invite_codes_rimozione_policy_pubblica.sql` rimuove la policy `"Anyone can validate a specific code"` (`USING (true)`), che permetteva a chiunque, con la anon key, di leggere tutti i codici invito e i loro ruoli. La validazione passa ormai solo da API con service role. Non tocca dati.
 
-### Migrazioni 090–097
+### Migrazioni 090–098
 
 | Migrazione                                                                        | Contenuto                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -137,6 +137,7 @@ Elimina i messaggi storici della vecchia chat: esportarli prima se servono.
 | `093_avvisi.sql`, `094_avvisi_messaggio.sql`, `095_avvisi_tipo_scadenza_link.sql` | Tabella `avvisi` della Bacheca: titolo, testo, tipo, scadenza e link interno (CHECK: solo `/…`, mai `//…`)                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `096_chat_rls_gruppi_e_non_letti.sql`                                             | Chat: RLS su `chat_groups` e `chat_group_members` (lettura solo ai membri, scrittura solo via API), policy di `internal_messages` riscritte (scrittura nei gruppi solo ai membri, lettura dei messaggi dei propri gruppi, update del solo `is_read`), colonna `chat_group_members.last_read_at`, funzioni `is_chat_group_member`, `mark_chat_group_read`, `get_unread_chat_count`, publication realtime per `internal_messages` e `notifications`. **Va applicata prima del deploy del codice della chat** |
 | `097_rimozione_policy_messaggi_duplicate.sql`                                     | Elimina due policy su `internal_messages` create a mano (`*_insert_policy`, `*_select_policy`) che, sommate in OR, aggiravano i controlli della 096                                                                                                                                                                                                                                                                                                                                                        |
+| `098_recupero_telefono_registrazione.sql`                                         | Copia in `profiles.phone`, se vuoto, il telefono indicato in registrazione (metadata di `auth.users`)                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Row Level Security
 
@@ -187,9 +188,9 @@ Il frontend sottoscrive `postgres_changes` su: `bookings`, `internal_messages`, 
 
 ## Migrazioni
 
-Le migrazioni vivono in `supabase/migrations/` (`001`–`097`). Regole:
+Le migrazioni vivono in `supabase/migrations/` (`001`–`098`). Regole:
 
-- **Non modificare** i file esistenti: per ogni cambiamento creare una nuova migrazione col numero successivo (la prossima è `098`).
+- **Non modificare** i file esistenti: per ogni cambiamento creare una nuova migrazione col numero successivo (la prossima è `099`).
 - Scriverle idempotenti (`IF NOT EXISTS`, `DROP ... IF EXISTS`, `ON CONFLICT DO NOTHING`).
 - Applicarle dallo SQL Editor di Supabase (o con `psql`), una alla volta.
 
@@ -202,7 +203,7 @@ Rieseguendo tutta la catena su un Postgres pulito, l'ordine che produce lo schem
 3. `DROP TABLE tournament_matches, tournament_groups CASCADE`, poi `010`, che le ricrea nella forma usata dal codice.
 4. Migrazioni da `011` a `021b`.
 5. Gli script in `supabase/scripts/` che creano oggetti assenti dalle migrazioni: `utilities/ADD_STATUS_TO_RECRUITMENT_APPLICATIONS.sql`, `utilities/CREATE_ARENA_CHALLENGES.sql`, `utilities/ADD_BOOKING_ID_TO_ARENA_CHALLENGES.sql`, `utilities/UPDATE_ARENA_CHALLENGES_ADD_MATCH_CONFIG.sql`, `utilities/ADD_COUNTER_PROPOSAL_STATUS.sql`, `fixes/FIX_ARENA_CHALLENGES_FOREIGN_KEYS.sql`, `fixes/FIX_ARENA_LEVELS.sql`, `fixes/FIX_ARENA_NO_DRAWS.sql`, la tabella `staff` di `migrations/archive/complete_migration.sql`, `utilities/ADD_STAFF_SOCIAL_COLUMNS.sql`, `utilities/CREATE_AVATARS_BUCKET.sql`.
-6. Migrazioni da `022` a `097`.
+6. Migrazioni da `022` a `098`.
 
 Questa sequenza è stata verificata su un Postgres locale. Gli errori residui sono solo duplicati innocui e le policy con `profiles.user_role` citate sopra.
 

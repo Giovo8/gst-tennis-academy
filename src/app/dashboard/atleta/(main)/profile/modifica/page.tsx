@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import { resolvePhoneUpdate } from '@/lib/utils/phone';
 import DateCalendarPanel from '@/components/ui/DateCalendarPanel';
 
 type Profile = {
@@ -166,6 +167,12 @@ export default function AthleteProfileEditPage({
     e.preventDefault();
     if (!user) return;
 
+    const { phone, error: phoneError } = resolvePhoneUpdate(formData.phone, user.phone);
+    if (phoneError) {
+      toast.warning(phoneError);
+      return;
+    }
+
     setUpdating(true);
     try {
       const existingMetadata =
@@ -173,7 +180,7 @@ export default function AthleteProfileEditPage({
 
       const baseUpdatePayload = {
         full_name: formData.full_name || null,
-        phone: formData.phone || null,
+        phone,
         bio: formData.notes || null,
         metadata: {
           ...(existingMetadata as Record<string, unknown>),
@@ -622,6 +629,7 @@ export default function AthleteProfileEditPage({
                 <div className="flex-1">
                   <input
                     type="tel"
+                    required={!!user.phone?.trim()}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"

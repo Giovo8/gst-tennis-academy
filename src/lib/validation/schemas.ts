@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { USER_ROLES, BOOKING_STATUS, VALIDATION_RULES } from '@/lib/constants/app';
+import { normalizePhone } from '@/lib/utils/phone';
 
 // ==================== COMMON SCHEMAS ====================
 
@@ -32,23 +33,18 @@ const passwordSchema = z
 // z.guid() accetta qualsiasi 8-4-4-4-12 esadecimale (come z.string().uuid() di zod 3)
 const uuidSchema = z.guid('ID non valido');
 
-const phoneSchema = z.preprocess(
-  (value) => {
-    if (typeof value !== 'string') {
-      return value;
+export const requiredPhoneSchema = z
+  .string('Numero di telefono obbligatorio')
+  .trim()
+  .min(1, { error: 'Numero di telefono obbligatorio', abort: true })
+  .transform((value, ctx) => {
+    const phone = normalizePhone(value);
+    if (!phone) {
+      ctx.addIssue({ code: 'custom', message: 'Numero di telefono non valido' });
+      return z.NEVER;
     }
-
-    const normalized = value.trim();
-    return normalized === '' ? undefined : normalized;
-  },
-  z
-    .string()
-    .regex(
-      /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
-      'Numero di telefono non valido',
-    )
-    .optional(),
-);
+    return phone;
+  });
 
 const dateStringSchema = z.string().datetime('Data non valida');
 
@@ -69,7 +65,7 @@ export const signupSchema = z.object({
     .min(VALIDATION_RULES.USERNAME_MIN_LENGTH, 'Nome troppo corto')
     .max(VALIDATION_RULES.USERNAME_MAX_LENGTH, 'Nome troppo lungo')
     .trim(),
-  phone: phoneSchema,
+  phone: requiredPhoneSchema,
   role: userRoleSchema,
   inviteCode: z.string().optional(),
 });

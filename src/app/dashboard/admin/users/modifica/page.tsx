@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import { resolvePhoneUpdate } from '@/lib/utils/phone';
 import DateCalendarPanel from '@/components/ui/DateCalendarPanel';
 
 type Profile = {
@@ -179,6 +180,12 @@ export default function ModificaUtentePage({
       return;
     }
 
+    const { phone, error: phoneError } = resolvePhoneUpdate(formData.phone, user?.phone);
+    if (phoneError) {
+      toast.warning(phoneError);
+      return;
+    }
+
     setUpdating(true);
     try {
       const existingMetadata =
@@ -192,7 +199,7 @@ export default function ModificaUtentePage({
         .update({
           email: formData.email.trim().toLowerCase(),
           full_name: formData.full_name,
-          phone: formData.phone,
+          phone,
           date_of_birth: formData.date_of_birth || null,
           bio: formData.notes || null,
           role: formData.role,
@@ -703,6 +710,7 @@ export default function ModificaUtentePage({
                 <div className="flex-1">
                   <input
                     type="tel"
+                    required={!!user.phone?.trim()}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"

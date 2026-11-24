@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
 import { verifyAuth } from '@/lib/auth/verifyAuth';
+import { requiredPhoneSchema } from '@/lib/validation/schemas';
 import logger from '@/lib/logger/secure-logger';
 
 /** POST /api/admin/users — crea un utente (account Auth + profilo) dal pannello admin. */
@@ -46,6 +47,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const phoneResult = requiredPhoneSchema.safeParse(phone);
+    if (!phoneResult.success) {
+      return NextResponse.json({ error: phoneResult.error.issues[0].message }, { status: 400 });
+    }
+
     // Validazione ruolo
     const validRoles = ['atleta', 'maestro', 'gestore', 'admin'];
     if (role && !validRoles.includes(role)) {
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
       email: email.toLowerCase(),
       full_name: full_name?.trim() || null,
       role: role || 'atleta',
-      phone: phone || null,
+      phone: phoneResult.data,
       date_of_birth: date_of_birth || null,
       bio: notes || null,
       metadata: {

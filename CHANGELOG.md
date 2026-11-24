@@ -4,6 +4,14 @@ Modifiche rilevanti a GST Tennis Academy, dalla più recente.
 
 ## [Unreleased]
 
+### Telefono obbligatorio in registrazione
+
+- Chi si registra con codice invito deve indicare un numero di telefono valido (controllo nel form e in `POST /api/auth/signup`). Obbligatorio anche per gli utenti creati dal pannello admin (`POST /api/admin/users`).
+- In modifica (profilo e pannello admin) un numero già presente si può cambiare ma non togliere; gli utenti già registrati senza telefono possono lasciarlo vuoto.
+- Il telefono indicato in registrazione ora viene salvato in `profiles.phone`: prima restava solo nei metadata dell'account e non compariva nel profilo.
+- Accettati i numeri con prefisso e spazi (es. `+39 347 123 4567`), prima rifiutati; si salvano senza separatori (`src/lib/utils/phone.ts`).
+- Migrazione `098`: copia nei profili senza telefono il numero indicato in registrazione, rimasto nei metadata dell'account.
+
 ### Nuovi orari di prenotazione
 
 - Atleti e maestri possono prenotare lun–ven 07:00–22:30 (prima 20:30) e sabato 07:00–19:00 (prima 18:00); domenica invariata 07:00–13:00. Configurazione in `src/lib/bookings/bookingTimeRestrictions.ts`.

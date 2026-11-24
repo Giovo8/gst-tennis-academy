@@ -103,9 +103,10 @@ Pagine: `dashboard/{atleta,maestro}/(main)/feedback` (lista, nuovo, dettaglio) e
 
 Pagine: `/register`, `/login`, `/auth/reset-password`; gestione in `dashboard/admin/users` e `dashboard/admin/invite-codes`. Tabelle `profiles`, `invite_codes`, `invite_code_uses`.
 
-- **Registrazione solo su invito**: il codice (validato da `/api/invite-codes/validate`) determina il ruolo (`atleta` o `maestro`); alla registrazione l'uso viene consumato e i gestori ricevono email e notifica.
+- **Registrazione solo su invito**: il codice (validato da `/api/invite-codes/validate`) determina il ruolo (`atleta` o `maestro`); il numero di telefono è obbligatorio e finisce nel profilo; alla registrazione l'uso viene consumato e i gestori ricevono email e notifica.
 - Admin/gestore generano codici con ruolo, numero massimo di utilizzi e scadenza, e vedono chi li ha usati.
-- Dal pannello admin si creano utenti con qualsiasi ruolo, si modificano anagrafica e ruoli (anche il ruolo secondario `maestro` per i gestori), si invia il reset password e si elimina un utente (account Auth incluso).
+- Dal pannello admin si creano utenti con qualsiasi ruolo (telefono obbligatorio), si modificano anagrafica e ruoli (anche il ruolo secondario `maestro` per i gestori), si invia il reset password e si elimina un utente (account Auth incluso).
+- In modifica (profilo e pannello admin) un telefono già presente si può cambiare ma non togliere; chi non l'ha mai indicato può lasciarlo vuoto.
 - Profilo personale con avatar e certificato medico (PDF), caricati con `/api/upload/staff-image` e `/api/upload/certificate`.
 
 ## Candidature (lavora con noi)

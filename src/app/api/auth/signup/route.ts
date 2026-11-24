@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
       user_metadata: {
         full_name: fullName,
-        phone: phone || null,
+        phone,
         role,
       },
     });
@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
         email,
         full_name: fullName,
         role,
+        phone,
       });
 
       if (profileError) {
@@ -195,6 +196,16 @@ export async function POST(request: NextRequest) {
           userId,
           email,
         });
+      }
+    } else {
+      // Il trigger handle_new_user non copia il telefono nel profilo
+      const { error: phoneError } = await supabaseAdmin
+        .from('profiles')
+        .update({ phone })
+        .eq('id', userId);
+
+      if (phoneError) {
+        logger.error('Profile phone update failed', phoneError, { userId });
       }
     }
 
@@ -248,7 +259,7 @@ export async function POST(request: NextRequest) {
       fullName,
       email,
       role,
-      phone: phone || null,
+      phone,
       inviteCode: inviteCode || null,
       notifyAthlete: role === 'atleta',
     });

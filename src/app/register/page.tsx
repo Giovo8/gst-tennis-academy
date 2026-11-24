@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { VALIDATION_RULES } from '@/lib/constants/app';
+import { normalizePhone } from '@/lib/utils/phone';
 
 function RegisterForm() {
   const router = useRouter();
@@ -91,6 +92,14 @@ function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    const phone = normalizePhone(formData.phone);
+    if (!phone) {
+      setError(
+        formData.phone.trim() ? 'Numero di telefono non valido' : 'Numero di telefono obbligatorio',
+      );
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Le password non coincidono');
       return;
@@ -107,7 +116,6 @@ function RegisterForm() {
 
     try {
       const emailToUse = formData.email.trim().toLowerCase();
-      const normalizedPhone = formData.phone.trim();
 
       // Call API endpoint for immediate signup with auto-confirmed email
       const signupResponse = await fetch('/api/auth/signup', {
@@ -117,7 +125,7 @@ function RegisterForm() {
           email: emailToUse,
           password: formData.password,
           fullName: formData.fullName,
-          phone: normalizedPhone || undefined,
+          phone,
           role: codeRole,
           inviteCode: inviteCode,
         }),
@@ -299,11 +307,12 @@ function RegisterForm() {
                   htmlFor="phone"
                   className="block text-sm sm:text-base font-semibold text-secondary mb-2"
                 >
-                  Telefono <span className="text-secondary/40 font-normal">(opzionale)</span>
+                  Telefono
                 </label>
                 <input
                   id="phone"
                   type="tel"
+                  required
                   className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="+39 123 456 7890"
                   value={formData.phone}

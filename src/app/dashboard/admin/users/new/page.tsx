@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toast';
+import { normalizePhone } from '@/lib/utils/phone';
 
 type NewUserPageProps = {
   basePath?: string;
@@ -53,13 +54,19 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!newUser.email || !newUser.password || !newUser.full_name) {
+    if (!newUser.email || !newUser.password || !newUser.full_name || !newUser.phone.trim()) {
       toast.warning('Compila i campi obbligatori');
       return;
     }
 
     if (!emailRegex.test(newUser.email)) {
       toast.warning('Email non valida');
+      return;
+    }
+
+    const phone = normalizePhone(newUser.phone);
+    if (!phone) {
+      toast.warning('Telefono non valido');
       return;
     }
 
@@ -93,7 +100,7 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
           password: newUser.password,
           full_name: newUser.full_name,
           role: newUser.role,
-          phone: newUser.phone,
+          phone,
           date_of_birth: newUser.date_of_birth,
           birth_city: newUser.birth_city,
           fiscal_code: newUser.fiscal_code,
@@ -235,6 +242,7 @@ export default function NewUserPage({ basePath = '/dashboard/admin' }: NewUserPa
               <div className="flex-1">
                 <input
                   type="tel"
+                  required
                   value={newUser.phone}
                   onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                   className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"

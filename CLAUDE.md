@@ -35,7 +35,7 @@ Pre-commit: `.husky/pre-commit` lancia lint-staged (Prettier sui file staged); l
 - **Notifiche in-app**: tabella `notifications` con `link` a un percorso interno (non `action_url`, solo legacy). Da server: `notifyAdmins` / `notifyAthletes` / insert con service role; dal client verso altri utenti: `createNotification()` → `POST /api/notifications`.
 - **Email**: Resend via `src/lib/email/` — skip silenzioso se `RESEND_API_KEY` assente; esiti registrati in `email_logs`.
 - **AI News**: generazione nella Edge Function Supabase `supabase/functions/genera-news` (Gemini via REST); le route `src/app/api/ai-news/` gestiscono fonti, cron, bozze e delegano la generazione. Cron configurati in DB (`ai_news_cron` + pg_cron), NON in Vercel.
-- **DB**: migrazioni `001–097` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `098`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
+- **DB**: migrazioni `001–098` in `supabase/migrations/`, applicate a mano dallo SQL Editor (niente `supabase db push`: non c'è `config.toml`). Mai modificare migrazioni esistenti: crearne di nuove numerate progressivamente (prossima `099`). Setup da zero e oggetti rimossi: `docs/DATABASE.md`. Vincoli importanti: max 4 partecipanti per prenotazione (trigger), anti-overlap bookings (btree_gist).
 
 ## Codice condiviso: cercare prima di scrivere
 
@@ -50,6 +50,7 @@ Le pagine sono grandi e simili tra aree (admin, atleta, maestro): prima di scriv
 | Punteggio tennis dei tornei, "best of", struttura torneo                               | `src/lib/tournaments/`                                                                                                               |
 | News pubblicata, titolo, data della news                                               | `src/lib/news/display.ts`                                                                                                            |
 | ID di un video YouTube                                                                 | `src/lib/utils/youtube.ts`                                                                                                           |
+| Telefono: validazione, formato, modifica                                               | `src/lib/utils/phone.ts`                                                                                                             |
 | Date in italiano                                                                       | `src/lib/utils/formatItalianDate.ts`                                                                                                 |
 | Controlli sul ruolo                                                                    | `src/lib/roles.ts` (`isAdminOrGestore`, `isStaffRole`, `isBookableCoachProfile`)                                                     |
 | Lista dei campi                                                                        | `getCourts()` (`src/lib/courts/getCourts.ts`) o l'hook `useCourts()`                                                                 |
